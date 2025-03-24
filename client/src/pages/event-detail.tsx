@@ -103,10 +103,10 @@ export default function EventDetail() {
   
   // Fetch guests for this event
   const {
-    data: guests,
+    data: guests = [],
     isLoading: isLoadingGuests,
     error: guestsError
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: [`/api/events/${eventId}/guests`],
     enabled: !!eventId
   });
@@ -325,13 +325,13 @@ export default function EventDetail() {
   }
   
   // Format date and time for display
-  const formatEventDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatEventDate = (dateValue: string | Date) => {
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
     return format(date, 'MMMM d, yyyy');
   };
   
-  const formatEventTime = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatEventTime = (dateValue: string | Date) => {
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
     return format(date, 'h:mm a');
   };
   
@@ -461,7 +461,7 @@ export default function EventDetail() {
                         id="date"
                         type="datetime-local"
                         value={editedEvent.date ? new Date(editedEvent.date).toISOString().slice(0, 16) : ''}
-                        onChange={(e) => setEditedEvent({...editedEvent, date: e.target.value})}
+                        onChange={(e) => setEditedEvent({...editedEvent, date: new Date(e.target.value)})}
                         className="mb-2"
                       />
                     </div>

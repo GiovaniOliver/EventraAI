@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { 
   Tabs, 
   TabsContent, 
@@ -110,9 +111,14 @@ export default function Events() {
     const { bg, text } = getEventIconStyles(event.type);
     const formattedDate = format(new Date(event.date), 'MMMM d, yyyy');
     const formattedTime = format(new Date(event.date), 'h:mm a');
+    const [, navigate] = useLocation();
     
     return (
-      <Card key={event.id} className="mb-4">
+      <Card 
+        key={event.id} 
+        className="mb-4 cursor-pointer hover:shadow-md transition-shadow"
+        onClick={() => navigate(`/events/${event.id}`)}
+      >
         <CardContent className="p-0">
           <div className="flex items-center p-4 border-b border-gray-100">
             <div className={`${bg} ${text} rounded-lg p-2 mr-3`}>

@@ -38,6 +38,7 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/events" component={Events} />
+          <Route path="/events/:id" component={EventDetail} />
           <Route path="/discover" component={Discover} />
           <Route path="/tasks" component={Tasks} />
           <Route path="/profile" component={Profile} />
