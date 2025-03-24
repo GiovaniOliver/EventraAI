@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -99,7 +99,7 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
           <button className="text-gray-500" onClick={onClose}>
             <X className="h-5 w-5" />
           </button>
-          <h2 className="text-lg font-semibold">Create New Event</h2>
+          <DialogTitle className="text-lg font-semibold">Create New Event</DialogTitle>
           <div className="w-6"></div>
         </div>
         
@@ -111,9 +111,13 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
               placeholder="Enter event name" 
               className="w-full px-4 py-3"
               {...register("name")}
+              aria-describedby="event-name-description"
             />
             {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
           </div>
+          <DialogDescription id="event-name-description" className="sr-only">
+            Fill out the event details to create a new event
+          </DialogDescription>
           
           <div className="mb-6">
             <Label className="block text-sm font-medium text-gray-700 mb-1">Event Type</Label>

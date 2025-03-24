@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Sparkles } from "lucide-react";
 
@@ -19,8 +19,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
         </div>
         
         <div className="p-6">
-          <h2 className="text-2xl font-semibold mb-2 text-center">Welcome to EventFlow</h2>
-          <p className="text-gray-600 text-center mb-6">Your AI-powered assistant for planning amazing virtual and hybrid events</p>
+          <DialogTitle className="text-2xl font-semibold mb-2 text-center">Welcome to EventFlow</DialogTitle>
+          <DialogDescription className="text-gray-600 text-center mb-6">Your AI-powered assistant for planning amazing virtual and hybrid events</DialogDescription>
           
           <div className="space-y-4 mb-6">
             <div className="flex items-start">
