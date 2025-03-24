@@ -25,6 +25,13 @@ export default function Discover() {
   const [selectedEventType, setSelectedEventType] = useState<string>("conference");
   const [suggestions, setSuggestions] = useState<AiSuggestions | null>(null);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  
+  // Preferences state
+  const [budget, setBudget] = useState<string>("");
+  const [guestCount, setGuestCount] = useState<string>("");
+  const [format, setFormat] = useState<"virtual" | "in-person" | "hybrid" | "">("");
+  const [duration, setDuration] = useState<string>("");
   
   // Fetch planning tips
   const { 
@@ -35,21 +42,55 @@ export default function Discover() {
     queryKey: ["/api/planning-tips"]
   });
   
-  // Fetch AI suggestions when event type changes
+  // Fetch user's events for context (could be expanded in the future)
+  const {
+    data: userEvents
+  } = useQuery({
+    queryKey: ["/api/users/1/events"] // Using hardcoded user ID for now
+  });
+  
+  // Fetch AI suggestions when event type changes or preferences are updated
+  const fetchSuggestions = async () => {
+    setIsLoadingSuggestions(true);
+    try {
+      // Convert budget and guestCount to numbers if they exist
+      const budgetNum = budget ? parseInt(budget) : undefined;
+      const guestCountNum = guestCount ? parseInt(guestCount) : undefined;
+      
+      // Prepare preferences object
+      const preferences: SuggestionPreferences = {
+        userId: 1, // Hardcoded for now, would be dynamic in a real app
+        guestCount: guestCountNum,
+        format: format as any || undefined,
+        duration: duration || undefined
+      };
+      
+      const data = await getAiSuggestions(
+        selectedEventType,
+        undefined, // theme
+        budgetNum,
+        showAdvancedOptions ? preferences : undefined
+      );
+      
+      setSuggestions(data);
+    } catch (error) {
+      console.error("Failed to fetch suggestions:", error);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+  
+  // Fetch suggestions when event type changes
   useEffect(() => {
-    const fetchSuggestions = async () => {
-      setIsLoadingSuggestions(true);
-      try {
-        const data = await getAiSuggestions(selectedEventType);
-        setSuggestions(data);
-      } catch (error) {
-        console.error("Failed to fetch suggestions:", error);
-      } finally {
-        setIsLoadingSuggestions(false);
-      }
-    };
-    
     fetchSuggestions();
+  }, [selectedEventType]);
+  
+  // Reset preferences when event type changes
+  useEffect(() => {
+    setBudget("");
+    setGuestCount("");
+    setFormat("");
+    setDuration("");
   }, [selectedEventType]);
   
   // Render theme card
@@ -191,6 +232,67 @@ export default function Discover() {
             </div>
           </div>
           
+          {/* Advanced options toggle button */}
+          <div className="mb-6">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+              className="flex items-center gap-2"
+            >
+              <Sliders className="h-4 w-4" />
+              {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
+            </Button>
+          </div>
+          
+          {/* Advanced Options Form */}
+          {showAdvancedOptions && (
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label htmlFor="format" className="block mb-1">Event Format</Label>
+                    <Select
+                      value={format}
+                      onValueChange={(value: any) => setFormat(value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="virtual">Virtual</SelectItem>
+                        <SelectItem value="in-person">In-Person</SelectItem>
+                        <SelectItem value="hybrid">Hybrid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="guestCount" className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>Number of Guests</span>
+                    </Label>
+                    <Input
+                      id="guestCount"
+                      type="number"
+                      placeholder="Enter guest count"
+                      value={guestCount}
+                      onChange={(e) => setGuestCount(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={fetchSuggestions}
+                  className="w-full"
+                >
+                  Get Personalized Theme Suggestions
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+          
           {isLoadingSuggestions ? (
             renderSkeletons()
           ) : suggestions?.themes && suggestions.themes.length > 0 ? (
@@ -219,6 +321,97 @@ export default function Discover() {
               ))}
             </div>
           </div>
+          
+          {/* Advanced options toggle button */}
+          <div className="mb-6">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+              className="flex items-center gap-2"
+            >
+              <Sliders className="h-4 w-4" />
+              {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
+            </Button>
+          </div>
+          
+          {/* Advanced Options Form */}
+          {showAdvancedOptions && (
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label htmlFor="budget" className="flex items-center gap-2">
+                      <span>Budget ($)</span>
+                    </Label>
+                    <Input
+                      id="budget"
+                      type="number"
+                      placeholder="Enter budget"
+                      value={budget}
+                      onChange={(e) => setBudget(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="guestCount" className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>Number of Guests</span>
+                    </Label>
+                    <Input
+                      id="guestCount"
+                      type="number"
+                      placeholder="Enter guest count"
+                      value={guestCount}
+                      onChange={(e) => setGuestCount(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <Label htmlFor="format" className="block mb-1">Event Format</Label>
+                    <Select
+                      value={format}
+                      onValueChange={(value: any) => setFormat(value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="virtual">Virtual</SelectItem>
+                        <SelectItem value="in-person">In-Person</SelectItem>
+                        <SelectItem value="hybrid">Hybrid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="duration" className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      <span>Duration</span>
+                    </Label>
+                    <Input
+                      id="duration"
+                      placeholder="e.g., 2 hours, 3 days"
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={fetchSuggestions}
+                  className="w-full"
+                >
+                  Get Personalized Suggestions
+                </Button>
+              </CardContent>
+            </Card>
+          )}
           
           {isLoadingSuggestions ? (
             renderSkeletons()
