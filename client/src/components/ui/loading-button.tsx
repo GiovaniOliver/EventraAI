@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -10,19 +10,19 @@ interface LoadingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export function LoadingButton({
   children,
   isLoading,
-  loadingText = "Loading...",
+  loadingText,
   disabled,
   ...props
 }: LoadingButtonProps) {
   return (
     <Button
-      disabled={disabled || isLoading}
       {...props}
+      disabled={isLoading || disabled}
     >
       {isLoading ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {loadingText}
+          {loadingText || "Loading..."}
         </>
       ) : (
         children
