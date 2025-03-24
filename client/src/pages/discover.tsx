@@ -127,6 +127,12 @@ export default function Discover() {
   const fetchSuggestions = async () => {
     setIsLoadingSuggestions(true);
     try {
+      // Show feedback toast for better UX
+      toast({
+        title: "Generating AI Suggestions",
+        description: "Please wait while we create personalized event suggestions...",
+      });
+      
       // Convert budget and guestCount to numbers if they exist
       const budgetNum = budget ? parseInt(budget) : undefined;
       const guestCountNum = guestCount ? parseInt(guestCount) : undefined;
@@ -147,6 +153,13 @@ export default function Discover() {
       );
       
       setSuggestions(data);
+      
+      // Show success toast
+      toast({
+        title: "Suggestions Ready",
+        description: "AI-powered event suggestions have been generated successfully!",
+        variant: "default"
+      });
       
       // If budget is provided, automatically show the budget tab
       if (budgetNum && data.budget && data.budget.length > 0 && budgetTabRef.current) {
