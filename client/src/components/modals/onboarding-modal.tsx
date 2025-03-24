@@ -11,7 +11,7 @@ interface OnboardingModalProps {
 export default function OnboardingModal({ isOpen, onClose, onComplete }: OnboardingModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="p-0 max-w-md overflow-hidden">
+      <DialogContent className="p-0 max-w-md overflow-hidden" aria-describedby="onboarding-description">
         <div className="relative h-40 bg-gradient-to-r from-primary-400 to-primary-600">
           <div className="absolute inset-0 flex items-center justify-center">
             <Sparkles className="h-16 w-16 text-white" />
@@ -20,7 +20,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
         
         <div className="p-6">
           <DialogTitle className="text-2xl font-semibold mb-2 text-center">Welcome to EventFlow</DialogTitle>
-          <DialogDescription className="text-gray-600 text-center mb-6">Your AI-powered assistant for planning amazing virtual and hybrid events</DialogDescription>
+          <DialogDescription id="onboarding-description" className="text-gray-600 text-center mb-6">Your AI-powered assistant for planning amazing virtual and hybrid events</DialogDescription>
           
           <div className="space-y-4 mb-6">
             <div className="flex items-start">

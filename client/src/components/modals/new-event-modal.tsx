@@ -60,6 +60,7 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
       // Convert date and time to a single date string
       const dateObj = new Date(`${data.date}T${data.time}`);
       
+      // Make sure the data matches the schema fields exactly
       const eventData = {
         name: data.name,
         type: data.type,
@@ -68,9 +69,21 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
         estimatedGuests: data.estimatedGuests,
         ownerId: data.ownerId,
         status: "planning",
+        description: null,  // Add optional fields with null values
+        theme: null,
+        budget: null
       };
       
+      console.log("Submitting event data:", eventData);
+      
       const response = await apiRequest("POST", "/api/events", eventData);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Event creation error:", errorData);
+        throw new Error(errorData.message || "Failed to create event");
+      }
+      
       const newEvent = await response.json();
       
       // Invalidate events cache to refresh the events list
@@ -83,10 +96,11 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
       
       onClose();
       navigate("/events");
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Event creation error:", error);
       toast({
         title: "Error",
-        description: "Failed to create event. Please try again.",
+        description: error.message || "Failed to create event. Please try again.",
         variant: "destructive",
       });
     }
@@ -94,7 +108,7 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="p-0 max-w-md rounded-t-xl w-full sm:max-h-[90vh] overflow-y-auto">
+      <DialogContent className="p-0 max-w-md rounded-t-xl w-full sm:max-h-[90vh] overflow-y-auto" aria-describedby="event-name-description">
         <div className="p-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white">
           <button className="text-gray-500" onClick={onClose}>
             <X className="h-5 w-5" />
