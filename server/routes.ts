@@ -11,7 +11,7 @@ import {
   insertEventVendorSchema,
   insertUserPreferenceSchema
 } from "@shared/schema";
-import { generateAiSuggestions } from "./services/ai-service";
+import { generateAiSuggestions, openai, MODEL } from "./services/ai-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // All routes are prefixed with /api
@@ -306,6 +306,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("AI suggestion error:", error);
       return res.status(500).json({ 
         message: "Failed to generate AI suggestions",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  // AI Event Improvement Suggestions
+  app.post("/api/ai/improve-event", async (req, res) => {
+    try {
+      const { event } = req.body;
+      
+      if (!event || !event.id) {
+        return res.status(400).json({ message: "Valid event data is required" });
+      }
+      
+      // Get tasks for this event to provide context
+      const tasks = await storage.getTasksByEvent(event.id);
+      
+      // Get guests for this event to provide context
+      const guests = await storage.getGuestsByEvent(event.id);
+      
+      // Get user preferences if available
+      const userPreferences = await storage.getUserPreferences(event.ownerId);
+      
+      const systemPrompt = `You are an expert virtual event planning assistant. Analyze the following event details and provide specific suggestions to improve this event. Consider engagement, technical aspects, and overall experience.
+
+Event details:
+- Name: ${event.name}
+- Type: ${event.type}
+- Format: ${event.format}
+- Date: ${new Date(event.date).toISOString().split('T')[0]}
+- Estimated Guests: ${event.estimatedGuests || 'Not specified'}
+- Budget: ${event.budget ? `$${event.budget}` : 'Not specified'}
+- Theme: ${event.theme || 'Not specified'}
+- Description: ${event.description || 'Not provided'}
+- Status: ${event.status}
+
+Current tasks (${tasks.length}): ${tasks.map(t => t.title).join(', ')}
+
+Guest count: ${guests.length} guests
+
+Provide 3-5 specific, actionable suggestions to improve this virtual event. Each suggestion should focus on a different area (engagement, technical setup, content, etc.).
+
+Format your response as a JSON array of improvement objects with the following structure:
+[
+  {
+    "area": "Area of improvement (e.g., Engagement, Technical, Content)",
+    "title": "Short, specific title of the suggestion",
+    "description": "Detailed explanation of the issue and why it matters",
+    "impact": "high|medium|low (how much this will improve the event)",
+    "implementation": "Step-by-step guidance on how to implement this suggestion",
+    "resources": ["Optional list of tools, websites, or resources to help implement"]
+  }
+]`;
+
+      // Call OpenAI to get suggestions
+      const response = await openai.chat.completions.create({
+        model: MODEL,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+      
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("No content received from OpenAI");
+      }
+      
+      const parsedResponse = JSON.parse(content);
+      
+      return res.json({ 
+        improvements: parsedResponse.improvements || parsedResponse
+      });
+    } catch (error) {
+      console.error("AI event improvement error:", error);
+      return res.status(500).json({ 
+        message: "Failed to generate event improvement suggestions",
         error: error instanceof Error ? error.message : String(error)
       });
     }

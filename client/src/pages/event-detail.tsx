@@ -59,7 +59,7 @@ import {
 import { Event, Task, Guest } from "@shared/schema";
 import { updateEvent, deleteEvent, createTask, updateTask, createGuest } from "@/lib/event-service";
 import { useToast } from "@/hooks/use-toast";
-import { getAiSuggestions } from "@/lib/ai-service";
+import { getAiSuggestions, getEventImprovements, ImprovementSuggestion } from "@/lib/ai-service";
 
 export default function EventDetail() {
   const { toast } = useToast();

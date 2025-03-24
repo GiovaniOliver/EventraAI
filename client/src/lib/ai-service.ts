@@ -1,4 +1,5 @@
 import { apiRequest } from "./queryClient";
+import { Event } from "@shared/schema";
 
 export interface EventSuggestion {
   id: string;
@@ -31,11 +32,21 @@ export interface TaskSuggestion {
   priority: 'low' | 'medium' | 'high';
 }
 
+export interface ImprovementSuggestion {
+  area: string;
+  title: string;
+  description: string;
+  impact: 'low' | 'medium' | 'high';
+  implementation: string;
+  resources?: string[];
+}
+
 export interface AiSuggestions {
   events?: EventSuggestion[];
   themes?: ThemeSuggestion[];
   budget?: BudgetSuggestion[];
   tasks?: TaskSuggestion[];
+  improvements?: ImprovementSuggestion[];
 }
 
 export interface SuggestionPreferences {
@@ -67,5 +78,23 @@ export async function getAiSuggestions(
   } catch (error) {
     console.error("Error fetching AI suggestions:", error);
     throw new Error("Failed to get AI suggestions");
+  }
+}
+
+export async function getEventImprovements(
+  event: Event
+): Promise<ImprovementSuggestion[]> {
+  try {
+    const response = await apiRequest(
+      "POST", 
+      "/api/ai/improve-event", 
+      { event }
+    );
+    
+    const data = await response.json();
+    return data.improvements || [];
+  } catch (error) {
+    console.error("Error fetching event improvement suggestions:", error);
+    throw new Error("Failed to get event improvement suggestions");
   }
 }
