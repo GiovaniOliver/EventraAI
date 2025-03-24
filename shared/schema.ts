@@ -187,5 +187,64 @@ export type InsertEventVendor = z.infer<typeof insertEventVendorSchema>;
 export type PlanningTip = typeof planningTips.$inferSelect;
 export type InsertPlanningTip = z.infer<typeof insertPlanningTipSchema>;
 
+// Event Analytics schema
+export const eventAnalytics = pgTable("event_analytics", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull(),
+  attendeeCount: integer("attendee_count").default(0),
+  engagementScore: integer("engagement_score").default(0), // 0-100 score
+  averageAttendanceTime: integer("average_attendance_time"), // in minutes
+  maxConcurrentUsers: integer("max_concurrent_users").default(0),
+  totalInteractions: integer("total_interactions").default(0),
+  feedbackScore: integer("feedback_score"), // average feedback score 1-5
+  analyticsDate: timestamp("analytics_date").defaultNow().notNull(), // when these analytics were collected
+  detailedMetrics: jsonb("detailed_metrics").default("{}"), // for storing complex metrics as JSON
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertEventAnalyticsSchema = createInsertSchema(eventAnalytics).pick({
+  eventId: true,
+  attendeeCount: true,
+  engagementScore: true,
+  averageAttendanceTime: true,
+  maxConcurrentUsers: true,
+  totalInteractions: true,
+  feedbackScore: true,
+  analyticsDate: true,
+  detailedMetrics: true,
+});
+
+// Attendee Feedback schema
+export const attendeeFeedback = pgTable("attendee_feedback", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull(),
+  attendeeEmail: text("attendee_email").notNull(),
+  overallRating: integer("overall_rating").notNull(), // 1-5 stars
+  contentRating: integer("content_rating"), // 1-5 stars
+  technicalRating: integer("technical_rating"), // 1-5 stars 
+  engagementRating: integer("engagement_rating"), // 1-5 stars
+  comments: text("comments"),
+  wouldRecommend: boolean("would_recommend"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertAttendeeFeedbackSchema = createInsertSchema(attendeeFeedback).pick({
+  eventId: true,
+  attendeeEmail: true,
+  overallRating: true,
+  contentRating: true,
+  technicalRating: true,
+  engagementRating: true,
+  comments: true,
+  wouldRecommend: true,
+});
+
 export type UserPreference = typeof userPreferences.$inferSelect;
 export type InsertUserPreference = z.infer<typeof insertUserPreferenceSchema>;
+
+export type EventAnalytics = typeof eventAnalytics.$inferSelect;
+export type InsertEventAnalytics = z.infer<typeof insertEventAnalyticsSchema>;
+
+export type AttendeeFeedback = typeof attendeeFeedback.$inferSelect;
+export type InsertAttendeeFeedback = z.infer<typeof insertAttendeeFeedbackSchema>;

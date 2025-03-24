@@ -7,6 +7,8 @@ import {
   eventVendors, 
   planningTips, 
   userPreferences,
+  eventAnalytics,
+  attendeeFeedback,
   type User, 
   type InsertUser, 
   type Event,
@@ -22,7 +24,11 @@ import {
   type PlanningTip,
   type InsertPlanningTip,
   type UserPreference,
-  type InsertUserPreference
+  type InsertUserPreference,
+  type EventAnalytics,
+  type InsertEventAnalytics,
+  type AttendeeFeedback,
+  type InsertAttendeeFeedback
 } from "@shared/schema";
 
 // Define storage interface
@@ -73,6 +79,25 @@ export interface IStorage {
   getUserPreferences(userId: number): Promise<UserPreference | undefined>;
   createUserPreferences(preferences: InsertUserPreference): Promise<UserPreference>;
   updateUserPreferences(userId: number, preferenceData: Partial<InsertUserPreference>): Promise<UserPreference | undefined>;
+  
+  // Event Analytics methods
+  getEventAnalytics(id: number): Promise<EventAnalytics | undefined>;
+  getAnalyticsByEvent(eventId: number): Promise<EventAnalytics[]>;
+  createEventAnalytics(analytics: InsertEventAnalytics): Promise<EventAnalytics>;
+  updateEventAnalytics(id: number, analyticsData: Partial<InsertEventAnalytics>): Promise<EventAnalytics | undefined>;
+  
+  // Attendee Feedback methods
+  getAttendeeFeedback(id: number): Promise<AttendeeFeedback | undefined>;
+  getFeedbackByEvent(eventId: number): Promise<AttendeeFeedback[]>;
+  createAttendeeFeedback(feedback: InsertAttendeeFeedback): Promise<AttendeeFeedback>;
+  getEventFeedbackSummary(eventId: number): Promise<{
+    averageOverallRating: number;
+    averageContentRating: number;
+    averageTechnicalRating: number;
+    averageEngagementRating: number;
+    recommendationPercentage: number;
+    totalFeedbackCount: number;
+  }>;
 }
 
 // Implement in-memory storage
@@ -105,6 +130,8 @@ export class MemStorage implements IStorage {
     this.eventVendors = new Map();
     this.planningTips = new Map();
     this.userPreferences = new Map();
+    this.eventAnalytics = new Map();
+    this.attendeeFeedback = new Map();
     
     this.currentUserId = 1;
     this.currentEventId = 1;
@@ -114,6 +141,8 @@ export class MemStorage implements IStorage {
     this.currentEventVendorId = 1;
     this.currentPlanningTipId = 1;
     this.currentUserPreferenceId = 1;
+    this.currentEventAnalyticsId = 1;
+    this.currentAttendeeFeedbackId = 1;
     
     // Initialize with some planning tips
     this.initPlanningTips();
@@ -416,6 +445,116 @@ export class MemStorage implements IStorage {
     
     this.userPreferences.set(preference.id, updatedPreference);
     return updatedPreference;
+  }
+  
+  // Event Analytics map and counters
+  private eventAnalytics: Map<number, EventAnalytics> = new Map();
+  private attendeeFeedback: Map<number, AttendeeFeedback> = new Map();
+  private currentEventAnalyticsId: number = 1;
+  private currentAttendeeFeedbackId: number = 1;
+  
+  // Event Analytics methods
+  async getEventAnalytics(id: number): Promise<EventAnalytics | undefined> {
+    return this.eventAnalytics.get(id);
+  }
+  
+  async getAnalyticsByEvent(eventId: number): Promise<EventAnalytics[]> {
+    return Array.from(this.eventAnalytics.values()).filter(
+      (analytics) => analytics.eventId === eventId
+    );
+  }
+  
+  async createEventAnalytics(insertAnalytics: InsertEventAnalytics): Promise<EventAnalytics> {
+    const id = this.currentEventAnalyticsId++;
+    const now = new Date();
+    const eventAnalytics: EventAnalytics = {
+      ...insertAnalytics,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.eventAnalytics.set(id, eventAnalytics);
+    return eventAnalytics;
+  }
+  
+  async updateEventAnalytics(id: number, analyticsData: Partial<InsertEventAnalytics>): Promise<EventAnalytics | undefined> {
+    const analytics = this.eventAnalytics.get(id);
+    if (!analytics) return undefined;
+    
+    const updatedAnalytics: EventAnalytics = {
+      ...analytics,
+      ...analyticsData,
+      updatedAt: new Date()
+    };
+    
+    this.eventAnalytics.set(id, updatedAnalytics);
+    return updatedAnalytics;
+  }
+  
+  // Attendee Feedback methods
+  async getAttendeeFeedback(id: number): Promise<AttendeeFeedback | undefined> {
+    return this.attendeeFeedback.get(id);
+  }
+  
+  async getFeedbackByEvent(eventId: number): Promise<AttendeeFeedback[]> {
+    return Array.from(this.attendeeFeedback.values()).filter(
+      (feedback) => feedback.eventId === eventId
+    );
+  }
+  
+  async createAttendeeFeedback(insertFeedback: InsertAttendeeFeedback): Promise<AttendeeFeedback> {
+    const id = this.currentAttendeeFeedbackId++;
+    const now = new Date();
+    const feedback: AttendeeFeedback = {
+      ...insertFeedback,
+      id,
+      createdAt: now
+    };
+    this.attendeeFeedback.set(id, feedback);
+    return feedback;
+  }
+  
+  async getEventFeedbackSummary(eventId: number): Promise<{
+    averageOverallRating: number;
+    averageContentRating: number;
+    averageTechnicalRating: number;
+    averageEngagementRating: number;
+    recommendationPercentage: number;
+    totalFeedbackCount: number;
+  }> {
+    const feedbacks = await this.getFeedbackByEvent(eventId);
+    
+    if (feedbacks.length === 0) {
+      return {
+        averageOverallRating: 0,
+        averageContentRating: 0,
+        averageTechnicalRating: 0,
+        averageEngagementRating: 0,
+        recommendationPercentage: 0,
+        totalFeedbackCount: 0
+      };
+    }
+    
+    // Calculate averages
+    const sum = (arr: (number | null | undefined)[]) => 
+      arr.filter(Boolean).reduce((acc, val) => acc + (val || 0), 0);
+    
+    const count = (arr: (number | null | undefined)[]) => 
+      arr.filter(Boolean).length;
+    
+    const avg = (arr: (number | null | undefined)[]) => 
+      count(arr) ? sum(arr) / count(arr) : 0;
+    
+    const recommendCount = feedbacks.filter(f => f.wouldRecommend).length;
+    
+    return {
+      averageOverallRating: avg(feedbacks.map(f => f.overallRating)),
+      averageContentRating: avg(feedbacks.map(f => f.contentRating)),
+      averageTechnicalRating: avg(feedbacks.map(f => f.technicalRating)),
+      averageEngagementRating: avg(feedbacks.map(f => f.engagementRating)),
+      recommendationPercentage: (recommendCount / feedbacks.length) * 100,
+      totalFeedbackCount: feedbacks.length
+    };
   }
 }
 
