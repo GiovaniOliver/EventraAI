@@ -269,9 +269,12 @@ export type InsertAttendeeFeedback = z.infer<typeof insertAttendeeFeedbackSchema
 export const subscriptionPlans = pgTable("subscription_plans", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(), // free, basic, premium, enterprise
+  displayName: text("display_name"), // For display to user: "Free Plan", "Premium Plan", etc.
+  description: text("description"), // Description of the plan for marketing
   price: integer("price").notNull(), // in cents (e.g., 1995 for $19.95)
   currency: text("currency").default("usd").notNull(),
   interval: text("interval").default("month").notNull(), // month, year
+  billingCycle: text("billing_cycle").default("monthly").notNull(), // monthly, yearly, etc.
   features: jsonb("features").default("[]"), // array of features included
   eventLimit: integer("event_limit"), // number of events allowed
   guestLimit: integer("guest_limit"), // number of guests per event
@@ -286,9 +289,12 @@ export const subscriptionPlans = pgTable("subscription_plans", {
 
 export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).pick({
   name: true,
+  displayName: true,
+  description: true,
   price: true,
   currency: true,
   interval: true,
+  billingCycle: true,
   features: true,
   eventLimit: true,
   guestLimit: true,

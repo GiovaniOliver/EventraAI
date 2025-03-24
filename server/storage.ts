@@ -127,6 +127,7 @@ export interface IStorage {
   getTransaction(id: number): Promise<Transaction | undefined>;
   getUserTransactions(userId: number): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  updateTransaction(id: number, transactionData: Partial<Transaction>): Promise<Transaction | undefined>;
 }
 
 // Implement in-memory storage
@@ -196,19 +197,27 @@ export class MemStorage implements IStorage {
         displayName: "Free Plan",
         description: "Basic features for personal use",
         price: 0,
+        currency: "usd",
+        interval: "month",
         billingCycle: "monthly",
         features: JSON.stringify([
           "Up to 3 virtual events",
           "Basic analytics",
           "Standard templates"
         ]),
+        eventLimit: 3,
+        guestLimit: 50,
+        vendorLimit: 5,
+        analyticsPeriod: 1,
         isActive: true
       },
       {
         name: "pro",
         displayName: "Pro Plan",
         description: "Advanced features for professionals",
-        price: 19.99,
+        price: 1999, // $19.99 in cents
+        currency: "usd",
+        interval: "month",
         billingCycle: "monthly",
         features: JSON.stringify([
           "Unlimited virtual events",
@@ -217,13 +226,19 @@ export class MemStorage implements IStorage {
           "Priority support",
           "Custom branding"
         ]),
+        eventLimit: 10,
+        guestLimit: 200,
+        vendorLimit: 15,
+        analyticsPeriod: 3,
         isActive: true
       },
       {
         name: "business",
         displayName: "Business Plan",
         description: "Full-featured solution for businesses",
-        price: 49.99,
+        price: 4999, // $49.99 in cents
+        currency: "usd",
+        interval: "month",
         billingCycle: "monthly",
         features: JSON.stringify([
           "Everything in Pro",
@@ -233,13 +248,19 @@ export class MemStorage implements IStorage {
           "White labeling",
           "Custom integrations"
         ]),
+        eventLimit: 30,
+        guestLimit: 500,
+        vendorLimit: 30,
+        analyticsPeriod: 6,
         isActive: true
       },
       {
         name: "enterprise",
         displayName: "Enterprise Plan",
         description: "Custom solution for large organizations",
-        price: 199.99,
+        price: 19999, // $199.99 in cents
+        currency: "usd",
+        interval: "month",
         billingCycle: "monthly",
         features: JSON.stringify([
           "Everything in Business",
@@ -249,6 +270,10 @@ export class MemStorage implements IStorage {
           "Advanced security features",
           "Bulk event management"
         ]),
+        eventLimit: null, // Unlimited
+        guestLimit: null, // Unlimited
+        vendorLimit: null, // Unlimited
+        analyticsPeriod: 12,
         isActive: true
       }
     ];
@@ -829,10 +854,28 @@ export class MemStorage implements IStorage {
     const transaction: Transaction = {
       ...insertTransaction,
       id,
-      createdAt: now
+      createdAt: now,
+      description: insertTransaction.description ?? null,
+      currency: insertTransaction.currency ?? "usd",
+      stripePaymentIntentId: insertTransaction.stripePaymentIntentId ?? null,
+      stripeInvoiceId: insertTransaction.stripeInvoiceId ?? null,
+      metadata: insertTransaction.metadata ?? null
     };
     this.transactions.set(id, transaction);
     return transaction;
+  }
+  
+  async updateTransaction(id: number, transactionData: Partial<Transaction>): Promise<Transaction | undefined> {
+    const transaction = this.transactions.get(id);
+    if (!transaction) return undefined;
+    
+    const updatedTransaction: Transaction = {
+      ...transaction,
+      ...transactionData
+    };
+    
+    this.transactions.set(id, updatedTransaction);
+    return updatedTransaction;
   }
 }
 
