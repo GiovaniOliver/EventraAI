@@ -27,7 +27,7 @@ import {
   TaskSuggestion,
   SuggestionPreferences 
 } from "@/lib/ai-service";
-import { createEvent } from "@/lib/event-service";
+import { createEvent, updateEvent } from "@/lib/event-service";
 import { 
   Lightbulb, 
   Palette, 
@@ -117,11 +117,12 @@ export default function Discover() {
     queryKey: ["/api/planning-tips"]
   });
   
-  // Fetch user's events for context
+  // Fetch user's events for context and theme dialog
   const {
     data: userEvents
   } = useQuery<Event[]>({
-    queryKey: ["/api/users/1/events"] // Using hardcoded user ID for now
+    queryKey: ["/api/users/1/events"], // Using hardcoded user ID for now
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
   
   // Fetch AI suggestions when event type changes or preferences are updated
@@ -260,8 +261,77 @@ export default function Discover() {
     return acc;
   }, []) || [];
   
+  // Theme management functions
+  const [selectedTheme, setSelectedTheme] = useState<ThemeSuggestion | null>(null);
+  const [showThemeDialog, setShowThemeDialog] = useState(false);
+  const [savedThemes, setSavedThemes] = useState<string[]>([]);
+
+  // Handle saving a theme
+  const handleSaveTheme = (theme: ThemeSuggestion) => {
+    const updatedSavedThemes = [...savedThemes];
+    
+    if (savedThemes.includes(theme.id)) {
+      // Remove from saved themes if already saved
+      const index = updatedSavedThemes.indexOf(theme.id);
+      updatedSavedThemes.splice(index, 1);
+      toast({
+        title: "Theme removed",
+        description: `${theme.name} has been removed from your saved themes`,
+      });
+    } else {
+      // Add to saved themes
+      updatedSavedThemes.push(theme.id);
+      toast({
+        title: "Theme saved",
+        description: `${theme.name} has been saved to your collection`,
+      });
+    }
+    
+    setSavedThemes(updatedSavedThemes);
+    // In a real app, you would persist this to user preferences in the database
+  };
+
+  // Handle applying a theme to an event
+  const handleUseTheme = (theme: ThemeSuggestion) => {
+    setSelectedTheme(theme);
+    setShowThemeDialog(true);
+  };
+
+  // Apply theme to an event
+  const applyThemeToEvent = async (eventId: number) => {
+    if (!selectedTheme) return;
+    
+    try {
+      // Format the theme data as JSON string to store in the database
+      const themeData = JSON.stringify({
+        name: selectedTheme.name,
+        description: selectedTheme.description,
+        colorScheme: selectedTheme.colorScheme,
+        id: selectedTheme.id
+      });
+      
+      await updateEvent(eventId, { theme: themeData });
+      
+      toast({
+        title: "Theme applied",
+        description: `${selectedTheme.name} has been applied to your event`,
+      });
+      
+      setShowThemeDialog(false);
+    } catch (error) {
+      console.error("Error applying theme:", error);
+      toast({
+        title: "Error",
+        description: "Failed to apply theme to event",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Render theme card
   const renderThemeCard = (theme: ThemeSuggestion) => {
+    const isSaved = savedThemes.includes(theme.id);
+    
     return (
       <Card key={theme.id} className="mb-4 hover:shadow-md transition-shadow">
         <CardHeader className="pb-2">
@@ -307,11 +377,20 @@ export default function Discover() {
           </div>
         </CardContent>
         <CardFooter className="pt-2 flex justify-between">
-          <Button variant="ghost" size="sm" className="text-gray-500">
+          <Button 
+            variant={isSaved ? "default" : "ghost"} 
+            size="sm" 
+            className={isSaved ? "text-white" : "text-gray-500"}
+            onClick={() => handleSaveTheme(theme)}
+          >
             <HeartIcon className="h-4 w-4 mr-2" />
-            Save
+            {isSaved ? "Saved" : "Save"}
           </Button>
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => handleUseTheme(theme)}
+          >
             Use This Theme
           </Button>
         </CardFooter>
@@ -592,8 +671,74 @@ export default function Discover() {
     ));
   };
   
+  // We already have userEvents from the earlier query
+
   return (
     <div className="container mx-auto py-6 max-w-6xl">
+      {/* Theme Selection Dialog */}
+      <Dialog open={showThemeDialog} onOpenChange={setShowThemeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Apply Theme to Event</DialogTitle>
+            <DialogDescription>
+              Choose which event you want to apply this theme to.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedTheme && (
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold mb-2">Selected Theme:</h3>
+                <Card className="mb-4">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-base">{selectedTheme.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2">
+                    <div className="flex space-x-2 mb-2">
+                      {selectedTheme.colorScheme.map((color, i) => (
+                        <div 
+                          key={i}
+                          className="h-6 w-6 rounded-full border border-gray-200"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Your Events:</h3>
+              {userEvents && userEvents.length > 0 ? (
+                <div className="space-y-2">
+                  {userEvents.map((event: Event) => (
+                    <div 
+                      key={event.id} 
+                      className="border rounded-md p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => applyThemeToEvent(event.id)}
+                    >
+                      <div className="font-medium">{event.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {new Date(event.date).toLocaleDateString()} • {event.type}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  No events found. Create an event first.
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowThemeDialog(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Discover Event Ideas</h1>
         <p className="text-gray-600">
