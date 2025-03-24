@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Event } from "@shared/schema";
-import { createEvent } from "@/lib/event-service";
+import { createEvent, createTask } from "@/lib/event-service";
 import { getAiSuggestions, TaskSuggestion } from "@/lib/ai-service";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -214,7 +214,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
       if (suggestions.tasks && suggestions.tasks.length > 0) {
         setSuggestedTasks(suggestions.tasks);
         // Automatically select all tasks
-        setSelectedTasks(suggestions.tasks.map((_, index) => index.toString()));
+        setSelectedTasks(suggestions.tasks.map(task => task.title));
       } else {
         toast({
           title: "No Task Suggestions",
@@ -241,12 +241,57 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
     }
   }, [currentStep, autoTasksEnabled, suggestedTasks.length]);
 
+  // Create task mutation
+  const createTaskMutation = useMutation({
+    mutationFn: (data: any) => createTask(data),
+    onSuccess: () => {
+      console.log("Task created successfully");
+    },
+    onError: (error) => {
+      console.error("Error creating task:", error);
+    }
+  });
+
+  // Helper to create tasks for an event
+  const createTasksForEvent = async (eventId: number) => {
+    if (!suggestedTasks.length || !selectedTasks.length) return;
+    
+    // Process only selected tasks
+    const tasksToCreate = suggestedTasks
+      .filter(task => selectedTasks.includes(task.title))
+      .map(task => ({
+        title: task.title,
+        description: task.description,
+        eventId: eventId,
+        status: "pending",
+        dueDate: task.dueDate,
+        assignedTo: null
+      }));
+    
+    console.log(`Creating ${tasksToCreate.length} tasks for event ${eventId}`);
+    
+    // Create each task sequentially
+    for (const taskData of tasksToCreate) {
+      await createTaskMutation.mutateAsync(taskData);
+    }
+  };
+
   // Create event mutation
   const createEventMutation = useMutation({
     mutationFn: (data: Partial<Event>) => createEvent(data),
-    onSuccess: (createdEvent) => {
+    onSuccess: async (createdEvent) => {
       // Invalidate events query to refetch latest data
       queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/events`] });
+      
+      // Create associated tasks if any were selected
+      if (selectedTasks.length > 0) {
+        try {
+          await createTasksForEvent(createdEvent.id);
+        } catch (error) {
+          console.error("Error creating tasks:", error);
+          // Continue anyway as the event was created successfully
+        }
+      }
       
       toast({
         title: "Event Created",
