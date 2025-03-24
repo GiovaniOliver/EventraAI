@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import Layout from "@/components/layout/layout";
 import Home from "@/pages/home";
 import Events from "@/pages/events";
+import EventDetail from "@/pages/event-detail";
 import Discover from "@/pages/discover";
 import Tasks from "@/pages/tasks";
 import Profile from "@/pages/profile";
