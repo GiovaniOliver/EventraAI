@@ -22,6 +22,17 @@ import {
 export async function registerRoutes(app: Express): Promise<Server> {
   // All routes are prefixed with /api
   
+  // Route to get all events
+  app.get("/api/events", async (req, res) => {
+    try {
+      // For now, just return all events from user with ID 1 as a default
+      const events = await storage.getEventsByOwner(1);
+      return res.json(events);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to get events" });
+    }
+  });
+  
   // User routes
   app.post("/api/users", async (req, res) => {
     try {

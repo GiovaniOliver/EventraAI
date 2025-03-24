@@ -78,8 +78,17 @@ import {
   BudgetItem,
   BudgetSuggestion,
   BudgetOptimizationResult,
-  ImprovementSuggestion 
+  ImprovementSuggestion,
+  ThemeSuggestion 
 } from "@/lib/ai-service";
+
+// Interface for parsed theme data
+interface ThemeData {
+  id: string;
+  name: string;
+  description: string;
+  colorScheme: string[];
+}
 
 export default function EventDetail() {
   const { toast } = useToast();
@@ -722,12 +731,55 @@ export default function EventDetail() {
                     
                     <div>
                       <Label htmlFor="theme" className="mb-1 block">Theme</Label>
-                      <Input 
-                        id="theme"
-                        value={editedEvent.theme || ''}
-                        onChange={(e) => setEditedEvent({...editedEvent, theme: e.target.value})}
-                        className="mb-2"
-                      />
+                      <div className="mb-2">
+                        {editedEvent.theme ? (
+                          (() => {
+                            try {
+                              const themeData: ThemeData = JSON.parse(editedEvent.theme);
+                              return (
+                                <div className="border rounded-md p-3">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="font-medium text-sm">{themeData.name}</span>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 text-red-500 hover:text-red-700"
+                                      onClick={() => setEditedEvent({...editedEvent, theme: null})}
+                                    >
+                                      <X className="h-4 w-4 mr-1" /> Remove
+                                    </Button>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    {themeData.colorScheme.map((color, i) => (
+                                      <div
+                                        key={i}
+                                        className="h-6 w-6 rounded-full border border-gray-200"
+                                        style={{ backgroundColor: color }}
+                                        title={color}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            } catch (e) {
+                              // Display raw theme data if it's not valid JSON
+                              return (
+                                <Input 
+                                  id="theme"
+                                  value={editedEvent.theme || ''}
+                                  onChange={(e) => setEditedEvent({...editedEvent, theme: e.target.value})}
+                                />
+                              );
+                            }
+                          })()
+                        ) : (
+                          <div className="text-sm text-gray-500 mt-1 border border-dashed rounded-md p-3 text-center">
+                            <p>No theme selected</p>
+                            <p className="text-xs mt-1">Go to Discover page to browse and apply themes</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   
@@ -791,9 +843,33 @@ export default function EventDetail() {
                       <span className="text-gray-500 text-sm mb-1 flex items-center">
                         <Sparkles className="h-4 w-4 mr-1" /> Theme
                       </span>
-                      <span className="font-medium">
-                        {event.theme || 'Not specified'}
-                      </span>
+                      {event.theme ? (
+                        (() => {
+                          try {
+                            const themeData: ThemeData = JSON.parse(event.theme);
+                            return (
+                              <div>
+                                <span className="font-medium">{themeData.name}</span>
+                                <div className="flex space-x-2 mt-1">
+                                  {themeData.colorScheme.map((color, i) => (
+                                    <div
+                                      key={i}
+                                      className="h-4 w-4 rounded-full border border-gray-200"
+                                      style={{ backgroundColor: color }}
+                                      title={color}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          } catch (e) {
+                            // Fallback for non-JSON theme data
+                            return <span className="font-medium">{event.theme}</span>;
+                          }
+                        })()
+                      ) : (
+                        <span className="font-medium">Not specified</span>
+                      )}
                     </div>
                   </div>
                 </div>
