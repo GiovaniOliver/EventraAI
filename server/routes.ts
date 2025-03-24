@@ -298,12 +298,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/vendors", async (req, res) => {
     try {
       const category = req.query.category as string;
-      const partnersOnly = req.query.partners === 'true';
+      const isPartner = req.query.isPartner === 'true';
       const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
       
       let vendors;
       
-      if (partnersOnly) {
+      if (isPartner) {
         vendors = await storage.getPartnerVendors();
       } else if (userId) {
         vendors = await storage.getUserVendors(userId);
@@ -316,6 +316,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(vendors);
     } catch (error) {
       return res.status(500).json({ message: "Failed to get vendors" });
+    }
+  });
+  
+  // Dedicated route for partner vendors
+  app.get("/api/vendors/partners", async (req, res) => {
+    try {
+      const partnerVendors = await storage.getPartnerVendors();
+      return res.json(partnerVendors);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to get partner vendors" });
     }
   });
   
