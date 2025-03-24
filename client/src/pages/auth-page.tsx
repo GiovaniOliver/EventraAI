@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -45,21 +45,14 @@ const registrationSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegistrationFormValues = z.infer<typeof registrationSchema>;
 
-export default function AuthPage() {
+function LoginForm() {
   const [location, setLocation] = useLocation();
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { loginMutation } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState("login");
   const { toast } = useToast();
   
-  // Redirect if user is already logged in
-  if (user) {
-    setLocation("/");
-    return null;
-  }
-  
   // Login form
-  const loginForm = useForm<LoginFormValues>({
+  const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
@@ -67,19 +60,7 @@ export default function AuthPage() {
     }
   });
   
-  // Registration form
-  const registrationForm = useForm<RegistrationFormValues>({
-    resolver: zodResolver(registrationSchema),
-    defaultValues: {
-      username: "",
-      email: "",
-      displayName: "",
-      password: "",
-      confirmPassword: ""
-    }
-  });
-  
-  const onLoginSubmit = (values: LoginFormValues) => {
+  const onSubmit = (values: LoginFormValues) => {
     loginMutation.mutate(values, {
       onSuccess: () => {
         toast({
@@ -91,7 +72,105 @@ export default function AuthPage() {
     });
   };
   
-  const onRegisterSubmit = (values: RegistrationFormValues) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Login</CardTitle>
+        <CardDescription>
+          Enter your credentials to access your account
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-3 top-3 text-muted-foreground">
+                        <User size={16} />
+                      </span>
+                      <Input 
+                        placeholder="Enter your username" 
+                        className="pl-9" 
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-3 top-3 text-muted-foreground">
+                        <Lock size={16} />
+                      </span>
+                      <Input 
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password" 
+                        className="pl-9 pr-10" 
+                        {...field} 
+                      />
+                      <button 
+                        type="button"
+                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <LoadingButton 
+              type="submit" 
+              className="w-full" 
+              isLoading={loginMutation.isPending}
+              loadingText="Logging in..."
+            >
+              Login
+            </LoadingButton>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RegisterForm() {
+  const [location, setLocation] = useLocation();
+  const { registerMutation } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const { toast } = useToast();
+  
+  // Registration form
+  const form = useForm<RegistrationFormValues>({
+    resolver: zodResolver(registrationSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      displayName: "",
+      password: "",
+      confirmPassword: ""
+    }
+  });
+  
+  const onSubmit = (values: RegistrationFormValues) => {
     const { confirmPassword, ...userData } = values;
     
     registerMutation.mutate(userData, {
@@ -104,6 +183,173 @@ export default function AuthPage() {
       }
     });
   };
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Create Account</CardTitle>
+        <CardDescription>
+          Fill in your details to create a new account
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-3 top-3 text-muted-foreground">
+                        <User size={16} />
+                      </span>
+                      <Input 
+                        placeholder="Choose a username" 
+                        className="pl-9" 
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    This will be used to log in to your account
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-3 top-3 text-muted-foreground">
+                        <Mail size={16} />
+                      </span>
+                      <Input 
+                        type="email"
+                        placeholder="Enter your email" 
+                        className="pl-9" 
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="displayName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Display Name</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="How you want to be known" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    This is how you'll appear to others
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-3 top-3 text-muted-foreground">
+                        <Lock size={16} />
+                      </span>
+                      <Input 
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Choose a password" 
+                        className="pl-9 pr-10" 
+                        {...field} 
+                      />
+                      <button 
+                        type="button"
+                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <span className="absolute left-3 top-3 text-muted-foreground">
+                        <Lock size={16} />
+                      </span>
+                      <Input 
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Confirm your password" 
+                        className="pl-9 pr-10" 
+                        {...field} 
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <LoadingButton 
+              type="submit" 
+              className="w-full" 
+              isLoading={registerMutation.isPending}
+              loadingText="Creating account..."
+            >
+              Create Account
+            </LoadingButton>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function AuthPage() {
+  const [location, setLocation] = useLocation();
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("login");
+  
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (user) {
+      setLocation("/");
+    }
+  }, [user, setLocation]);
+  
+  if (user) {
+    return null;
+  }
   
   return (
     <div className="flex min-h-screen flex-col-reverse md:flex-row bg-background">
@@ -130,255 +376,30 @@ export default function AuthPage() {
             
             {/* Login Tab */}
             <TabsContent value="login">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Login</CardTitle>
-                  <CardDescription>
-                    Enter your credentials to access your account
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...loginForm}>
-                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                      <FormField
-                        control={loginForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute left-3 top-3 text-muted-foreground">
-                                  <User size={16} />
-                                </span>
-                                <Input 
-                                  placeholder="Enter your username" 
-                                  className="pl-9" 
-                                  {...field} 
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={loginForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute left-3 top-3 text-muted-foreground">
-                                  <Lock size={16} />
-                                </span>
-                                <Input 
-                                  type={showPassword ? "text" : "password"}
-                                  placeholder="Enter your password" 
-                                  className="pl-9 pr-10" 
-                                  {...field} 
-                                />
-                                <button 
-                                  type="button"
-                                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                >
-                                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <LoadingButton 
-                        type="submit" 
-                        className="w-full" 
-                        isLoading={loginMutation.isPending}
-                        loadingText="Logging in..."
-                      >
-                        Login
-                      </LoadingButton>
-                    </form>
-                  </Form>
-                </CardContent>
-                <CardFooter className="flex flex-col space-y-4">
-                  <div className="text-sm text-center">
-                    Don't have an account?{" "}
-                    <button 
-                      className="text-primary underline cursor-pointer" 
-                      onClick={() => setActiveTab("register")}
-                    >
-                      Sign up
-                    </button>
-                  </div>
-                </CardFooter>
-              </Card>
+              <LoginForm />
+              <div className="mt-4 text-sm text-center">
+                Don't have an account?{" "}
+                <button 
+                  className="text-primary underline cursor-pointer" 
+                  onClick={() => setActiveTab("register")}
+                >
+                  Sign up
+                </button>
+              </div>
             </TabsContent>
             
             {/* Register Tab */}
             <TabsContent value="register">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create Account</CardTitle>
-                  <CardDescription>
-                    Fill in your details to create a new account
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...registrationForm}>
-                    <form onSubmit={registrationForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-                      <FormField
-                        control={registrationForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute left-3 top-3 text-muted-foreground">
-                                  <User size={16} />
-                                </span>
-                                <Input 
-                                  placeholder="Choose a username" 
-                                  className="pl-9" 
-                                  {...field} 
-                                />
-                              </div>
-                            </FormControl>
-                            <FormDescription>
-                              This will be used to log in to your account
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={registrationForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute left-3 top-3 text-muted-foreground">
-                                  <Mail size={16} />
-                                </span>
-                                <Input 
-                                  type="email"
-                                  placeholder="Enter your email" 
-                                  className="pl-9" 
-                                  {...field} 
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={registrationForm.control}
-                        name="displayName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Display Name</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="How you want to be known" 
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              This is how you'll appear to others
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={registrationForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute left-3 top-3 text-muted-foreground">
-                                  <Lock size={16} />
-                                </span>
-                                <Input 
-                                  type={showPassword ? "text" : "password"}
-                                  placeholder="Choose a password" 
-                                  className="pl-9 pr-10" 
-                                  {...field} 
-                                />
-                                <button 
-                                  type="button"
-                                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                >
-                                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={registrationForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Confirm Password</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <span className="absolute left-3 top-3 text-muted-foreground">
-                                  <Lock size={16} />
-                                </span>
-                                <Input 
-                                  type={showPassword ? "text" : "password"}
-                                  placeholder="Confirm your password" 
-                                  className="pl-9 pr-10" 
-                                  {...field} 
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <LoadingButton 
-                        type="submit" 
-                        className="w-full" 
-                        isLoading={registerMutation.isPending}
-                        loadingText="Creating account..."
-                      >
-                        Create Account
-                      </LoadingButton>
-                    </form>
-                  </Form>
-                </CardContent>
-                <CardFooter className="flex flex-col space-y-4">
-                  <div className="text-sm text-center">
-                    Already have an account?{" "}
-                    <button 
-                      className="text-primary underline cursor-pointer" 
-                      onClick={() => setActiveTab("login")}
-                    >
-                      Sign in
-                    </button>
-                  </div>
-                </CardFooter>
-              </Card>
+              <RegisterForm />
+              <div className="mt-4 text-sm text-center">
+                Already have an account?{" "}
+                <button 
+                  className="text-primary underline cursor-pointer" 
+                  onClick={() => setActiveTab("login")}
+                >
+                  Sign in
+                </button>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
