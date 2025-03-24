@@ -65,7 +65,7 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
         name: data.name,
         type: data.type,
         format: data.format,
-        date: dateObj.toISOString(),
+        date: dateObj, // Send the Date object directly, not a string
         estimatedGuests: data.estimatedGuests,
         ownerId: data.ownerId,
         status: "planning",
