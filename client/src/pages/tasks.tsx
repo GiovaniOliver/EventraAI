@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import {
   Card,
   CardContent,
@@ -12,6 +13,17 @@ import {
 } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -19,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Clock, CalendarCheck, Plus, CheckCircle2 } from "lucide-react";
+import { Check, Clock, CalendarCheck, Plus, CheckCircle2, Calendar } from "lucide-react";
 import { Task, Event } from "@shared/schema";
 import { format } from "date-fns";
 import { createTask, updateTask } from "@/lib/event-service";
@@ -29,6 +41,13 @@ export default function Tasks() {
   const { toast } = useToast();
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
+  const [showNewTaskDialog, setShowNewTaskDialog] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: "",
+    description: "",
+    dueDate: "",
+    status: "pending"
+  });
   
   // Fetch user events
   const { 
@@ -95,35 +114,74 @@ export default function Tasks() {
     }
   };
   
-  // Create a new task (simple example)
-  const handleCreateTask = async () => {
-    if (!selectedEventId) return;
-    
-    try {
-      const newTask = {
-        eventId: selectedEventId,
-        title: "New Task",
-        description: "Task description here",
-        status: "pending",
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 1 week from now
-      };
-      
-      await createTask(newTask);
-      
+  // Create task mutation
+  const createTaskMutation = useMutation({
+    mutationFn: (data: any) => {
+      return createTask(data);
+    },
+    onSuccess: () => {
       toast({
         title: "Task Created",
-        description: "New task has been created",
+        description: "Your task has been successfully created"
       });
-      
-      // Refetch tasks to update the UI
+      setShowNewTaskDialog(false);
+      setNewTask({
+        title: "",
+        description: "",
+        dueDate: "",
+        status: "pending"
+      });
+      // Refetch tasks list
       refetchTasks();
-    } catch (error) {
+    },
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create new task",
-        variant: "destructive",
+        description: "Failed to create task",
+        variant: "destructive"
       });
+      console.error("Error creating task:", error);
     }
+  });
+  
+  // Handle opening the "Create Task" dialog
+  const handleOpenNewTaskDialog = () => {
+    if (!selectedEventId) {
+      toast({
+        title: "Select an Event",
+        description: "Please select an event before creating a task",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setShowNewTaskDialog(true);
+  };
+  
+  // Handle create task submission
+  const handleCreateTask = () => {
+    if (!selectedEventId) return;
+    
+    if (!newTask.title.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a title for the task",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Format date properly if provided
+    let taskToCreate: any = { 
+      ...newTask,
+      eventId: selectedEventId
+    };
+    
+    if (taskToCreate.dueDate) {
+      taskToCreate.dueDate = new Date(taskToCreate.dueDate).toISOString();
+    }
+    
+    createTaskMutation.mutate(taskToCreate);
   };
   
   // Render task card
@@ -212,7 +270,7 @@ export default function Tasks() {
     <div className="px-4 pt-4 pb-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">Tasks</h2>
-        <Button size="sm" onClick={handleCreateTask}>
+        <Button size="sm" onClick={handleOpenNewTaskDialog}>
           <Plus className="h-4 w-4 mr-1" />
           New Task
         </Button>
@@ -269,13 +327,88 @@ export default function Tasks() {
                 <div className="text-center py-10">
                   <CheckCircle2 className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                   <p className="text-gray-500 mb-4">No tasks found</p>
-                  <Button onClick={handleCreateTask}>Create Task</Button>
+                  <Button onClick={handleOpenNewTaskDialog}>Create Task</Button>
                 </div>
               )}
             </TabsContent>
           </Tabs>
         </>
       )}
+      
+      {/* New Task Dialog */}
+      <Dialog open={showNewTaskDialog} onOpenChange={setShowNewTaskDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Task</DialogTitle>
+            <DialogDescription>
+              Add a task to your event
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="task-title">Task Title</Label>
+              <Input
+                id="task-title"
+                value={newTask.title}
+                onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+                placeholder="Enter task title"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="task-description">Description (Optional)</Label>
+              <Textarea
+                id="task-description"
+                value={newTask.description}
+                onChange={(e) => setNewTask({...newTask, description: e.target.value})}
+                placeholder="Enter task description"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="task-status">Status</Label>
+              <Select
+                value={newTask.status}
+                onValueChange={(value) => setNewTask({...newTask, status: value})}
+              >
+                <SelectTrigger id="task-status" className="mt-1">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="task-due-date">Due Date (Optional)</Label>
+              <div className="flex items-center mt-1">
+                <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                <Input
+                  id="task-due-date"
+                  type="date"
+                  value={newTask.dueDate}
+                  onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => setShowNewTaskDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateTask}>
+              Create Task
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
