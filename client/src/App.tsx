@@ -13,8 +13,11 @@ import Tasks from "@/pages/tasks";
 import Profile from "@/pages/profile";
 import Analytics from "@/pages/analytics";
 import NotFound from "@/pages/not-found";
+import AuthPage from "@/pages/auth-page";
 
 import OnboardingModal from "@/components/modals/onboarding-modal";
+import { ProtectedRoute } from "@/lib/protected-route";
+import { AuthProvider } from "@/hooks/use-auth";
 
 function Router() {
   const [location] = useLocation();
@@ -32,18 +35,28 @@ function Router() {
     localStorage.setItem("onboardingCompleted", "true");
     setShowOnboarding(false);
   };
+
+  // Don't show layout on the auth page
+  if (location === "/auth") {
+    return (
+      <Switch>
+        <Route path="/auth" component={AuthPage} />
+      </Switch>
+    );
+  }
   
   return (
     <>
       <Layout currentPath={location}>
         <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/events" component={Events} />
-          <Route path="/events/:id" component={EventDetail} />
-          <Route path="/discover" component={Discover} />
-          <Route path="/tasks" component={Tasks} />
-          <Route path="/analytics" component={Analytics} />
-          <Route path="/profile" component={Profile} />
+          <ProtectedRoute path="/" component={Home} />
+          <ProtectedRoute path="/events" component={Events} />
+          <ProtectedRoute path="/events/:id" component={EventDetail} />
+          <ProtectedRoute path="/discover" component={Discover} />
+          <ProtectedRoute path="/tasks" component={Tasks} />
+          <ProtectedRoute path="/analytics" component={Analytics} />
+          <ProtectedRoute path="/profile" component={Profile} />
+          <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
         </Switch>
       </Layout>
@@ -60,8 +73,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <AuthProvider>
+        <Router />
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
