@@ -9,6 +9,10 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   displayName: text("display_name").notNull(),
   email: text("email").notNull().unique(),
+  isAdmin: boolean("is_admin").default(false).notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  subscriptionTier: text("subscription_tier").default("free").notNull(), // free, basic, premium, enterprise
+  subscriptionStatus: text("subscription_status").default("active").notNull(), // active, past_due, canceled, unpaid
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -17,6 +21,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   displayName: true,
   email: true,
+  isAdmin: true,
+  subscriptionTier: true,
 });
 
 // Event schema
@@ -258,3 +264,70 @@ export type InsertEventAnalytics = z.infer<typeof insertEventAnalyticsSchema>;
 
 export type AttendeeFeedback = typeof attendeeFeedback.$inferSelect;
 export type InsertAttendeeFeedback = z.infer<typeof insertAttendeeFeedbackSchema>;
+
+// Subscription Plans schema
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // free, basic, premium, enterprise
+  price: integer("price").notNull(), // in cents (e.g., 1995 for $19.95)
+  currency: text("currency").default("usd").notNull(),
+  interval: text("interval").default("month").notNull(), // month, year
+  features: jsonb("features").default("[]"), // array of features included
+  eventLimit: integer("event_limit"), // number of events allowed
+  guestLimit: integer("guest_limit"), // number of guests per event
+  vendorLimit: integer("vendor_limit"), // number of custom vendors allowed
+  analyticsPeriod: integer("analytics_period"), // how many months of analytics history
+  stripeProductId: text("stripe_product_id"),
+  stripePriceId: text("stripe_price_id"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).pick({
+  name: true,
+  price: true,
+  currency: true,
+  interval: true,
+  features: true,
+  eventLimit: true,
+  guestLimit: true,
+  vendorLimit: true,
+  analyticsPeriod: true,
+  stripeProductId: true,
+  stripePriceId: true,
+  isActive: true,
+});
+
+// Transactions schema
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  amount: integer("amount").notNull(), // in cents
+  currency: text("currency").default("usd").notNull(),
+  status: text("status").notNull(), // succeeded, pending, failed
+  type: text("type").notNull(), // subscription, one-time
+  description: text("description"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripeInvoiceId: text("stripe_invoice_id"),
+  metadata: jsonb("metadata").default("{}"), // additional transaction data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertTransactionSchema = createInsertSchema(transactions).pick({
+  userId: true,
+  amount: true,
+  currency: true,
+  status: true,
+  type: true,
+  description: true,
+  stripePaymentIntentId: true,
+  stripeInvoiceId: true,
+  metadata: true,
+});
+
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
+export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
+
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;

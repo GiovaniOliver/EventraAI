@@ -295,6 +295,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Vendor routes
+  // Dedicated route for partner vendors - must come before /:id route
+  app.get("/api/vendors/partners", async (req, res) => {
+    try {
+      const partnerVendors = await storage.getPartnerVendors();
+      return res.json(partnerVendors);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to get partner vendors" });
+    }
+  });
+
   app.get("/api/vendors", async (req, res) => {
     try {
       const category = req.query.category as string;
@@ -316,16 +326,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(vendors);
     } catch (error) {
       return res.status(500).json({ message: "Failed to get vendors" });
-    }
-  });
-  
-  // Dedicated route for partner vendors
-  app.get("/api/vendors/partners", async (req, res) => {
-    try {
-      const partnerVendors = await storage.getPartnerVendors();
-      return res.json(partnerVendors);
-    } catch (error) {
-      return res.status(500).json({ message: "Failed to get partner vendors" });
     }
   });
   
