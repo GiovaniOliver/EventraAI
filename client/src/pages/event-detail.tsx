@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Collapsible,
   CollapsibleContent,
@@ -70,7 +71,15 @@ import {
 import { Event, Task, Guest } from "@shared/schema";
 import { updateEvent, deleteEvent, createTask, updateTask, createGuest } from "@/lib/event-service";
 import { useToast } from "@/hooks/use-toast";
-import { getAiSuggestions, getEventImprovements, ImprovementSuggestion } from "@/lib/ai-service";
+import { 
+  getAiSuggestions, 
+  getEventImprovements, 
+  optimizeEventBudget,
+  BudgetItem,
+  BudgetSuggestion,
+  BudgetOptimizationResult,
+  ImprovementSuggestion 
+} from "@/lib/ai-service";
 
 export default function EventDetail() {
   const { toast } = useToast();
@@ -105,6 +114,23 @@ export default function EventDetail() {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [improvementSuggestions, setImprovementSuggestions] = useState<ImprovementSuggestion[]>([]);
   const [isLoadingImprovements, setIsLoadingImprovements] = useState(false);
+  
+  // Budget state variables
+  const [showAddBudgetItemDialog, setShowAddBudgetItemDialog] = useState(false);
+  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
+  const [newBudgetItem, setNewBudgetItem] = useState<{
+    category: string; 
+    amount: number; 
+    notes: string;
+  }>({
+    category: "",
+    amount: 0,
+    notes: ""
+  });
+  const [isOptimizingBudget, setIsOptimizingBudget] = useState(false);
+  const [budgetOptimization, setBudgetOptimization] = useState<BudgetOptimizationResult | null>(null);
+  const [optimizedBudget, setOptimizedBudget] = useState<BudgetSuggestion[]>([]);
+  const [currentBudgetView, setCurrentBudgetView] = useState<'current' | 'optimized'>('current');
   
   // Fetch event details
   const {
@@ -435,6 +461,88 @@ export default function EventDetail() {
       status: newGuest.status,
       eventId: eventId
     });
+  };
+  
+  // Handle budget item creation
+  const handleCreateBudgetItem = () => {
+    if (!newBudgetItem.category || newBudgetItem.amount <= 0) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide a category and amount greater than 0",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newItem: BudgetItem = {
+      id: crypto.randomUUID(),
+      category: newBudgetItem.category,
+      amount: newBudgetItem.amount,
+      notes: newBudgetItem.notes || undefined
+    };
+    
+    setBudgetItems([...budgetItems, newItem]);
+    setShowAddBudgetItemDialog(false);
+    setNewBudgetItem({
+      category: "",
+      amount: 0,
+      notes: ""
+    });
+    
+    // Reset optimization data when budget items change
+    setBudgetOptimization(null);
+    setOptimizedBudget([]);
+  };
+  
+  // Handle budget optimization
+  const handleOptimizeBudget = async () => {
+    if (!event || !budgetItems.length) {
+      toast({
+        title: "Insufficient Data",
+        description: "Add budget items before optimizing"
+      });
+      return;
+    }
+    
+    setIsOptimizingBudget(true);
+    try {
+      const result = await optimizeEventBudget(
+        event,
+        budgetItems,
+        {
+          guestCount: event.estimatedGuests || undefined
+        }
+      );
+      
+      setBudgetOptimization(result);
+      setOptimizedBudget(result.optimizedBudget);
+      setCurrentBudgetView('optimized');
+      
+      toast({
+        title: "Budget Optimized",
+        description: `Found potential savings of $${result.savings.toFixed(2)}`
+      });
+    } catch (error) {
+      toast({
+        title: "Optimization Failed",
+        description: "Could not optimize budget at this time",
+        variant: "destructive"
+      });
+      console.error("Error optimizing budget:", error);
+    } finally {
+      setIsOptimizingBudget(false);
+    }
+  };
+  
+  // Function to generate a color from a string (for budget categories)
+  const stringToColor = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    const hue = hash % 360;
+    return `hsl(${hue}, 70%, 65%)`;
   };
   
   // If event is not found
