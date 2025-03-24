@@ -83,9 +83,10 @@ export default function EventDetail() {
   const [showAddGuestDialog, setShowAddGuestDialog] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
-    description: "",
-    dueDate: "",
-    status: "pending"
+    description: null,
+    dueDate: null,
+    status: "pending",
+    assignedTo: null
   });
   const [newGuest, setNewGuest] = useState({
     name: "",
@@ -207,9 +208,10 @@ export default function EventDetail() {
       setShowAddTaskDialog(false);
       setNewTask({
         title: "",
-        description: "",
-        dueDate: "",
-        status: "pending"
+        description: null,
+        dueDate: null,
+        status: "pending",
+        assignedTo: null
       });
       refetchTasks();
     },
@@ -1046,8 +1048,8 @@ export default function EventDetail() {
               <Label htmlFor="task-description">Description (Optional)</Label>
               <Textarea
                 id="task-description"
-                value={newTask.description}
-                onChange={(e) => setNewTask({...newTask, description: e.target.value})}
+                value={newTask.description || ""}
+                onChange={(e) => setNewTask({...newTask, description: e.target.value || null})}
                 placeholder="Enter task description"
               />
             </div>
@@ -1057,8 +1059,8 @@ export default function EventDetail() {
               <Input
                 id="task-due-date"
                 type="date"
-                value={newTask.dueDate}
-                onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
+                value={newTask.dueDate || ""}
+                onChange={(e) => setNewTask({...newTask, dueDate: e.target.value || null})}
               />
             </div>
           </div>
