@@ -81,10 +81,16 @@ export default function EventDetail() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
   const [showAddGuestDialog, setShowAddGuestDialog] = useState(false);
-  const [newTask, setNewTask] = useState({
+  const [newTask, setNewTask] = useState<{
+    title: string;
+    description: string | null;
+    dueDate: string | null;
+    status: string;
+    assignedTo: number | null;
+  }>({
     title: "",
-    description: null,
-    dueDate: null,
+    description: "",
+    dueDate: "",
     status: "pending",
     assignedTo: null
   });
@@ -272,10 +278,18 @@ export default function EventDetail() {
   const handleCreateTask = () => {
     if (!eventId) return;
     
-    // Format date properly if provided
-    let taskToCreate: any = { ...newTask };
-    if (taskToCreate.dueDate) {
-      taskToCreate.dueDate = new Date(taskToCreate.dueDate).toISOString();
+    // Format date properly if provided and ensure correct typing
+    let taskToCreate: any = { 
+      ...newTask,
+      eventId: eventId,
+      description: newTask.description || null,
+      dueDate: null,
+      assignedTo: null
+    };
+    
+    // Only set the date if a value was provided
+    if (typeof newTask.dueDate === 'string' && newTask.dueDate.trim() !== '') {
+      taskToCreate.dueDate = new Date(newTask.dueDate).toISOString();
     }
     
     createTaskMutation.mutate(taskToCreate);
@@ -323,10 +337,11 @@ export default function EventDetail() {
     
     createTaskMutation.mutate({
       title: task.title,
-      description: task.description,
+      description: task.description || null,
       status: "pending",
       eventId: eventId,
-      dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null
+      dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
+      assignedTo: null
     });
   };
   
@@ -1049,7 +1064,7 @@ export default function EventDetail() {
               <Textarea
                 id="task-description"
                 value={newTask.description || ""}
-                onChange={(e) => setNewTask({...newTask, description: e.target.value || null})}
+                onChange={(e) => setNewTask({...newTask, description: e.target.value})}
                 placeholder="Enter task description"
               />
             </div>
@@ -1060,7 +1075,7 @@ export default function EventDetail() {
                 id="task-due-date"
                 type="date"
                 value={newTask.dueDate || ""}
-                onChange={(e) => setNewTask({...newTask, dueDate: e.target.value || null})}
+                onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
               />
             </div>
           </div>

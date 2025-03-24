@@ -49,7 +49,15 @@ export async function deleteEvent(eventId: number): Promise<boolean> {
 
 export async function createTask(taskData: any): Promise<Task> {
   try {
-    const response = await apiRequest("POST", "/api/tasks", taskData);
+    // Process empty strings as null values for optional fields
+    const processedData = {
+      ...taskData,
+      description: taskData.description || null,
+      dueDate: taskData.dueDate || null,
+      assignedTo: taskData.assignedTo || null
+    };
+    
+    const response = await apiRequest("POST", "/api/tasks", processedData);
     const newTask = await response.json();
     
     // Invalidate tasks cache for the event
@@ -64,7 +72,15 @@ export async function createTask(taskData: any): Promise<Task> {
 
 export async function updateTask(taskId: number, taskData: any): Promise<Task> {
   try {
-    const response = await apiRequest("PUT", `/api/tasks/${taskId}`, taskData);
+    // Process empty strings as null values for optional fields
+    const processedData = {
+      ...taskData,
+      description: taskData.description || null,
+      dueDate: taskData.dueDate || null,
+      assignedTo: taskData.assignedTo || null
+    };
+    
+    const response = await apiRequest("PUT", `/api/tasks/${taskId}`, processedData);
     const updatedTask = await response.json();
     
     // Invalidate tasks cache for the event
@@ -81,7 +97,13 @@ export async function updateTask(taskId: number, taskData: any): Promise<Task> {
 
 export async function createGuest(guestData: any): Promise<Guest> {
   try {
-    const response = await apiRequest("POST", "/api/guests", guestData);
+    // Make sure status is never undefined
+    const processedData = {
+      ...guestData,
+      status: guestData.status || "invited" // Default value if not provided
+    };
+    
+    const response = await apiRequest("POST", "/api/guests", processedData);
     const newGuest = await response.json();
     
     // Invalidate guests cache for the event
