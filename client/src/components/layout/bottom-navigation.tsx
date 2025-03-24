@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Home, CalendarCheck, Plus, User, Sparkles, BarChart } from "lucide-react";
 import { useState } from "react";
 import NewEventModal from "@/components/modals/new-event-modal";
+import { cn } from "@/lib/utils";
 
 interface BottomNavigationProps {
   currentPath: string;
@@ -14,48 +15,69 @@ export default function BottomNavigation({ currentPath }: BottomNavigationProps)
   
   return (
     <>
-      <nav className="bg-white shadow-lg fixed bottom-0 left-0 right-0 z-10 h-20">
+      <nav className="bg-background border-t fixed bottom-0 left-0 right-0 z-10 h-16">
         <div className="flex justify-around items-center h-full">
           <Link 
             href="/"
-            className={`flex flex-col items-center justify-center space-y-1 w-1/5 h-full ${isActive('/') ? 'text-primary-500' : 'text-gray-400 hover:text-primary-500'}`}
+            className={cn(
+              "flex flex-col items-center justify-center w-1/5 h-full transition-colors",
+              isActive('/') 
+                ? "text-primary" 
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
             <Home className="h-5 w-5" />
-            <span className="text-xs font-medium">Home</span>
+            <span className="text-xs font-medium mt-1">Home</span>
           </Link>
           
           <Link 
             href="/events"
-            className={`flex flex-col items-center justify-center space-y-1 w-1/5 h-full ${isActive('/events') ? 'text-primary-500' : 'text-gray-400 hover:text-primary-500'}`}
+            className={cn(
+              "flex flex-col items-center justify-center w-1/5 h-full transition-colors",
+              isActive('/events') 
+                ? "text-primary" 
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
             <CalendarCheck className="h-5 w-5" />
-            <span className="text-xs font-medium">Events</span>
+            <span className="text-xs font-medium mt-1">Events</span>
           </Link>
           
           <button 
             onClick={() => setShowNewEventModal(true)}
-            className="flex flex-col items-center justify-center space-y-1 w-1/5 h-full text-gray-400 hover:text-primary-500"
+            className="flex flex-col items-center justify-center w-1/5 h-full"
+            aria-label="Create new event"
           >
-            <div className="bg-primary-500 rounded-full p-3 -mt-6 shadow-md">
-              <Plus className="h-5 w-5 text-white" />
+            <div className="bg-primary text-primary-foreground rounded-full p-3 -mt-6 shadow-md hover:brightness-110 transition-all">
+              <Plus className="h-5 w-5" />
             </div>
-            <span className="text-xs font-medium mt-1">Create</span>
+            <span className="text-xs font-medium mt-3 text-muted-foreground">Create</span>
           </button>
           
           <Link 
             href="/discover"
-            className={`flex flex-col items-center justify-center space-y-1 w-1/5 h-full ${isActive('/discover') ? 'text-primary-500' : 'text-gray-400 hover:text-primary-500'}`}
+            className={cn(
+              "flex flex-col items-center justify-center w-1/5 h-full transition-colors",
+              isActive('/discover') 
+                ? "text-primary" 
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
             <Sparkles className="h-5 w-5" />
-            <span className="text-xs font-medium">Discover</span>
+            <span className="text-xs font-medium mt-1">Discover</span>
           </Link>
           
           <Link 
             href="/analytics"
-            className={`flex flex-col items-center justify-center space-y-1 w-1/5 h-full ${isActive('/analytics') ? 'text-primary-500' : 'text-gray-400 hover:text-primary-500'}`}
+            className={cn(
+              "flex flex-col items-center justify-center w-1/5 h-full transition-colors",
+              isActive('/analytics') 
+                ? "text-primary" 
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
             <BarChart className="h-5 w-5" />
-            <span className="text-xs font-medium">Analytics</span>
+            <span className="text-xs font-medium mt-1">Analytics</span>
           </Link>
         </div>
       </nav>

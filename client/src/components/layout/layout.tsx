@@ -9,11 +9,11 @@ interface LayoutProps {
 
 export default function Layout({ children, currentPath }: LayoutProps) {
   return (
-    <div className="bg-gray-50 text-gray-800 min-h-screen">
+    <div className="bg-background text-foreground min-h-screen flex flex-col">
       <Header />
-      <div className="main-content pt-16 pb-20">
+      <main className="flex-grow pt-16 pb-24 overflow-x-hidden">
         {children}
-      </div>
+      </main>
       <BottomNavigation currentPath={currentPath} />
     </div>
   );
