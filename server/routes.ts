@@ -294,6 +294,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Vendor routes
+  app.get("/api/vendors", async (req, res) => {
+    try {
+      const category = req.query.category as string;
+      const partnersOnly = req.query.partners === 'true';
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+      
+      let vendors;
+      
+      if (partnersOnly) {
+        vendors = await storage.getPartnerVendors();
+      } else if (userId) {
+        vendors = await storage.getUserVendors(userId);
+      } else if (category) {
+        vendors = await storage.getVendorsByCategory(category);
+      } else {
+        vendors = await storage.getAllVendors();
+      }
+      
+      return res.json(vendors);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to get vendors" });
+    }
+  });
+  
+  app.get("/api/vendors/:id", async (req, res) => {
+    try {
+      const vendorId = parseInt(req.params.id);
+      const vendor = await storage.getVendor(vendorId);
+      
+      if (!vendor) {
+        return res.status(404).json({ message: "Vendor not found" });
+      }
+      
+      return res.json(vendor);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to get vendor" });
+    }
+  });
+  
+  app.post("/api/vendors", async (req, res) => {
+    try {
+      const vendorData = insertVendorSchema.parse(req.body);
+      const vendor = await storage.createVendor(vendorData);
+      return res.status(201).json(vendor);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid vendor data", errors: error.errors });
+      }
+      return res.status(500).json({ message: "Failed to create vendor" });
+    }
+  });
+  
+  app.put("/api/vendors/:id", async (req, res) => {
+    try {
+      const vendorId = parseInt(req.params.id);
+      const vendorData = req.body;
+      
+      const updatedVendor = await storage.updateVendor(vendorId, vendorData);
+      if (!updatedVendor) {
+        return res.status(404).json({ message: "Vendor not found" });
+      }
+      
+      return res.json(updatedVendor);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to update vendor" });
+    }
+  });
+  
+  app.delete("/api/vendors/:id", async (req, res) => {
+    try {
+      const vendorId = parseInt(req.params.id);
+      const success = await storage.deleteVendor(vendorId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Vendor not found" });
+      }
+      
+      return res.json({ success: true });
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to delete vendor" });
+    }
+  });
+  
+  // Event-Vendor routes
+  app.get("/api/events/:eventId/vendors", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      const eventVendors = await storage.getVendorsByEvent(eventId);
+      
+      // We need to get the full vendor details
+      const fullVendors = await Promise.all(
+        eventVendors.map(async (ev) => {
+          const vendor = await storage.getVendor(ev.vendorId);
+          return {
+            ...ev,
+            vendor
+          };
+        })
+      );
+      
+      return res.json(fullVendors);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to get event vendors" });
+    }
+  });
+  
+  app.post("/api/events/:eventId/vendors", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      
+      // Make sure eventId in URL and body match
+      const eventVendorData = {
+        ...insertEventVendorSchema.parse(req.body),
+        eventId
+      };
+      
+      const eventVendor = await storage.createEventVendor(eventVendorData);
+      return res.status(201).json(eventVendor);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid event vendor data", errors: error.errors });
+      }
+      return res.status(500).json({ message: "Failed to add vendor to event" });
+    }
+  });
+  
   // AI suggestions routes
   app.post("/api/ai/suggestions", async (req, res) => {
     try {

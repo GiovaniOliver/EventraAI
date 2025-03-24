@@ -62,7 +62,12 @@ export interface IStorage {
   // Vendor methods
   getVendor(id: number): Promise<Vendor | undefined>;
   getAllVendors(): Promise<Vendor[]>;
+  getPartnerVendors(): Promise<Vendor[]>;
+  getUserVendors(userId: number): Promise<Vendor[]>;
+  getVendorsByCategory(category: string): Promise<Vendor[]>;
   createVendor(vendor: InsertVendor): Promise<Vendor>;
+  updateVendor(id: number, vendorData: Partial<InsertVendor>): Promise<Vendor | undefined>;
+  deleteVendor(id: number): Promise<boolean>;
   
   // Event-Vendor methods
   getEventVendor(id: number): Promise<EventVendor | undefined>;
@@ -347,6 +352,24 @@ export class MemStorage implements IStorage {
   async getAllVendors(): Promise<Vendor[]> {
     return Array.from(this.vendors.values());
   }
+  
+  async getPartnerVendors(): Promise<Vendor[]> {
+    return Array.from(this.vendors.values()).filter(
+      (vendor) => vendor.isPartner === true
+    );
+  }
+  
+  async getUserVendors(userId: number): Promise<Vendor[]> {
+    return Array.from(this.vendors.values()).filter(
+      (vendor) => vendor.ownerId === userId
+    );
+  }
+  
+  async getVendorsByCategory(category: string): Promise<Vendor[]> {
+    return Array.from(this.vendors.values()).filter(
+      (vendor) => vendor.category === category
+    );
+  }
 
   async createVendor(insertVendor: InsertVendor): Promise<Vendor> {
     const id = this.currentVendorId++;
@@ -354,10 +377,35 @@ export class MemStorage implements IStorage {
     const vendor: Vendor = {
       ...insertVendor,
       id,
-      createdAt: now
+      createdAt: now,
+      isPartner: insertVendor.isPartner ?? false,
+      services: insertVendor.services ?? [],
+      logo: insertVendor.logo ?? null,
+      rating: insertVendor.rating ?? null,
+      description: insertVendor.description ?? null,
+      contactEmail: insertVendor.contactEmail ?? null,
+      contactPhone: insertVendor.contactPhone ?? null,
+      website: insertVendor.website ?? null
     };
     this.vendors.set(id, vendor);
     return vendor;
+  }
+  
+  async updateVendor(id: number, vendorData: Partial<InsertVendor>): Promise<Vendor | undefined> {
+    const vendor = this.vendors.get(id);
+    if (!vendor) return undefined;
+    
+    const updatedVendor: Vendor = {
+      ...vendor,
+      ...vendorData
+    };
+    
+    this.vendors.set(id, updatedVendor);
+    return updatedVendor;
+  }
+  
+  async deleteVendor(id: number): Promise<boolean> {
+    return this.vendors.delete(id);
   }
 
   // Event-Vendor methods
