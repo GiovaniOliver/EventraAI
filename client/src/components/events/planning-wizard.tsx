@@ -252,27 +252,82 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
     }
   });
 
+  // Helper to convert relative dates to actual dates
+  const parseDueDate = (relativeDate: string, eventDate: Date): Date | null => {
+    try {
+      // If it's a valid date string, use it directly
+      if (!isNaN(Date.parse(relativeDate))) {
+        return new Date(relativeDate);
+      }
+      
+      // Handle relative dates
+      const eventTime = eventDate.getTime();
+      
+      // Match patterns like "30 days before event" or "2 weeks after event"
+      const match = relativeDate.match(/(\d+)\s+(day|days|week|weeks|month|months)\s+(before|after)\s+event/i);
+      if (match) {
+        const amount = parseInt(match[1]);
+        const unit = match[2].toLowerCase();
+        const direction = match[3].toLowerCase();
+        
+        let milliseconds = 0;
+        
+        // Convert unit to milliseconds
+        if (unit === 'day' || unit === 'days') {
+          milliseconds = amount * 24 * 60 * 60 * 1000;
+        } else if (unit === 'week' || unit === 'weeks') {
+          milliseconds = amount * 7 * 24 * 60 * 60 * 1000;
+        } else if (unit === 'month' || unit === 'months') {
+          milliseconds = amount * 30 * 24 * 60 * 60 * 1000; // Approximate
+        }
+        
+        // Apply direction
+        if (direction === 'before') {
+          return new Date(eventTime - milliseconds);
+        } else {
+          return new Date(eventTime + milliseconds);
+        }
+      }
+      
+      // Default to event date if we can't parse
+      return eventDate;
+    } catch (error) {
+      console.error("Error parsing date:", error);
+      return eventDate; // Default to event date
+    }
+  };
+
   // Helper to create tasks for an event
   const createTasksForEvent = async (eventId: number) => {
-    if (!suggestedTasks.length || !selectedTasks.length) return;
+    if (!suggestedTasks.length || !selectedTasks.length || !eventData.date) return;
     
     // Process only selected tasks
     const tasksToCreate = suggestedTasks
       .filter(task => selectedTasks.includes(task.title))
-      .map(task => ({
-        title: task.title,
-        description: task.description,
-        eventId: eventId,
-        status: "pending",
-        dueDate: task.dueDate,
-        assignedTo: null
-      }));
+      .map(task => {
+        // Convert relative date string to actual Date object
+        const parsedDueDate = parseDueDate(task.dueDate, new Date(eventData.date as Date));
+        
+        return {
+          title: task.title,
+          description: task.description,
+          eventId: eventId,
+          status: "pending",
+          dueDate: parsedDueDate,
+          assignedTo: null
+        };
+      });
     
     console.log(`Creating ${tasksToCreate.length} tasks for event ${eventId}`);
     
     // Create each task sequentially
     for (const taskData of tasksToCreate) {
-      await createTaskMutation.mutateAsync(taskData);
+      try {
+        console.log("Submitting task data:", taskData);
+        await createTaskMutation.mutateAsync(taskData);
+      } catch (error) {
+        console.error("Error creating task:", error);
+      }
     }
   };
 
@@ -849,7 +904,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                               {task.dueDate && (
                                 <span className="flex items-center">
                                   <Clock className="h-3 w-3 mr-1" />
-                                  {task.dueDate}
+                                  {eventData.date ? formatEventDate(parseDueDate(task.dueDate, new Date(eventData.date as Date))) : task.dueDate}
                                 </span>
                               )}
                             </div>
@@ -963,7 +1018,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                           const task = suggestedTasks.find(t => t.title === taskTitle);
                           if (!task) return null;
                           return (
-                            <div key={taskTitle} className="flex items-center">
+                            <div key={taskTitle} className="flex flex-wrap items-center mb-1">
                               <MoveRight className="h-3 w-3 mr-1.5 text-muted-foreground" />
                               <span>{task.title}</span>
                               <Badge 
@@ -972,6 +1027,12 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                               >
                                 {task.priority}
                               </Badge>
+                              {task.dueDate && eventData.date && (
+                                <span className="flex items-center ml-auto text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {formatEventDate(parseDueDate(task.dueDate, new Date(eventData.date as Date)))}
+                                </span>
+                              )}
                             </div>
                           );
                         })}
