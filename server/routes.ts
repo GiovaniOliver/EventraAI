@@ -454,6 +454,114 @@ Format your response as a JSON array of improvement objects with the following s
     }
   });
 
+  // Analytics routes
+  app.post("/api/events/:eventId/analytics", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      
+      // Validate that the event exists
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      // Add eventId to the analytics data
+      const analyticsData = {
+        ...req.body,
+        eventId
+      };
+      
+      const analytics = await storage.createEventAnalytics(analyticsData);
+      return res.status(201).json(analytics);
+    } catch (error) {
+      console.error("Create analytics error:", error);
+      return res.status(500).json({ 
+        message: "Failed to create analytics data",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  app.get("/api/events/:eventId/analytics", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      
+      // Get all analytics entries for this event
+      const analytics = await storage.getAnalyticsByEvent(eventId);
+      return res.json(analytics);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to get analytics data" });
+    }
+  });
+  
+  app.put("/api/analytics/:id", async (req, res) => {
+    try {
+      const analyticsId = parseInt(req.params.id);
+      const updatedAnalytics = await storage.updateEventAnalytics(analyticsId, req.body);
+      
+      if (!updatedAnalytics) {
+        return res.status(404).json({ message: "Analytics data not found" });
+      }
+      
+      return res.json(updatedAnalytics);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to update analytics data" });
+    }
+  });
+  
+  // Attendee Feedback routes
+  app.post("/api/events/:eventId/feedback", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      
+      // Validate that the event exists
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
+      // Add eventId to the feedback data
+      const feedbackData = {
+        ...req.body,
+        eventId
+      };
+      
+      const feedback = await storage.createAttendeeFeedback(feedbackData);
+      return res.status(201).json(feedback);
+    } catch (error) {
+      console.error("Create feedback error:", error);
+      return res.status(500).json({ 
+        message: "Failed to save feedback",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
+  app.get("/api/events/:eventId/feedback", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      
+      // Get all feedback entries for this event
+      const feedback = await storage.getFeedbackByEvent(eventId);
+      return res.json(feedback);
+    } catch (error) {
+      return res.status(500).json({ message: "Failed to get feedback data" });
+    }
+  });
+  
+  app.get("/api/events/:eventId/feedback-summary", async (req, res) => {
+    try {
+      const eventId = parseInt(req.params.eventId);
+      
+      // Get a summary of all feedback for this event
+      const summary = await storage.getEventFeedbackSummary(eventId);
+      return res.json(summary);
+    } catch (error) {
+      console.error("Feedback summary error:", error);
+      return res.status(500).json({ message: "Failed to get feedback summary" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

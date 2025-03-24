@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Home, CalendarCheck, Plus, CheckCircle, User, Sparkles } from "lucide-react";
+import { Home, CalendarCheck, Plus, User, Sparkles, BarChart } from "lucide-react";
 import { useState } from "react";
 import NewEventModal from "@/components/modals/new-event-modal";
 
@@ -51,11 +51,11 @@ export default function BottomNavigation({ currentPath }: BottomNavigationProps)
           </Link>
           
           <Link 
-            href="/profile"
-            className={`flex flex-col items-center justify-center space-y-1 w-1/5 h-full ${isActive('/profile') ? 'text-primary-500' : 'text-gray-400 hover:text-primary-500'}`}
+            href="/analytics"
+            className={`flex flex-col items-center justify-center space-y-1 w-1/5 h-full ${isActive('/analytics') ? 'text-primary-500' : 'text-gray-400 hover:text-primary-500'}`}
           >
-            <User className="h-5 w-5" />
-            <span className="text-xs font-medium">Profile</span>
+            <BarChart className="h-5 w-5" />
+            <span className="text-xs font-medium">Analytics</span>
           </Link>
         </div>
       </nav>

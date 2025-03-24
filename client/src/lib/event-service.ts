@@ -2,10 +2,25 @@ import { apiRequest } from "./queryClient";
 import { Event, Task, Guest } from "@shared/schema";
 import { queryClient } from "./queryClient";
 
+export async function getEvent(eventId: number): Promise<Event> {
+  try {
+    return apiRequest<Event>({
+      url: `/api/events/${eventId}`,
+      method: "GET"
+    });
+  } catch (error) {
+    console.error("Error fetching event:", error);
+    throw new Error("Failed to fetch event");
+  }
+}
+
 export async function createEvent(eventData: any): Promise<Event> {
   try {
-    const response = await apiRequest("POST", "/api/events", eventData);
-    const newEvent = await response.json();
+    const newEvent = await apiRequest<Event>({
+      url: "/api/events",
+      method: "POST",
+      data: eventData
+    });
     
     // Invalidate events cache
     queryClient.invalidateQueries({ queryKey: [`/api/users/${eventData.ownerId}/events`] });
@@ -19,8 +34,11 @@ export async function createEvent(eventData: any): Promise<Event> {
 
 export async function updateEvent(eventId: number, eventData: any): Promise<Event> {
   try {
-    const response = await apiRequest("PUT", `/api/events/${eventId}`, eventData);
-    const updatedEvent = await response.json();
+    const updatedEvent = await apiRequest<Event>({
+      url: `/api/events/${eventId}`,
+      method: "PUT",
+      data: eventData
+    });
     
     // Invalidate event cache and events list
     queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
@@ -35,7 +53,10 @@ export async function updateEvent(eventId: number, eventData: any): Promise<Even
 
 export async function deleteEvent(eventId: number): Promise<boolean> {
   try {
-    await apiRequest("DELETE", `/api/events/${eventId}`, undefined);
+    await apiRequest({
+      url: `/api/events/${eventId}`,
+      method: "DELETE"
+    });
     
     // Invalidate events cache
     queryClient.invalidateQueries({ queryKey: ["/api/users/1/events"] });
@@ -60,8 +81,11 @@ export async function createTask(taskData: any): Promise<Task> {
     };
     
     console.log("Submitting task data:", processedData);
-    const response = await apiRequest("POST", "/api/tasks", processedData);
-    const newTask = await response.json();
+    const newTask = await apiRequest<Task>({
+      url: "/api/tasks",
+      method: "POST",
+      data: processedData
+    });
     
     // Invalidate tasks cache for the event
     queryClient.invalidateQueries({ queryKey: [`/api/events/${taskData.eventId}/tasks`] });
@@ -85,8 +109,11 @@ export async function updateTask(taskId: number, taskData: any): Promise<Task> {
     };
     
     console.log("Updating task data:", processedData);
-    const response = await apiRequest("PUT", `/api/tasks/${taskId}`, processedData);
-    const updatedTask = await response.json();
+    const updatedTask = await apiRequest<Task>({
+      url: `/api/tasks/${taskId}`,
+      method: "PUT",
+      data: processedData
+    });
     
     // Invalidate tasks cache for the event
     if (taskData.eventId) {
@@ -111,8 +138,11 @@ export async function createGuest(guestData: any): Promise<Guest> {
     };
     
     console.log("Submitting guest data:", processedData);
-    const response = await apiRequest("POST", "/api/guests", processedData);
-    const newGuest = await response.json();
+    const newGuest = await apiRequest<Guest>({
+      url: "/api/guests",
+      method: "POST",
+      data: processedData
+    });
     
     // Invalidate guests cache for the event
     queryClient.invalidateQueries({ queryKey: [`/api/events/${guestData.eventId}/guests`] });

@@ -11,6 +11,7 @@ import EventDetail from "@/pages/event-detail";
 import Discover from "@/pages/discover";
 import Tasks from "@/pages/tasks";
 import Profile from "@/pages/profile";
+import Analytics from "@/pages/analytics";
 import NotFound from "@/pages/not-found";
 
 import OnboardingModal from "@/components/modals/onboarding-modal";
@@ -41,6 +42,7 @@ function Router() {
           <Route path="/events/:id" component={EventDetail} />
           <Route path="/discover" component={Discover} />
           <Route path="/tasks" component={Tasks} />
+          <Route path="/analytics" component={Analytics} />
           <Route path="/profile" component={Profile} />
           <Route component={NotFound} />
         </Switch>
