@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
 import {
   Card,
@@ -55,8 +56,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Event, Task } from "@shared/schema";
-import { updateEvent, deleteEvent, createTask, updateTask } from "@/lib/event-service";
+import { Event, Task, Guest } from "@shared/schema";
+import { updateEvent, deleteEvent, createTask, updateTask, createGuest } from "@/lib/event-service";
 import { useToast } from "@/hooks/use-toast";
 import { getAiSuggestions } from "@/lib/ai-service";
 
@@ -70,11 +71,17 @@ export default function EventDetail() {
   const [editedEvent, setEditedEvent] = useState<Partial<Event>>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
+  const [showAddGuestDialog, setShowAddGuestDialog] = useState(false);
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
     dueDate: "",
     status: "pending"
+  });
+  const [newGuest, setNewGuest] = useState({
+    name: "",
+    email: "",
+    status: "invited"
   });
   const [suggestedTasks, setSuggestedTasks] = useState<any[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
@@ -307,6 +314,60 @@ export default function EventDetail() {
       status: "pending",
       eventId: eventId,
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null
+    });
+  };
+  
+  // Create guest mutation
+  const createGuestMutation = useMutation({
+    mutationFn: (data: any) => {
+      return createGuest({
+        ...data,
+        eventId: eventId
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Guest Added",
+        description: "The guest has been successfully added to the event"
+      });
+      setShowAddGuestDialog(false);
+      setNewGuest({
+        name: "",
+        email: "",
+        status: "invited"
+      });
+      // Refetch guests list
+      const guestsQueryKey = [`/api/events/${eventId}/guests`];
+      queryClient.invalidateQueries({ queryKey: guestsQueryKey });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to add guest",
+        variant: "destructive"
+      });
+      console.error("Error adding guest:", error);
+    }
+  });
+  
+  // Handle create guest
+  const handleCreateGuest = () => {
+    if (!eventId) return;
+    
+    if (!newGuest.name.trim() || !newGuest.email.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide name and email for the guest",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    createGuestMutation.mutate({
+      name: newGuest.name,
+      email: newGuest.email,
+      status: newGuest.status,
+      eventId: eventId
     });
   };
   
@@ -713,7 +774,10 @@ export default function EventDetail() {
             <TabsContent value="guests">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium">Guest List</h3>
-                <Button size="sm">
+                <Button 
+                  size="sm"
+                  onClick={() => setShowAddGuestDialog(true)}
+                >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Guest
                 </Button>
@@ -770,7 +834,7 @@ export default function EventDetail() {
               ) : (
                 <div className="text-center py-10">
                   <div className="text-gray-400 mb-4">No guests added yet</div>
-                  <Button>
+                  <Button onClick={() => setShowAddGuestDialog(true)}>
                     <Plus className="h-4 w-4 mr-1" />
                     Add First Guest
                   </Button>
