@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
+import { setupAuth } from "./auth";
+import Stripe from "stripe";
 import { 
   insertUserSchema, 
   insertEventSchema, 
@@ -9,7 +11,9 @@ import {
   insertGuestSchema,
   insertVendorSchema,
   insertEventVendorSchema,
-  insertUserPreferenceSchema
+  insertUserPreferenceSchema,
+  insertSubscriptionPlanSchema,
+  insertTransactionSchema
 } from "@shared/schema";
 import { 
   generateAiSuggestions, 
@@ -19,7 +23,19 @@ import {
   MODEL 
 } from "./services/ai-service";
 
+// Initialize Stripe
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.warn('Missing Stripe secret key. Payment features will not work properly.');
+}
+
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" })
+  : null;
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication
+  setupAuth(app);
+  
   // All routes are prefixed with /api
   
   // Route to get all events
