@@ -4,10 +4,9 @@ import { queryClient } from "./queryClient";
 
 export async function getEvent(eventId: number): Promise<Event> {
   try {
-    return apiRequest<Event>({
-      url: `/api/events/${eventId}`,
-      method: "GET"
-    });
+    const response = await apiRequest("GET", `/api/events/${eventId}`);
+    const event = await response.json() as Event;
+    return event;
   } catch (error) {
     console.error("Error fetching event:", error);
     throw new Error("Failed to fetch event");
@@ -16,11 +15,15 @@ export async function getEvent(eventId: number): Promise<Event> {
 
 export async function createEvent(eventData: any): Promise<Event> {
   try {
-    const newEvent = await apiRequest<Event>({
-      url: "/api/events",
-      method: "POST",
-      data: eventData
-    });
+    // Parse event data to ensure proper formatting
+    const eventDataToSend = {
+      ...eventData,
+      // Convert date object to ISO string if it's a Date object
+      date: eventData.date instanceof Date ? eventData.date.toISOString() : eventData.date
+    };
+    
+    const response = await apiRequest("POST", "/api/events", eventDataToSend);
+    const newEvent = await response.json();
     
     // Invalidate events cache
     queryClient.invalidateQueries({ queryKey: [`/api/users/${eventData.ownerId}/events`] });
@@ -34,11 +37,15 @@ export async function createEvent(eventData: any): Promise<Event> {
 
 export async function updateEvent(eventId: number, eventData: any): Promise<Event> {
   try {
-    const updatedEvent = await apiRequest<Event>({
-      url: `/api/events/${eventId}`,
-      method: "PUT",
-      data: eventData
-    });
+    // Format data to ensure date is properly handled
+    const eventDataToSend = {
+      ...eventData,
+      // Convert date object to ISO string if it's a Date object
+      date: eventData.date instanceof Date ? eventData.date.toISOString() : eventData.date
+    };
+    
+    const response = await apiRequest("PUT", `/api/events/${eventId}`, eventDataToSend);
+    const updatedEvent = await response.json();
     
     // Invalidate event cache and events list
     queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
@@ -53,10 +60,7 @@ export async function updateEvent(eventId: number, eventData: any): Promise<Even
 
 export async function deleteEvent(eventId: number): Promise<boolean> {
   try {
-    await apiRequest({
-      url: `/api/events/${eventId}`,
-      method: "DELETE"
-    });
+    await apiRequest("DELETE", `/api/events/${eventId}`);
     
     // Invalidate events cache
     queryClient.invalidateQueries({ queryKey: ["/api/users/1/events"] });
@@ -81,11 +85,8 @@ export async function createTask(taskData: any): Promise<Task> {
     };
     
     console.log("Submitting task data:", processedData);
-    const newTask = await apiRequest<Task>({
-      url: "/api/tasks",
-      method: "POST",
-      data: processedData
-    });
+    const response = await apiRequest("POST", "/api/tasks", processedData);
+    const newTask = await response.json();
     
     // Invalidate tasks cache for the event
     queryClient.invalidateQueries({ queryKey: [`/api/events/${taskData.eventId}/tasks`] });
@@ -109,11 +110,8 @@ export async function updateTask(taskId: number, taskData: any): Promise<Task> {
     };
     
     console.log("Updating task data:", processedData);
-    const updatedTask = await apiRequest<Task>({
-      url: `/api/tasks/${taskId}`,
-      method: "PUT",
-      data: processedData
-    });
+    const response = await apiRequest("PUT", `/api/tasks/${taskId}`, processedData);
+    const updatedTask = await response.json();
     
     // Invalidate tasks cache for the event
     if (taskData.eventId) {
@@ -138,11 +136,8 @@ export async function createGuest(guestData: any): Promise<Guest> {
     };
     
     console.log("Submitting guest data:", processedData);
-    const newGuest = await apiRequest<Guest>({
-      url: "/api/guests",
-      method: "POST",
-      data: processedData
-    });
+    const response = await apiRequest("POST", "/api/guests", processedData);
+    const newGuest = await response.json();
     
     // Invalidate guests cache for the event
     queryClient.invalidateQueries({ queryKey: [`/api/events/${guestData.eventId}/guests`] });
