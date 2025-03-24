@@ -820,7 +820,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                       <div 
                         key={index}
                         className={`border rounded-lg p-3 ${
-                          selectedTasks.includes(index.toString())
+                          selectedTasks.includes(task.title)
                             ? "border-primary/50 bg-primary/5"
                             : "hover:border-muted-foreground/30"
                         }`}
@@ -828,8 +828,8 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                         <div className="flex items-start">
                           <Checkbox 
                             id={`task-${index}`}
-                            checked={selectedTasks.includes(index.toString())}
-                            onCheckedChange={() => handleTaskSelection(index.toString())}
+                            checked={selectedTasks.includes(task.title)}
+                            onCheckedChange={() => handleTaskSelection(task.title)}
                             className="mt-1"
                           />
                           <div className="ml-3 flex-1">
@@ -874,7 +874,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => setSelectedTasks(suggestedTasks.map((_, i) => i.toString()))}
+                          onClick={() => setSelectedTasks(suggestedTasks.map(task => task.title))}
                           disabled={selectedTasks.length === suggestedTasks.length}
                         >
                           Select All
@@ -959,10 +959,11 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                         <span>Selected Tasks ({selectedTasks.length})</span>
                       </h4>
                       <div className="space-y-1 text-sm">
-                        {selectedTasks.map((taskId) => {
-                          const task = suggestedTasks[parseInt(taskId)];
+                        {selectedTasks.map((taskTitle) => {
+                          const task = suggestedTasks.find(t => t.title === taskTitle);
+                          if (!task) return null;
                           return (
-                            <div key={taskId} className="flex items-center">
+                            <div key={taskTitle} className="flex items-center">
                               <MoveRight className="h-3 w-3 mr-1.5 text-muted-foreground" />
                               <span>{task.title}</span>
                               <Badge 
