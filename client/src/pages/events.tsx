@@ -19,17 +19,27 @@ import {
   MoreHorizontal,
   Clock,
   Calendar,
-  Users
+  Users,
+  Sparkles,
+  Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Event } from "@shared/schema";
 import { format } from "date-fns";
 import NewEventModal from "@/components/modals/new-event-modal";
+import PlanningWizard from "@/components/events/planning-wizard";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 export default function Events() {
   // All hooks must be called at the top level
   const [showNewEventModal, setShowNewEventModal] = useState(false);
+  const [showPlanningWizard, setShowPlanningWizard] = useState(false);
   const [userId] = useState(1); // For demo, hardcode userId to 1
   const [, navigate] = useLocation();
   
@@ -78,13 +88,21 @@ export default function Events() {
     }
   }, [events]);
   
-  // Create modal controls
+  // Modal controls
   const openNewEventModal = useCallback(() => {
     setShowNewEventModal(true);
   }, []);
   
   const closeNewEventModal = useCallback(() => {
     setShowNewEventModal(false);
+  }, []);
+  
+  const openPlanningWizard = useCallback(() => {
+    setShowPlanningWizard(true);
+  }, []);
+  
+  const closePlanningWizard = useCallback(() => {
+    setShowPlanningWizard(false);
   }, []);
   
   // Helper function to get event icon based on type
@@ -126,7 +144,23 @@ export default function Events() {
     <div className="px-4 pt-4 pb-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold">My Events</h2>
-        <Button size="sm" onClick={openNewEventModal}>New Event</Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" className="font-medium">
+              <Plus className="h-4 w-4 mr-1" /> 
+              New Event
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={openNewEventModal}>
+              Quick Create
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={openPlanningWizard} className="flex items-center gap-1">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span>Use Planning Wizard</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
       <Tabs defaultValue="upcoming">
