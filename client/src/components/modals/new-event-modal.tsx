@@ -61,11 +61,12 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
       const dateObj = new Date(`${data.date}T${data.time}`);
       
       // Make sure the data matches the schema fields exactly
+      // Convert the date to an ISO string as that's what the server expects
       const eventData = {
         name: data.name,
         type: data.type,
         format: data.format,
-        date: dateObj, // Send the Date object directly, not a string
+        date: dateObj.toISOString(), // Send as ISO string
         estimatedGuests: data.estimatedGuests,
         ownerId: data.ownerId,
         status: "planning",
