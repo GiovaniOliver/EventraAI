@@ -214,8 +214,8 @@ export default function EventDetail() {
       setShowAddTaskDialog(false);
       setNewTask({
         title: "",
-        description: null,
-        dueDate: null,
+        description: "",
+        dueDate: "",
         status: "pending",
         assignedTo: null
       });
@@ -280,15 +280,16 @@ export default function EventDetail() {
     
     // Format date properly if provided and ensure correct typing
     let taskToCreate: any = { 
-      ...newTask,
+      title: newTask.title,
       eventId: eventId,
-      description: newTask.description || null,
+      description: newTask.description && newTask.description.trim() !== "" ? newTask.description : null,
       dueDate: null,
+      status: newTask.status,
       assignedTo: null
     };
     
     // Only set the date if a value was provided
-    if (typeof newTask.dueDate === 'string' && newTask.dueDate.trim() !== '') {
+    if (newTask.dueDate && newTask.dueDate.trim() !== '') {
       taskToCreate.dueDate = new Date(newTask.dueDate).toISOString();
     }
     
@@ -335,14 +336,17 @@ export default function EventDetail() {
   const handleAddSuggestedTask = (task: any) => {
     if (!eventId) return;
     
-    createTaskMutation.mutate({
+    // Process the task data for API submission
+    const taskData = {
       title: task.title,
-      description: task.description || null,
+      description: task.description && task.description.trim() !== "" ? task.description : null,
       status: "pending",
       eventId: eventId,
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
       assignedTo: null
-    });
+    };
+    
+    createTaskMutation.mutate(taskData);
   };
   
   // Handle generating AI improvement suggestions
