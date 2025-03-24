@@ -97,6 +97,11 @@ export const vendors = pgTable("vendors", {
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   website: text("website"),
+  isPartner: boolean("is_partner").default(false).notNull(), // Partner vendors vs user-added
+  logo: text("logo"), // URL for vendor logo
+  services: jsonb("services").default("[]"), // List of services offered
+  rating: integer("rating"), // 1-5 rating
+  ownerId: integer("owner_id"), // User who added this vendor (null for partner vendors)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -107,6 +112,11 @@ export const insertVendorSchema = createInsertSchema(vendors).pick({
   contactEmail: true,
   contactPhone: true,
   website: true,
+  isPartner: true,
+  logo: true,
+  services: true,
+  rating: true,
+  ownerId: true,
 });
 
 // Event-Vendor relationship schema
