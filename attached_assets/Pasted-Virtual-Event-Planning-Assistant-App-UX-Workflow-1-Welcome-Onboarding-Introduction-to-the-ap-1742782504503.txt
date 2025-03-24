@@ -1,0 +1,52 @@
+Virtual Event Planning Assistant App - UX Workflow
+	1	Welcome & Onboarding
+	◦	Introduction to the app's capabilities and quick tutorial.
+	◦	AI-driven questionnaire to understand the user's needs and preferences.
+	2	Event Type Selection
+	◦	Choose the event type (e.g., conference, birthday, webinar).
+	◦	AI suggestions based on popular trends and user preferences.
+	3	Theme Selection
+	◦	AI-curated themes based on event type and trending designs.
+	◦	Customizable options for themes and virtual decorations.
+	4	Budget Planning
+	◦	Input initial budget.
+	◦	AI to suggest budget allocation across different categories (venue, catering, etc.).
+	5	Guest List Management
+	◦	Import contacts and create guest lists.
+	◦	AI to suggest invitees based on past events and connections.
+	6	Venue Selection
+	◦	Options for virtual platforms or physical venues.
+	◦	AI recommendations based on budget, guest count, and location preferences.
+	7	Agenda Planning
+	◦	Create and manage the event schedule.
+	◦	AI-driven suggestions for agenda items, speakers, and timings based on event type.
+	8	Vendor and Resource Management
+	◦	List and manage vendors for services like catering and entertainment.
+	◦	AI to recommend vendors based on user ratings, budget, and availability.
+	9	Task and Checklist Creation
+	◦	Customizable to-do lists for event planning tasks.
+	◦	AI to suggest tasks based on event type and timeline.
+	10	Collaboration and Team Coordination
+	◦	Tools for team communication and document sharing.
+	◦	AI to assign tasks to team members based on their roles and expertise.
+	11	Marketing and Promotion
+	◦	Create marketing materials and distribute invitations.
+	◦	AI to suggest marketing channels and content based on target audience.
+	12	Registration and Ticketing
+	◦	Manage attendee registration and ticket sales.
+	◦	AI to optimize ticket pricing and promotional offers.
+	13	Event Execution and Day-of Management
+	◦	Checklist and timeline for day-of event activities.
+	◦	AI assistance for real-time problem-solving and coordination.
+	14	Feedback Collection and Analysis
+	◦	Post-event surveys and feedback forms.
+	◦	AI to analyze feedback for insights and improvement areas.
+	15	Post-Event Reporting and Analytics
+	◦	Overview of event success metrics and financial reporting.
+	◦	AI-generated reports on attendee engagement, budget adherence, and ROI.
+	16	User Profile & Settings
+	◦	Manage account details and preferences.
+	◦	Access past events, templates, and saved vendors.
+	17	Help & Support
+	◦	FAQs, tutorial guides, and contact information for customer support.
+	◦	AI chatbot for instant assistance and troubleshooting.
