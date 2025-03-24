@@ -814,8 +814,22 @@ export class MemStorage implements IStorage {
     const id = this.currentSubscriptionPlanId++;
     const now = new Date();
     const plan: SubscriptionPlan = {
-      ...insertPlan,
       id,
+      name: insertPlan.name,
+      displayName: insertPlan.displayName ?? null,
+      description: insertPlan.description ?? null,
+      price: insertPlan.price,
+      currency: insertPlan.currency ?? "usd",
+      interval: insertPlan.interval ?? "month",
+      billingCycle: insertPlan.billingCycle ?? "monthly",
+      features: insertPlan.features ?? "[]",
+      eventLimit: insertPlan.eventLimit ?? null,
+      guestLimit: insertPlan.guestLimit ?? null,
+      vendorLimit: insertPlan.vendorLimit ?? null,
+      analyticsPeriod: insertPlan.analyticsPeriod ?? null,
+      stripeProductId: insertPlan.stripeProductId ?? null,
+      stripePriceId: insertPlan.stripePriceId ?? null,
+      isActive: insertPlan.isActive ?? true,
       createdAt: now,
       updatedAt: now
     };
@@ -829,7 +843,21 @@ export class MemStorage implements IStorage {
     
     const updatedPlan: SubscriptionPlan = {
       ...plan,
-      ...planData,
+      name: planData.name ?? plan.name,
+      displayName: planData.displayName ?? plan.displayName,
+      description: planData.description ?? plan.description,
+      price: planData.price ?? plan.price,
+      currency: planData.currency ?? plan.currency,
+      interval: planData.interval ?? plan.interval,
+      billingCycle: planData.billingCycle ?? plan.billingCycle,
+      features: planData.features ?? plan.features,
+      eventLimit: planData.eventLimit ?? plan.eventLimit,
+      guestLimit: planData.guestLimit ?? plan.guestLimit,
+      vendorLimit: planData.vendorLimit ?? plan.vendorLimit,
+      analyticsPeriod: planData.analyticsPeriod ?? plan.analyticsPeriod,
+      stripeProductId: planData.stripeProductId ?? plan.stripeProductId,
+      stripePriceId: planData.stripePriceId ?? plan.stripePriceId,
+      isActive: planData.isActive ?? plan.isActive,
       updatedAt: new Date()
     };
     

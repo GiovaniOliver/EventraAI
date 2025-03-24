@@ -28,9 +28,13 @@ if (!process.env.STRIPE_SECRET_KEY) {
   console.warn('Missing Stripe secret key. Payment features will not work properly.');
 }
 
-const stripe = process.env.STRIPE_SECRET_KEY 
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" })
-  : null;
+let stripe: Stripe | null = null;
+
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2023-10-16" // Current API version
+  });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
