@@ -49,14 +49,17 @@ export async function deleteEvent(eventId: number): Promise<boolean> {
 
 export async function createTask(taskData: any): Promise<Task> {
   try {
-    // Process empty strings as null values for optional fields
+    // Make sure all required fields are present and format properly
     const processedData = {
-      ...taskData,
-      description: taskData.description || null,
-      dueDate: taskData.dueDate || null,
+      title: taskData.title.trim(),
+      eventId: taskData.eventId,
+      status: taskData.status || "pending",
+      description: (taskData.description && taskData.description.trim() !== "") ? taskData.description : null,
+      dueDate: (taskData.dueDate && taskData.dueDate.trim() !== "") ? taskData.dueDate : null,
       assignedTo: taskData.assignedTo || null
     };
     
+    console.log("Submitting task data:", processedData);
     const response = await apiRequest("POST", "/api/tasks", processedData);
     const newTask = await response.json();
     
@@ -66,20 +69,22 @@ export async function createTask(taskData: any): Promise<Task> {
     return newTask;
   } catch (error) {
     console.error("Error creating task:", error);
-    throw new Error("Failed to create task");
+    throw error; // Preserve the original error for better debugging
   }
 }
 
 export async function updateTask(taskId: number, taskData: any): Promise<Task> {
   try {
-    // Process empty strings as null values for optional fields
+    // Format data properly for API submission
     const processedData = {
       ...taskData,
-      description: taskData.description || null,
-      dueDate: taskData.dueDate || null,
+      status: taskData.status || "pending",
+      description: (taskData.description && taskData.description.trim() !== "") ? taskData.description : null,
+      dueDate: (taskData.dueDate && taskData.dueDate.trim() !== "") ? taskData.dueDate : null,
       assignedTo: taskData.assignedTo || null
     };
     
+    console.log("Updating task data:", processedData);
     const response = await apiRequest("PUT", `/api/tasks/${taskId}`, processedData);
     const updatedTask = await response.json();
     
@@ -91,18 +96,21 @@ export async function updateTask(taskId: number, taskData: any): Promise<Task> {
     return updatedTask;
   } catch (error) {
     console.error("Error updating task:", error);
-    throw new Error("Failed to update task");
+    throw error; // Preserve the original error for better debugging
   }
 }
 
 export async function createGuest(guestData: any): Promise<Guest> {
   try {
-    // Make sure status is never undefined
+    // Format data properly for API submission
     const processedData = {
-      ...guestData,
+      name: guestData.name.trim(),
+      email: guestData.email.trim(),
+      eventId: guestData.eventId,
       status: guestData.status || "invited" // Default value if not provided
     };
     
+    console.log("Submitting guest data:", processedData);
     const response = await apiRequest("POST", "/api/guests", processedData);
     const newGuest = await response.json();
     
@@ -112,6 +120,6 @@ export async function createGuest(guestData: any): Promise<Guest> {
     return newGuest;
   } catch (error) {
     console.error("Error creating guest:", error);
-    throw new Error("Failed to create guest");
+    throw error; // Preserve the original error for better debugging
   }
 }

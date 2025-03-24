@@ -224,12 +224,20 @@ export class MemStorage implements IStorage {
   async createTask(insertTask: InsertTask): Promise<Task> {
     const id = this.currentTaskId++;
     const now = new Date();
+    
+    // Ensure all required fields are set and optional fields are properly null
     const task: Task = {
-      ...insertTask,
+      title: insertTask.title,
+      eventId: insertTask.eventId,
+      description: insertTask.description ?? null,
+      status: insertTask.status ?? "pending",
+      dueDate: insertTask.dueDate ?? null,
+      assignedTo: insertTask.assignedTo ?? null,
       id,
       createdAt: now,
       updatedAt: now
     };
+    
     this.tasks.set(id, task);
     return task;
   }
@@ -238,9 +246,19 @@ export class MemStorage implements IStorage {
     const task = this.tasks.get(id);
     if (!task) return undefined;
     
+    // Make sure we don't store undefined values
+    const processedData = {
+      ...(taskData.eventId !== undefined ? { eventId: taskData.eventId } : {}),
+      ...(taskData.title !== undefined ? { title: taskData.title } : {}),
+      ...(taskData.status !== undefined ? { status: taskData.status } : {}),
+      description: taskData.description ?? task.description,
+      dueDate: taskData.dueDate ?? task.dueDate,
+      assignedTo: taskData.assignedTo ?? task.assignedTo
+    };
+    
     const updatedTask: Task = {
       ...task,
-      ...taskData,
+      ...processedData,
       updatedAt: new Date()
     };
     
