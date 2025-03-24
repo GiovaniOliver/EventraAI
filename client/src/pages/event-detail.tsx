@@ -32,6 +32,7 @@ import {
   ArrowLeft,
   ArrowRight,
   TrendingUp,
+  TrendingDown,
   Calendar,
   Check,
   CheckCircle,
@@ -39,6 +40,7 @@ import {
   Clock,
   DollarSign,
   Edit,
+  Lightbulb,
   MapPin,
   MoreVertical,
   Plus,
@@ -908,22 +910,227 @@ export default function EventDetail() {
             
             {/* Budget tab */}
             <TabsContent value="budget">
-              <div className="text-center py-10">
-                <p className="text-gray-500 mb-4">Budget tracking coming soon</p>
+              <div className="mb-4 flex justify-between items-center">
+                <h3 className="text-lg font-medium">Event Budget</h3>
                 {event.budget ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <h3 className="text-xl font-semibold text-center mb-4">Total Budget</h3>
-                      <div className="text-3xl font-bold text-center text-primary-600">${event.budget}</div>
-                    </CardContent>
-                  </Card>
+                  <div className="flex space-x-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={handleOptimizeBudget}
+                      disabled={isOptimizingBudget}
+                    >
+                      <Sparkles className="h-4 w-4 mr-1" />
+                      {isOptimizingBudget ? 'Optimizing...' : 'AI Budget Optimization'}
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setShowAddBudgetItemDialog(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Budget Item
+                    </Button>
+                  </div>
                 ) : (
-                  <Button onClick={() => setIsEditing(true)}>
+                  <Button 
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                  >
                     <Edit className="h-4 w-4 mr-1" />
                     Set Budget
                   </Button>
                 )}
               </div>
+              
+              {event.budget ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <Card>
+                      <CardContent className="p-6">
+                        <h3 className="text-xl font-semibold text-center mb-4">Total Budget</h3>
+                        <div className="text-3xl font-bold text-center text-primary-600">${event.budget}</div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardContent className="p-6">
+                        <h3 className="text-xl font-semibold text-center mb-4">Budget Allocated</h3>
+                        <div className="text-3xl font-bold text-center text-primary-600">
+                          ${budgetItems.reduce((total, item) => total + item.amount, 0)}
+                        </div>
+                        <div className="mt-2">
+                          <Progress 
+                            value={(budgetItems.reduce((total, item) => total + item.amount, 0) / event.budget) * 100} 
+                            className="h-2"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                  
+                  {/* Budget Allocation Section */}
+                  <div className="space-y-4 mb-6">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-medium">Budget Allocation</h4>
+                      {optimizedBudget.length > 0 && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-green-600 font-medium flex items-center">
+                            <TrendingDown className="h-4 w-4 mr-1" />
+                            Potential Savings: ${budgetOptimization?.savings || 0}
+                          </span>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-xs h-7"
+                            onClick={() => setCurrentBudgetView(currentBudgetView === 'current' ? 'optimized' : 'current')}
+                          >
+                            {currentBudgetView === 'current' ? 'View Optimized' : 'View Current'}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {currentBudgetView === 'current' ? (
+                      // Current Budget Items
+                      budgetItems.length > 0 ? (
+                        <div className="space-y-3">
+                          {budgetItems.map((item) => (
+                            <Card key={item.id} className="overflow-hidden">
+                              <div className="flex">
+                                <div 
+                                  className="w-1 h-auto" 
+                                  style={{ 
+                                    backgroundColor: stringToColor(item.category)
+                                  }}
+                                />
+                                <CardContent className="p-4 flex-1">
+                                  <div className="flex justify-between items-center">
+                                    <div>
+                                      <h5 className="font-medium">{item.category}</h5>
+                                      <p className="text-sm text-gray-500">{item.notes}</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <div className="text-lg font-medium">${item.amount}</div>
+                                      <div className="text-xs text-gray-500">
+                                        {((item.amount / event.budget) * 100).toFixed(1)}% of budget
+                                      </div>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                          <p className="text-gray-500 mb-4">No budget items added yet</p>
+                          <Button 
+                            onClick={() => setShowAddBudgetItemDialog(true)}
+                            size="sm"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add First Budget Item
+                          </Button>
+                        </div>
+                      )
+                    ) : (
+                      // Optimized Budget Items
+                      <div className="space-y-3">
+                        {optimizedBudget.map((item, index) => (
+                          <Card key={index} className="overflow-hidden">
+                            <div className="flex">
+                              <div 
+                                className="w-1 h-auto" 
+                                style={{ 
+                                  backgroundColor: stringToColor(item.category)
+                                }}
+                              />
+                              <CardContent className="p-4 flex-1">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <h5 className="font-medium">{item.category}</h5>
+                                    <p className="text-sm text-gray-500">{item.notes}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-lg font-medium">${item.estimatedAmount}</div>
+                                    <div className="text-xs text-gray-500">
+                                      {(item.percentage * 100).toFixed(1)}% of budget
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* AI Budget Insights */}
+                  {budgetOptimization && budgetOptimization.insights.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="font-medium mb-3 flex items-center">
+                        <Sparkles className="h-4 w-4 mr-2 text-primary-500" />
+                        AI Budget Insights
+                      </h4>
+                      <div className="space-y-2 bg-primary-50 p-4 rounded-lg border border-primary-100">
+                        {budgetOptimization.insights.map((insight, index) => (
+                          <div key={index} className="flex items-start">
+                            <div className="bg-white shadow-sm p-1 rounded-full mr-2 mt-0.5">
+                              <Lightbulb className="h-3 w-3 text-amber-500" />
+                            </div>
+                            <p className="text-sm text-gray-700">{insight}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Budget Recommendations */}
+                  {budgetOptimization && budgetOptimization.recommendations.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-3">Cost Saving Recommendations</h4>
+                      <div className="space-y-3">
+                        {budgetOptimization.recommendations.map((rec, index) => (
+                          <Card key={index}>
+                            <CardContent className="p-4">
+                              <div className="flex items-start">
+                                <div className={`w-2 h-2 mt-2 mr-3 rounded-full ${
+                                  rec.priority === 'high' 
+                                    ? 'bg-red-500' 
+                                    : rec.priority === 'medium' 
+                                      ? 'bg-amber-500' 
+                                      : 'bg-green-500'
+                                }`} />
+                                <div className="flex-1">
+                                  <div className="flex justify-between items-start">
+                                    <h5 className="font-medium">{rec.title}</h5>
+                                    <Badge variant="outline" className="ml-2">
+                                      Save ${rec.potentialSavings}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mt-1">{rec.description}</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                  <p className="text-gray-500 mb-4">
+                    Set a budget to start tracking your event expenses and get AI-powered optimization suggestions.
+                  </p>
+                  <Button onClick={() => setIsEditing(true)}>
+                    <Edit className="h-4 w-4 mr-1" />
+                    Set Budget
+                  </Button>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
           
