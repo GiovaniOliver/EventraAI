@@ -433,6 +433,11 @@ export default function Events() {
         isOpen={showNewEventModal} 
         onClose={closeNewEventModal} 
       />
+      
+      <PlanningWizard
+        isOpen={showPlanningWizard}
+        onClose={closePlanningWizard}
+      />
     </div>
   );
 }
