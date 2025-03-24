@@ -508,10 +508,7 @@ export default function EventDetail() {
     try {
       const result = await optimizeEventBudget(
         event,
-        budgetItems,
-        {
-          guestCount: event.estimatedGuests || undefined
-        }
+        budgetItems
       );
       
       setBudgetOptimization(result);
@@ -1121,7 +1118,7 @@ export default function EventDetail() {
                                     <div className="text-right">
                                       <div className="text-lg font-medium">${item.amount}</div>
                                       <div className="text-xs text-gray-500">
-                                        {((item.amount / event.budget) * 100).toFixed(1)}% of budget
+                                        {event.budget ? ((item.amount / event.budget) * 100).toFixed(1) : "0"}% of budget
                                       </div>
                                     </div>
                                   </div>
@@ -1464,6 +1461,71 @@ export default function EventDetail() {
             </Button>
             <Button onClick={handleCreateGuest}>
               Add Guest
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add budget item dialog */}
+      <Dialog open={showAddBudgetItemDialog} onOpenChange={setShowAddBudgetItemDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Budget Item</DialogTitle>
+            <DialogDescription>
+              Add a new item to your event budget
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="budget-category">Category</Label>
+              <Input
+                id="budget-category"
+                placeholder="e.g., Venue, Food, Entertainment"
+                value={newBudgetItem.category}
+                onChange={(e) => setNewBudgetItem({
+                  ...newBudgetItem, 
+                  category: e.target.value
+                })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="budget-amount">Amount ($)</Label>
+              <Input
+                id="budget-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={newBudgetItem.amount}
+                onChange={(e) => setNewBudgetItem({
+                  ...newBudgetItem, 
+                  amount: parseFloat(e.target.value) || 0
+                })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="budget-notes">Notes (Optional)</Label>
+              <Textarea
+                id="budget-notes"
+                placeholder="Add details about this budget item"
+                value={newBudgetItem.notes}
+                onChange={(e) => setNewBudgetItem({
+                  ...newBudgetItem, 
+                  notes: e.target.value
+                })}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddBudgetItemDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateBudgetItem}>
+              Add Item
             </Button>
           </DialogFooter>
         </DialogContent>
