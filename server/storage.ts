@@ -9,6 +9,8 @@ import {
   userPreferences,
   eventAnalytics,
   attendeeFeedback,
+  subscriptionPlans,
+  transactions,
   type User, 
   type InsertUser, 
   type Event,
@@ -28,7 +30,11 @@ import {
   type EventAnalytics,
   type InsertEventAnalytics,
   type AttendeeFeedback,
-  type InsertAttendeeFeedback
+  type InsertAttendeeFeedback,
+  type SubscriptionPlan,
+  type InsertSubscriptionPlan,
+  type Transaction,
+  type InsertTransaction
 } from "@shared/schema";
 
 // Define storage interface
@@ -37,6 +43,11 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
+  getAdminUsers(): Promise<User[]>;
+  createAdminUser(user: InsertUser): Promise<User>;
+  updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
+  updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined>;
   
   // Event methods
   getEvent(id: number): Promise<Event | undefined>;
@@ -103,6 +114,19 @@ export interface IStorage {
     recommendationPercentage: number;
     totalFeedbackCount: number;
   }>;
+  
+  // Subscription Plan methods
+  getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined>;
+  getSubscriptionPlanByName(name: string): Promise<SubscriptionPlan | undefined>;
+  getAllSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  getActiveSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
+  updateSubscriptionPlan(id: number, planData: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan | undefined>;
+  
+  // Transaction methods
+  getTransaction(id: number): Promise<Transaction | undefined>;
+  getUserTransactions(userId: number): Promise<Transaction[]>;
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
 }
 
 // Implement in-memory storage
@@ -115,6 +139,8 @@ export class MemStorage implements IStorage {
   private eventVendors: Map<number, EventVendor>;
   private planningTips: Map<number, PlanningTip>;
   private userPreferences: Map<number, UserPreference>;
+  private subscriptionPlans: Map<number, SubscriptionPlan>;
+  private transactions: Map<number, Transaction>;
   
   // ID counters for generating primary keys
   private currentUserId: number;
@@ -125,6 +151,8 @@ export class MemStorage implements IStorage {
   private currentEventVendorId: number;
   private currentPlanningTipId: number;
   private currentUserPreferenceId: number;
+  private currentSubscriptionPlanId: number;
+  private currentTransactionId: number;
 
   constructor() {
     this.users = new Map();
@@ -137,6 +165,8 @@ export class MemStorage implements IStorage {
     this.userPreferences = new Map();
     this.eventAnalytics = new Map();
     this.attendeeFeedback = new Map();
+    this.subscriptionPlans = new Map();
+    this.transactions = new Map();
     
     this.currentUserId = 1;
     this.currentEventId = 1;
@@ -148,6 +178,8 @@ export class MemStorage implements IStorage {
     this.currentUserPreferenceId = 1;
     this.currentEventAnalyticsId = 1;
     this.currentAttendeeFeedbackId = 1;
+    this.currentSubscriptionPlanId = 1;
+    this.currentTransactionId = 1;
     
     // Initialize with some planning tips
     this.initPlanningTips();
