@@ -23,7 +23,7 @@ export async function createEvent(eventData: any): Promise<Event> {
     };
     
     const response = await apiRequest("POST", "/api/events", eventDataToSend);
-    const newEvent = await response.json();
+    const newEvent = await response.json() as Event;
     
     // Invalidate events cache
     queryClient.invalidateQueries({ queryKey: [`/api/users/${eventData.ownerId}/events`] });
@@ -45,7 +45,7 @@ export async function updateEvent(eventId: number, eventData: any): Promise<Even
     };
     
     const response = await apiRequest("PUT", `/api/events/${eventId}`, eventDataToSend);
-    const updatedEvent = await response.json();
+    const updatedEvent = await response.json() as Event;
     
     // Invalidate event cache and events list
     queryClient.invalidateQueries({ queryKey: [`/api/events/${eventId}`] });
@@ -86,7 +86,7 @@ export async function createTask(taskData: any): Promise<Task> {
     
     console.log("Submitting task data:", processedData);
     const response = await apiRequest("POST", "/api/tasks", processedData);
-    const newTask = await response.json();
+    const newTask = await response.json() as Task;
     
     // Invalidate tasks cache for the event
     queryClient.invalidateQueries({ queryKey: [`/api/events/${taskData.eventId}/tasks`] });
@@ -111,7 +111,7 @@ export async function updateTask(taskId: number, taskData: any): Promise<Task> {
     
     console.log("Updating task data:", processedData);
     const response = await apiRequest("PUT", `/api/tasks/${taskId}`, processedData);
-    const updatedTask = await response.json();
+    const updatedTask = await response.json() as Task;
     
     // Invalidate tasks cache for the event
     if (taskData.eventId) {
@@ -137,7 +137,7 @@ export async function createGuest(guestData: any): Promise<Guest> {
     
     console.log("Submitting guest data:", processedData);
     const response = await apiRequest("POST", "/api/guests", processedData);
-    const newGuest = await response.json();
+    const newGuest = await response.json() as Guest;
     
     // Invalidate guests cache for the event
     queryClient.invalidateQueries({ queryKey: [`/api/events/${guestData.eventId}/guests`] });
