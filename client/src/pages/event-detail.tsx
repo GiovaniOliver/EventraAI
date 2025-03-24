@@ -937,6 +937,65 @@ export default function EventDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Add guest dialog */}
+      <Dialog open={showAddGuestDialog} onOpenChange={setShowAddGuestDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Guest</DialogTitle>
+            <DialogDescription>
+              Invite a new guest to your event
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="guest-name">Guest Name</Label>
+              <Input
+                id="guest-name"
+                value={newGuest.name}
+                onChange={(e) => setNewGuest({...newGuest, name: e.target.value})}
+                placeholder="Enter guest name"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="guest-email">Email Address</Label>
+              <Input
+                id="guest-email"
+                type="email"
+                value={newGuest.email}
+                onChange={(e) => setNewGuest({...newGuest, email: e.target.value})}
+                placeholder="Enter guest email"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="guest-status">Status</Label>
+              <select
+                id="guest-status"
+                className="w-full p-2 border rounded mt-1"
+                value={newGuest.status}
+                onChange={(e) => setNewGuest({...newGuest, status: e.target.value})}
+              >
+                <option value="invited">Invited</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="declined">Declined</option>
+                <option value="tentative">Tentative</option>
+              </select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddGuestDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateGuest}>
+              Add Guest
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
