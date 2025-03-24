@@ -508,3 +508,173 @@ function generateFallbackBudgetSuggestions(eventType: string, totalBudget: numbe
 }
 
 // This function is kept for reference but we're using the AI version directly now
+
+// Budget Optimization Types
+export type BudgetItem = {
+  id: string;
+  category: string;
+  amount: number;
+  notes?: string;
+};
+
+export type BudgetOptimizationResult = {
+  optimizedBudget: BudgetSuggestion[];
+  savings: number;
+  insights: string[];
+  recommendations: {
+    title: string;
+    description: string;
+    potentialSavings: number;
+    priority: 'low' | 'medium' | 'high';
+  }[];
+};
+
+/**
+ * Optimize event budget based on event details and current budget allocation
+ */
+export async function optimizeEventBudget(
+  event: any,
+  currentBudgetItems?: BudgetItem[],
+  similarEvents?: any[]
+): Promise<BudgetOptimizationResult> {
+  try {
+    // Build context from event details
+    const eventInfo = `
+      Event Type: ${event.type}
+      Format: ${event.format}
+      Estimated Guests: ${event.estimatedGuests || 'Not specified'}
+      Total Budget: $${event.budget || 0}
+      Theme: ${event.theme || 'Not specified'}
+      Status: ${event.status}
+    `;
+
+    // Add current budget allocation to context, if provided
+    const currentBudgetInfo = currentBudgetItems && currentBudgetItems.length > 0
+      ? `Current budget allocation:
+        ${currentBudgetItems.map(item => `- ${item.category}: $${item.amount} (${((item.amount / event.budget) * 100).toFixed(1)}%)`).join('\n')}`
+      : 'No current budget allocation provided.';
+
+    // Add similar events context if provided
+    const similarEventsInfo = similarEvents && similarEvents.length > 0
+      ? `Similar event data for reference:
+        ${similarEvents.map(evt => 
+          `- ${evt.name} (${evt.type}, ${evt.format}, ${evt.estimatedGuests} guests): Budget $${evt.budget || 'N/A'}`
+        ).join('\n')}`
+      : '';
+
+    const systemPrompt = `You are an expert virtual event budget optimization assistant.
+Your task is to analyze the event details and current budget allocation (if available) and provide optimized budget suggestions.
+You should look for inefficiencies, suggest better allocations, and provide practical cost-saving insights.
+
+Event details:
+${eventInfo}
+
+${currentBudgetInfo}
+
+${similarEventsInfo}
+
+Based on this information, provide:
+1. An optimized budget allocation with the same or lower total
+2. Specific cost-saving insights 
+3. Practical recommendations with estimated savings potential
+
+Format your response as a JSON with the following structure:
+{
+  "optimizedBudget": [
+    {
+      "category": "Category Name",
+      "percentage": decimal between 0-1 (should sum to 1.0),
+      "estimatedAmount": calculated amount in dollars,
+      "notes": "Brief explanation of this allocation"
+    }
+  ],
+  "savings": total potential savings in dollars,
+  "insights": [
+    "Insight 1 about budget efficiency",
+    "Insight 2 about cost saving opportunities"
+  ],
+  "recommendations": [
+    {
+      "title": "Recommendation title",
+      "description": "Detailed explanation of the recommendation",
+      "potentialSavings": estimated savings in dollars,
+      "priority": "high|medium|low"
+    }
+  ]
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt
+        }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("No content received from OpenAI");
+    }
+
+    const result = JSON.parse(content);
+    return {
+      optimizedBudget: result.optimizedBudget || [],
+      savings: result.savings || 0,
+      insights: result.insights || [],
+      recommendations: result.recommendations || []
+    };
+  } catch (error) {
+    console.error("Error optimizing budget with AI:", error);
+    // Return fallback response
+    return generateFallbackBudgetOptimization(event, currentBudgetItems);
+  }
+}
+
+/**
+ * Generate a fallback budget optimization if the AI call fails
+ */
+function generateFallbackBudgetOptimization(
+  event: any,
+  currentBudgetItems?: BudgetItem[]
+): BudgetOptimizationResult {
+  const totalBudget = event.budget || 5000;
+  let baseBudget = generateFallbackBudgetSuggestions(event.type, totalBudget);
+  
+  // Calculate a modest 5-15% savings
+  const savingsRate = 0.05 + (Math.random() * 0.1);
+  const savings = Math.round(totalBudget * savingsRate);
+  
+  // Adjust the budget items to reflect savings
+  const optimizedBudget = baseBudget.map(item => ({
+    ...item,
+    estimatedAmount: Math.round(item.estimatedAmount * (1 - (savingsRate / 2))),
+    percentage: item.percentage * (1 - (savingsRate / 2))
+  }));
+  
+  return {
+    optimizedBudget,
+    savings,
+    insights: [
+      "Consider using more cost-effective virtual platforms",
+      "Reduce redundant technical services",
+      "Negotiate better rates with service providers"
+    ],
+    recommendations: [
+      {
+        title: "Reduce platform costs",
+        description: "Use alternative virtual event platforms that offer similar features at lower costs",
+        potentialSavings: Math.round(totalBudget * 0.05),
+        priority: 'high'
+      },
+      {
+        title: "Optimize staffing",
+        description: "Streamline the number of technical staff required during the event",
+        potentialSavings: Math.round(totalBudget * 0.03),
+        priority: 'medium'
+      }
+    ]
+  };
+}

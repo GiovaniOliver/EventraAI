@@ -98,3 +98,43 @@ export async function getEventImprovements(
     throw new Error("Failed to get event improvement suggestions");
   }
 }
+
+export interface BudgetItem {
+  id: string;
+  category: string;
+  amount: number;
+  notes?: string;
+}
+
+export interface BudgetOptimizationRecommendation {
+  title: string;
+  description: string;
+  potentialSavings: number;
+  priority: 'low' | 'medium' | 'high';
+}
+
+export interface BudgetOptimizationResult {
+  optimizedBudget: BudgetSuggestion[];
+  savings: number;
+  insights: string[];
+  recommendations: BudgetOptimizationRecommendation[];
+}
+
+export async function optimizeEventBudget(
+  event: Event,
+  currentBudgetItems?: BudgetItem[],
+  similarEvents?: Event[]
+): Promise<BudgetOptimizationResult> {
+  try {
+    const response = await apiRequest(
+      "POST",
+      "/api/ai/optimize-budget",
+      { event, currentBudgetItems, similarEvents }
+    );
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error optimizing budget:", error);
+    throw new Error("Failed to optimize budget");
+  }
+}

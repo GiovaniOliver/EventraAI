@@ -11,7 +11,13 @@ import {
   insertEventVendorSchema,
   insertUserPreferenceSchema
 } from "@shared/schema";
-import { generateAiSuggestions, openai, MODEL } from "./services/ai-service";
+import { 
+  generateAiSuggestions, 
+  optimizeEventBudget, 
+  BudgetItem, 
+  openai, 
+  MODEL 
+} from "./services/ai-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // All routes are prefixed with /api
@@ -399,6 +405,39 @@ Format your response as a JSON array of improvement objects with the following s
       console.error("AI event improvement error:", error);
       return res.status(500).json({ 
         message: "Failed to generate event improvement suggestions",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // AI Budget Optimization
+  app.post("/api/ai/optimize-budget", async (req, res) => {
+    try {
+      const { event, currentBudgetItems, similarEvents } = req.body;
+      
+      if (!event || !event.id) {
+        return res.status(400).json({ message: "Valid event data is required" });
+      }
+      
+      // Ensure budget is available
+      if (!event.budget) {
+        return res.status(400).json({ 
+          message: "Event must have a budget to optimize" 
+        });
+      }
+      
+      // Get budget optimization recommendations
+      const optimizationResult = await optimizeEventBudget(
+        event,
+        currentBudgetItems,
+        similarEvents
+      );
+      
+      return res.json(optimizationResult);
+    } catch (error) {
+      console.error("Budget optimization error:", error);
+      return res.status(500).json({ 
+        message: "Failed to generate budget optimization",
         error: error instanceof Error ? error.message : String(error)
       });
     }
