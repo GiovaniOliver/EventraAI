@@ -22,23 +22,32 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
-  Calendar,
-  Clock,
-  Users,
-  DollarSign,
-  MapPin,
-  Edit,
-  Trash2,
-  CheckCircle,
-  X,
-  Plus,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "@/components/ui/collapsible";
+import {
   ArrowLeft,
-  Sparkles,
-  Share2,
+  ArrowRight,
+  TrendingUp,
+  Calendar,
+  Check,
+  CheckCircle,
+  ChevronDown,
+  Clock,
+  DollarSign,
+  Edit,
+  MapPin,
   MoreVertical,
+  Plus,
+  Share2,
+  Sparkles,
   Tag,
-  CalendarClock,
+  Trash2,
+  Users,
+  X,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -783,7 +792,7 @@ export default function EventDetail() {
                             
                             {task.dueDate && (
                               <div className="flex items-center text-xs text-gray-500">
-                                <CalendarClock className="h-3 w-3 mr-1" />
+                                <Calendar className="h-3 w-3 mr-1" />
                                 <span>Due: {format(new Date(task.dueDate), 'MMM d, yyyy')}</span>
                               </div>
                             )}
@@ -942,7 +951,7 @@ export default function EventDetail() {
                           'bg-green-100 text-green-600'
                         }`}>
                           {suggestion.impact === 'high' ? (
-                            <ArrowTrendingUp className="h-4 w-4" />
+                            <TrendingUp className="h-4 w-4" />
                           ) : suggestion.impact === 'medium' ? (
                             <ArrowRight className="h-4 w-4" />
                           ) : (
