@@ -183,6 +183,77 @@ export class MemStorage implements IStorage {
     
     // Initialize with some planning tips
     this.initPlanningTips();
+    
+    // Initialize default subscription plans
+    this.initSubscriptionPlans();
+  }
+  
+  // Initialize default subscription plans
+  private initSubscriptionPlans() {
+    const plans: InsertSubscriptionPlan[] = [
+      {
+        name: "free",
+        displayName: "Free Plan",
+        description: "Basic features for personal use",
+        price: 0,
+        billingCycle: "monthly",
+        features: JSON.stringify([
+          "Up to 3 virtual events",
+          "Basic analytics",
+          "Standard templates"
+        ]),
+        isActive: true
+      },
+      {
+        name: "pro",
+        displayName: "Pro Plan",
+        description: "Advanced features for professionals",
+        price: 19.99,
+        billingCycle: "monthly",
+        features: JSON.stringify([
+          "Unlimited virtual events",
+          "Advanced analytics",
+          "Premium templates",
+          "Priority support",
+          "Custom branding"
+        ]),
+        isActive: true
+      },
+      {
+        name: "business",
+        displayName: "Business Plan",
+        description: "Full-featured solution for businesses",
+        price: 49.99,
+        billingCycle: "monthly",
+        features: JSON.stringify([
+          "Everything in Pro",
+          "Dedicated support",
+          "Team collaboration",
+          "API access",
+          "White labeling",
+          "Custom integrations"
+        ]),
+        isActive: true
+      },
+      {
+        name: "enterprise",
+        displayName: "Enterprise Plan",
+        description: "Custom solution for large organizations",
+        price: 199.99,
+        billingCycle: "monthly",
+        features: JSON.stringify([
+          "Everything in Business",
+          "Dedicated account manager",
+          "Custom development",
+          "SLA guarantees",
+          "Advanced security features",
+          "Bulk event management"
+        ]),
+        isActive: true
+      }
+    ];
+    
+    plans.forEach(plan => this.createSubscriptionPlan(plan));
   }
 
   // Initialize with some default planning tips
@@ -228,9 +299,65 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser, 
       id, 
+      isAdmin: insertUser.isAdmin ?? false,
+      stripeCustomerId: null,
+      subscriptionTier: insertUser.subscriptionTier ?? "free",
+      subscriptionStatus: "active",
       createdAt: now
     };
     this.users.set(id, user);
+    return user;
+  }
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser: User = {
+      ...user,
+      ...userData
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async getAdminUsers(): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => user.isAdmin === true);
+  }
+  
+  async createAdminUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentUserId++;
+    const now = new Date();
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      isAdmin: true,
+      stripeCustomerId: null,
+      subscriptionTier: "enterprise",
+      subscriptionStatus: "active",
+      createdAt: now
+    };
+    this.users.set(id, user);
+    return user;
+  }
+  
+  async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    user.stripeCustomerId = customerId;
+    this.users.set(userId, user);
+    return user;
+  }
+  
+  async updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    user.subscriptionTier = tier;
+    user.subscriptionStatus = status;
+    this.users.set(userId, user);
     return user;
   }
 
@@ -635,6 +762,77 @@ export class MemStorage implements IStorage {
       recommendationPercentage: (recommendCount / feedbacks.length) * 100,
       totalFeedbackCount: feedbacks.length
     };
+  }
+  
+  // Subscription Plan methods
+  async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
+    return this.subscriptionPlans.get(id);
+  }
+  
+  async getSubscriptionPlanByName(name: string): Promise<SubscriptionPlan | undefined> {
+    return Array.from(this.subscriptionPlans.values()).find(
+      (plan) => plan.name === name
+    );
+  }
+  
+  async getAllSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return Array.from(this.subscriptionPlans.values());
+  }
+  
+  async getActiveSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return Array.from(this.subscriptionPlans.values()).filter(
+      (plan) => plan.isActive === true
+    );
+  }
+  
+  async createSubscriptionPlan(insertPlan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
+    const id = this.currentSubscriptionPlanId++;
+    const now = new Date();
+    const plan: SubscriptionPlan = {
+      ...insertPlan,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.subscriptionPlans.set(id, plan);
+    return plan;
+  }
+  
+  async updateSubscriptionPlan(id: number, planData: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan | undefined> {
+    const plan = this.subscriptionPlans.get(id);
+    if (!plan) return undefined;
+    
+    const updatedPlan: SubscriptionPlan = {
+      ...plan,
+      ...planData,
+      updatedAt: new Date()
+    };
+    
+    this.subscriptionPlans.set(id, updatedPlan);
+    return updatedPlan;
+  }
+  
+  // Transaction methods
+  async getTransaction(id: number): Promise<Transaction | undefined> {
+    return this.transactions.get(id);
+  }
+  
+  async getUserTransactions(userId: number): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      (transaction) => transaction.userId === userId
+    );
+  }
+  
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const id = this.currentTransactionId++;
+    const now = new Date();
+    const transaction: Transaction = {
+      ...insertTransaction,
+      id,
+      createdAt: now
+    };
+    this.transactions.set(id, transaction);
+    return transaction;
   }
 }
 
