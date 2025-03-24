@@ -85,6 +85,8 @@ export default function EventDetail() {
   });
   const [suggestedTasks, setSuggestedTasks] = useState<any[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [improvementSuggestions, setImprovementSuggestions] = useState<ImprovementSuggestion[]>([]);
+  const [isLoadingImprovements, setIsLoadingImprovements] = useState(false);
   
   // Fetch event details
   const {
@@ -315,6 +317,38 @@ export default function EventDetail() {
       eventId: eventId,
       dueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null
     });
+  };
+  
+  // Handle generating AI improvement suggestions
+  const handleGenerateImprovementSuggestions = async () => {
+    if (!event) return;
+    
+    setIsLoadingImprovements(true);
+    try {
+      const improvements = await getEventImprovements(event);
+      
+      if (improvements && improvements.length > 0) {
+        setImprovementSuggestions(improvements);
+        toast({
+          title: "AI Assistant",
+          description: `Generated ${improvements.length} suggestions to improve your event`
+        });
+      } else {
+        toast({
+          title: "No Suggestions",
+          description: "Couldn't generate improvement suggestions for this event"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate improvement suggestions",
+        variant: "destructive"
+      });
+      console.error("Error generating improvement suggestions:", error);
+    } finally {
+      setIsLoadingImprovements(false);
+    }
   };
   
   // Create guest mutation
@@ -862,6 +896,99 @@ export default function EventDetail() {
               </div>
             </TabsContent>
           </Tabs>
+          
+          {/* AI Event Improvement Assistant */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium flex items-center">
+                <Sparkles className="h-5 w-5 mr-2 text-primary" />
+                AI Event Assistant
+              </h3>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleGenerateImprovementSuggestions}
+                disabled={isLoadingImprovements}
+              >
+                {isLoadingImprovements ? 'Generating...' : 'Get Event Recommendations'}
+              </Button>
+            </div>
+            
+            {improvementSuggestions.length === 0 ? (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <Sparkles className="h-8 w-8 mb-2 mx-auto text-primary/60" />
+                  <h4 className="text-lg font-medium mb-2">Event Improvement Suggestions</h4>
+                  <p className="text-gray-500 mb-4">
+                    Get AI-powered recommendations to enhance your virtual event experience.
+                  </p>
+                  <Button 
+                    onClick={handleGenerateImprovementSuggestions}
+                    disabled={isLoadingImprovements}
+                  >
+                    {isLoadingImprovements ? 'Generating...' : 'Generate Suggestions'}
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {improvementSuggestions.map((suggestion, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 mt-1 ${
+                          suggestion.impact === 'high' ? 'bg-red-100 text-red-600' : 
+                          suggestion.impact === 'medium' ? 'bg-amber-100 text-amber-600' : 
+                          'bg-green-100 text-green-600'
+                        }`}>
+                          {suggestion.impact === 'high' ? (
+                            <ArrowTrendingUp className="h-4 w-4" />
+                          ) : suggestion.impact === 'medium' ? (
+                            <ArrowRight className="h-4 w-4" />
+                          ) : (
+                            <Check className="h-4 w-4" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <h5 className="font-semibold">{suggestion.title}</h5>
+                            <Badge variant="outline" className="capitalize">
+                              {suggestion.area}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">{suggestion.description}</p>
+                          
+                          <Collapsible>
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" size="sm" className="px-0 h-auto text-xs">
+                                <ChevronDown className="h-3 w-3 mr-1" />
+                                Implementation Details
+                              </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="mt-2 border-l-2 border-gray-200 pl-4 text-sm text-gray-600">
+                                <p className="mb-2">{suggestion.implementation}</p>
+                                {suggestion.resources && suggestion.resources.length > 0 && (
+                                  <div className="mt-2">
+                                    <p className="font-medium text-xs uppercase text-gray-500 mb-1">Resources</p>
+                                    <ul className="list-disc list-inside text-primary space-y-1">
+                                      {suggestion.resources.map((resource, i) => (
+                                        <li key={i}>{resource}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </>
       )}
       
