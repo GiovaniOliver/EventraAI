@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import EventVendors from "@/components/events/event-vendors";
 import {
   Collapsible,
   CollapsibleContent,
@@ -883,6 +884,7 @@ export default function EventDetail() {
               <TabsTrigger value="tasks" className="flex-1">Tasks</TabsTrigger>
               <TabsTrigger value="guests" className="flex-1">Guests</TabsTrigger>
               <TabsTrigger value="budget" className="flex-1">Budget</TabsTrigger>
+              <TabsTrigger value="vendors" className="flex-1">Vendors</TabsTrigger>
             </TabsList>
             
             {/* Tasks tab */}
@@ -1312,6 +1314,11 @@ export default function EventDetail() {
                   </Button>
                 </div>
               )}
+            </TabsContent>
+            
+            {/* Vendors tab */}
+            <TabsContent value="vendors">
+              {event && <EventVendors event={event} />}
             </TabsContent>
           </Tabs>
           
