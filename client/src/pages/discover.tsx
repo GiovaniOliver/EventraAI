@@ -15,6 +15,7 @@ import {
   TabsTrigger
 } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -577,481 +578,441 @@ export default function Discover() {
               <Skeleton key={j} className="h-6 w-6 rounded-full" />
             ))}
           </div>
+          <div className="flex flex-wrap gap-2">
+            {Array(3).fill(0).map((_, j) => (
+              <Skeleton key={j} className="h-5 w-16 rounded-full" />
+            ))}
+          </div>
         </CardContent>
-        <CardFooter>
-          <Skeleton className="h-9 w-full" />
+        <CardFooter className="pt-2 flex justify-between">
+          <Skeleton className="h-8 w-20" />
+          <Skeleton className="h-8 w-28" />
         </CardFooter>
       </Card>
     ));
   };
-
+  
   return (
-    <div className="px-4 pt-4 pb-16">
-      <div className="mb-4">
-        <h2 className="text-2xl font-semibold mb-1">Discover</h2>
-        <p className="text-gray-600">Explore ideas and recommendations for your events</p>
+    <div className="container mx-auto py-6 max-w-6xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Discover Event Ideas</h1>
+        <p className="text-gray-600">
+          Get AI-powered suggestions for your next virtual event
+        </p>
       </div>
       
-      {/* Search bar */}
-      <div className="mb-6 relative">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input 
-            placeholder="Search for themes, ideas, or tips..."
-            className="pl-10 pr-4"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6"
-              onClick={() => setSearchQuery("")}
-            >
-              <span className="sr-only">Clear search</span>
-              ✕
-            </Button>
-          )}
-        </div>
-      </div>
-      
-      <Tabs defaultValue="themes">
-        <TabsList className="w-full mb-6">
-          <TabsTrigger value="themes" className="flex-1">
-            <Palette className="h-4 w-4 mr-2 hidden sm:inline-block" />
-            Themes
-          </TabsTrigger>
-          <TabsTrigger value="ideas" className="flex-1">
-            <Sparkles className="h-4 w-4 mr-2 hidden sm:inline-block" />
-            Event Ideas
-          </TabsTrigger>
-          <TabsTrigger value="budget" ref={budgetTabRef} className="flex-1">
-            <PieChart className="h-4 w-4 mr-2 hidden sm:inline-block" />
-            Budget
-          </TabsTrigger>
-          <TabsTrigger value="tasks" className="flex-1">
-            <CheckCircle2 className="h-4 w-4 mr-2 hidden sm:inline-block" />
-            Tasks
-          </TabsTrigger>
-          <TabsTrigger value="tips" className="flex-1">
-            <Lightbulb className="h-4 w-4 mr-2 hidden sm:inline-block" />
-            Tips
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="themes">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Event Type</label>
-              <div className="flex flex-wrap gap-2">
-                {['conference', 'birthday', 'webinar', 'workshop', 'other'].map(type => (
-                  <Button
-                    key={type}
-                    variant={selectedEventType === type ? "default" : "outline"}
-                    onClick={() => setSelectedEventType(type)}
-                    size="sm"
-                    className="flex-shrink-0"
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                className="flex items-center gap-2"
-              >
-                <Sliders className="h-4 w-4" />
-                {showAdvancedOptions ? 'Hide Options' : 'Show Options'}
-              </Button>
-              
-              {themeCategories.length > 0 && (
-                <div className="relative ml-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-2"
-                    onClick={() => setSelectedThemeFilter(null)}
-                  >
-                    <Filter className="h-4 w-4" />
-                    {selectedThemeFilter ? `Filter: ${selectedThemeFilter}` : 'Filter'}
-                  </Button>
-                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg z-10 hidden group-hover:block">
-                    {themeCategories.map(category => (
-                      <Button
-                        key={category}
-                        variant="ghost"
-                        className="w-full justify-start text-left"
-                        onClick={() => setSelectedThemeFilter(category)}
-                      >
-                        {category}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Advanced Options Form */}
-          {showAdvancedOptions && (
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row gap-4 items-start">
+          <div className="w-full md:w-1/3">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Event Preferences</CardTitle>
+                <CardDescription>
+                  Select your event type to get started
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                   <div>
-                    <Label htmlFor="format" className="block mb-1">Event Format</Label>
+                    <Label htmlFor="eventType" className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      <span>Event Type</span>
+                    </Label>
                     <Select
-                      value={format}
-                      onValueChange={(value: any) => setFormat(value)}
+                      value={selectedEventType}
+                      onValueChange={setSelectedEventType}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select format" />
+                      <SelectTrigger id="eventType" className="mt-1">
+                        <SelectValue placeholder="Select event type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="virtual">Virtual</SelectItem>
-                        <SelectItem value="in-person">In-Person</SelectItem>
-                        <SelectItem value="hybrid">Hybrid</SelectItem>
+                        <SelectItem value="conference">Virtual Conference</SelectItem>
+                        <SelectItem value="workshop">Workshop</SelectItem>
+                        <SelectItem value="webinar">Webinar</SelectItem>
+                        <SelectItem value="team-building">Team Building</SelectItem>
+                        <SelectItem value="product-launch">Product Launch</SelectItem>
+                        <SelectItem value="networking">Networking Event</SelectItem>
+                        <SelectItem value="training">Training Session</SelectItem>
+                        <SelectItem value="panel-discussion">Panel Discussion</SelectItem>
+                        <SelectItem value="award-ceremony">Award Ceremony</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
                   <div>
-                    <Label htmlFor="guestCount" className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span>Number of Guests</span>
-                    </Label>
-                    <Input
-                      id="guestCount"
-                      type="number"
-                      placeholder="Enter guest count"
-                      value={guestCount}
-                      onChange={(e) => setGuestCount(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-                
-                <Button 
-                  onClick={fetchSuggestions}
-                  className="w-full"
-                >
-                  Get Personalized Suggestions
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-          
-          {isLoadingSuggestions ? (
-            renderSkeletons()
-          ) : filteredThemes && filteredThemes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredThemes.map(renderThemeCard)}
-            </div>
-          ) : (
-            <div className="text-center py-10">
-              <Lightbulb className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500">No theme suggestions found for this event type</p>
-              {searchQuery && (
-                <Button 
-                  variant="link" 
-                  onClick={() => setSearchQuery("")}
-                  className="mt-2"
-                >
-                  Clear search and try again
-                </Button>
-              )}
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="ideas">
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Event Type</label>
-              <div className="flex flex-wrap gap-2">
-                {['conference', 'birthday', 'webinar', 'workshop', 'other'].map(type => (
-                  <Button
-                    key={type}
-                    variant={selectedEventType === type ? "default" : "outline"}
-                    onClick={() => setSelectedEventType(type)}
-                    size="sm"
-                    className="flex-shrink-0"
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-              className="flex items-center gap-2"
-            >
-              <Sliders className="h-4 w-4" />
-              {showAdvancedOptions ? 'Hide Options' : 'Show Options'}
-            </Button>
-          </div>
-          
-          {/* Advanced Options Form */}
-          {showAdvancedOptions && (
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
                     <Label htmlFor="budget" className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
-                      <span>Budget ($)</span>
+                      <span>Budget (USD)</span>
                     </Label>
                     <Input
                       id="budget"
                       type="number"
-                      placeholder="Enter budget"
+                      placeholder="Enter budget amount"
                       value={budget}
                       onChange={(e) => setBudget(e.target.value)}
                       className="mt-1"
                     />
                   </div>
                   
-                  <div>
-                    <Label htmlFor="guestCount" className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span>Number of Guests</span>
-                    </Label>
-                    <Input
-                      id="guestCount"
-                      type="number"
-                      placeholder="Enter guest count"
-                      value={guestCount}
-                      onChange={(e) => setGuestCount(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
+                  <Button
+                    onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                    variant="ghost"
+                    className="w-full flex items-center justify-center"
+                  >
+                    <Sliders className="h-4 w-4 mr-2" />
+                    {showAdvancedOptions ? "Hide Advanced Options" : "Show Advanced Options"}
+                  </Button>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <Label htmlFor="format" className="block mb-1">Event Format</Label>
-                    <Select
-                      value={format}
-                      onValueChange={(value: any) => setFormat(value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select format" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="virtual">Virtual</SelectItem>
-                        <SelectItem value="in-person">In-Person</SelectItem>
-                        <SelectItem value="hybrid">Hybrid</SelectItem>
-                      </SelectContent>
-                    </Select>
+                {showAdvancedOptions && (
+                  <div className="mt-4 space-y-4 border-t pt-4">
+                    <div>
+                      <Label htmlFor="format" className="flex items-center gap-2">
+                        <PieChart className="h-4 w-4" />
+                        <span>Event Format</span>
+                      </Label>
+                      <Select
+                        value={format}
+                        onValueChange={(value: "virtual" | "in-person" | "hybrid") => setFormat(value)}
+                      >
+                        <SelectTrigger id="format" className="mt-1">
+                          <SelectValue placeholder="Select format" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="virtual">Virtual Only</SelectItem>
+                          <SelectItem value="in-person">In Person</SelectItem>
+                          <SelectItem value="hybrid">Hybrid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="duration" className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        <span>Expected Duration</span>
+                      </Label>
+                      <Select
+                        value={duration}
+                        onValueChange={setDuration}
+                      >
+                        <SelectTrigger id="duration" className="mt-1">
+                          <SelectValue placeholder="Select duration" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1-2 hours">1-2 hours</SelectItem>
+                          <SelectItem value="half-day">Half day</SelectItem>
+                          <SelectItem value="full-day">Full day</SelectItem>
+                          <SelectItem value="multi-day">Multi-day</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="guestCount" className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>Number of Guests</span>
+                      </Label>
+                      <Input
+                        id="guestCount"
+                        type="number"
+                        placeholder="Enter guest count"
+                        value={guestCount}
+                        onChange={(e) => setGuestCount(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="duration" className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>Duration</span>
-                    </Label>
-                    <Input
-                      id="duration"
-                      placeholder="e.g., 2 hours, 3 days"
-                      value={duration}
-                      onChange={(e) => setDuration(e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
+                )}
                 
-                <Button 
+                <LoadingButton 
                   onClick={fetchSuggestions}
-                  className="w-full"
+                  className="w-full mt-4"
+                  isLoading={isLoadingSuggestions}
+                  loadingText="Generating Suggestions..."
                 >
                   Get Personalized Suggestions
-                </Button>
+                </LoadingButton>
               </CardContent>
             </Card>
-          )}
+          </div>
           
-          {isLoadingSuggestions ? (
-            renderSkeletons()
-          ) : filteredEventSuggestions && filteredEventSuggestions.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredEventSuggestions.map(renderEventSuggestionCard)}
-            </div>
-          ) : (
-            <div className="text-center py-10">
-              <Lightbulb className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500">No event suggestions found for this event type</p>
-              {searchQuery && (
-                <Button 
-                  variant="link" 
-                  onClick={() => setSearchQuery("")}
-                  className="mt-2"
-                >
-                  Clear search and try again
-                </Button>
-              )}
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="budget">
-          {budget ? (
-            isLoadingSuggestions ? (
-              <div className="py-10">
-                <div className="flex justify-center mb-4">
-                  <BarChart4 className="h-12 w-12 text-gray-300 animate-pulse" />
+          <div className="w-full md:w-2/3">
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Event Suggestions</CardTitle>
+                    <CardDescription>
+                      AI-powered ideas tailored to your preferences
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="relative w-full md:w-64">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                      <Input
+                        placeholder="Search suggestions..."
+                        className="pl-8"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <p className="text-center text-gray-500">Generating budget suggestions...</p>
-              </div>
-            ) : suggestions?.budget && suggestions.budget.length > 0 ? (
-              renderBudgetCard(suggestions.budget)
-            ) : (
-              <div className="text-center py-10">
-                <AlertCircle className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">Enter a budget in the advanced options to see suggestions</p>
-                <Button 
-                  variant="link" 
-                  onClick={() => {
-                    setShowAdvancedOptions(true);
-                    // Focus on the budget input field
-                    setTimeout(() => {
-                      document.getElementById('budget')?.focus();
-                    }, 100);
-                  }}
-                  className="mt-2"
-                >
-                  Set Budget Now
-                </Button>
-              </div>
-            )
-          ) : (
-            <div className="text-center py-10">
-              <DollarSign className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500">Enter a budget in the advanced options to see suggestions</p>
-              <Button 
-                variant="link" 
-                onClick={() => {
-                  setShowAdvancedOptions(true);
-                  // Focus on the budget input field
-                  setTimeout(() => {
-                    document.getElementById('budget')?.focus();
-                  }, 100);
-                }}
-                className="mt-2"
-              >
-                Set Budget Now
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="tasks">
-          {isLoadingSuggestions ? (
-            <div className="py-10">
-              <div className="flex justify-center mb-4">
-                <CheckCircle2 className="h-12 w-12 text-gray-300 animate-pulse" />
-              </div>
-              <p className="text-center text-gray-500">Generating task suggestions...</p>
-            </div>
-          ) : suggestions?.tasks && suggestions.tasks.length > 0 ? (
-            renderTaskSuggestions(suggestions.tasks)
-          ) : (
-            <div className="text-center py-10">
-              <CheckCircle2 className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500">No task suggestions available for this event type</p>
-              <Button 
-                variant="link" 
-                onClick={fetchSuggestions}
-                className="mt-2"
-              >
-                Generate Task Suggestions
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="tips">
-          {isLoadingTips ? (
-            renderSkeletons()
-          ) : tipsError ? (
-            <div className="text-center py-6 text-red-500">
-              <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-              Error loading planning tips. Please try again.
-            </div>
-          ) : filteredPlanningTips && filteredPlanningTips.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredPlanningTips.map(renderPlanningTipCard)}
-            </div>
-          ) : (
-            <div className="text-center py-10">
-              <Lightbulb className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500">No planning tips available</p>
-              {searchQuery && (
-                <Button 
-                  variant="link" 
-                  onClick={() => setSearchQuery("")}
-                  className="mt-2"
-                >
-                  Clear search and try again
-                </Button>
-              )}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Tabs defaultValue="events" className="w-full">
+                  <TabsList className="w-full justify-start rounded-none px-6 border-b">
+                    <TabsTrigger value="events">Events</TabsTrigger>
+                    <TabsTrigger value="themes">Themes</TabsTrigger>
+                    <TabsTrigger value="budget" ref={budgetTabRef}>Budget</TabsTrigger>
+                    <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                    <TabsTrigger value="tips">Planning Tips</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="events" className="p-6">
+                    {selectedThemeFilter && (
+                      <div className="mb-4 flex items-center gap-2">
+                        <Badge variant="secondary" className="gap-1 px-3 py-1">
+                          <Filter className="h-3 w-3" />
+                          {selectedThemeFilter}
+                          <button 
+                            onClick={() => setSelectedThemeFilter(null)}
+                            className="ml-1 text-gray-500 hover:text-gray-700"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                        <span className="text-sm text-gray-500">
+                          Filtering by event type
+                        </span>
+                      </div>
+                    )}
+                    
+                    {isLoadingSuggestions ? (
+                      renderSkeletons()
+                    ) : filteredEventSuggestions && filteredEventSuggestions.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filteredEventSuggestions.map(renderEventSuggestionCard)}
+                      </div>
+                    ) : (
+                      <div className="text-center py-10">
+                        <Lightbulb className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-500">No event suggestions found for this event type</p>
+                        {searchQuery && (
+                          <Button 
+                            variant="link" 
+                            onClick={() => setSearchQuery("")}
+                            className="mt-2"
+                          >
+                            Clear search and try again
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="themes" className="p-6">
+                    {themeCategories.length > 0 && (
+                      <div className="mb-6">
+                        <p className="text-sm text-gray-500 mb-2">Filter by event type:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {themeCategories.map((category, i) => (
+                            <Badge 
+                              key={i}
+                              variant={selectedThemeFilter === category ? "default" : "outline"}
+                              className="cursor-pointer"
+                              onClick={() => 
+                                selectedThemeFilter === category
+                                  ? setSelectedThemeFilter(null)
+                                  : setSelectedThemeFilter(category)
+                              }
+                            >
+                              {category}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {isLoadingSuggestions ? (
+                      renderSkeletons()
+                    ) : filteredThemes && filteredThemes.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filteredThemes.map(renderThemeCard)}
+                      </div>
+                    ) : (
+                      <div className="text-center py-10">
+                        <Lightbulb className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-500">No theme suggestions found for this event type</p>
+                        {searchQuery && (
+                          <Button 
+                            variant="link" 
+                            onClick={() => setSearchQuery("")}
+                            className="mt-2"
+                          >
+                            Clear search and try again
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="budget" className="p-6">
+                    {isLoadingSuggestions ? (
+                      <div className="py-10">
+                        <div className="flex justify-center mb-4">
+                          <BarChart4 className="h-12 w-12 text-gray-300 animate-pulse" />
+                        </div>
+                        <p className="text-center text-gray-500">Generating budget suggestions...</p>
+                      </div>
+                    ) : suggestions?.budget && suggestions.budget.length > 0 ? (
+                      renderBudgetCard(suggestions.budget)
+                    ) : (
+                      <div className="text-center py-10">
+                        <DollarSign className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-500">
+                          {budget 
+                            ? "No budget suggestions available for this event type"
+                            : "Enter a budget amount to see suggested allocations"
+                          }
+                        </p>
+                        <LoadingButton
+                          onClick={fetchSuggestions}
+                          className="mt-4"
+                          isLoading={isLoadingSuggestions}
+                          loadingText="Generating Budget..."
+                        >
+                          Generate Budget Suggestions
+                        </LoadingButton>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="tasks" className="p-6">
+                    {isLoadingSuggestions ? (
+                      <div className="py-10">
+                        <div className="flex justify-center mb-4">
+                          <CheckCircle2 className="h-12 w-12 text-gray-300 animate-pulse" />
+                        </div>
+                        <p className="text-center text-gray-500">Generating task suggestions...</p>
+                      </div>
+                    ) : suggestions?.tasks && suggestions.tasks.length > 0 ? (
+                      renderTaskSuggestions(suggestions.tasks)
+                    ) : (
+                      <div className="text-center py-10">
+                        <CheckCircle2 className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-500">No task suggestions available for this event type</p>
+                        <LoadingButton
+                          onClick={fetchSuggestions}
+                          className="mt-4"
+                          isLoading={isLoadingSuggestions}
+                          loadingText="Generating Tasks..."
+                        >
+                          Generate Task Suggestions
+                        </LoadingButton>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="tips" className="p-6">
+                    {isLoadingTips ? (
+                      renderSkeletons()
+                    ) : tipsError ? (
+                      <div className="text-center py-6 text-red-500">
+                        <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                        Error loading planning tips. Please try again.
+                      </div>
+                    ) : filteredPlanningTips && filteredPlanningTips.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filteredPlanningTips.map(renderPlanningTipCard)}
+                      </div>
+                    ) : (
+                      <div className="text-center py-10">
+                        <Lightbulb className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-500">No planning tips available</p>
+                        {searchQuery && (
+                          <Button 
+                            variant="link" 
+                            onClick={() => setSearchQuery("")}
+                            className="mt-2"
+                          >
+                            Clear search and try again
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
       
-      {/* Create Event Dialog */}
+      {/* Create event dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create Event from Suggestion</DialogTitle>
+            <DialogTitle>Create New Event</DialogTitle>
             <DialogDescription>
-              This will create a new event based on the selected suggestion. You can edit it further afterwards.
+              Create a new event based on the selected suggestion
             </DialogDescription>
           </DialogHeader>
           
-          {selectedSuggestion && (
-            <div className="py-4">
-              <h4 className="font-medium text-lg">{selectedSuggestion.title}</h4>
-              <p className="text-sm text-gray-600 mt-1 mb-4">{selectedSuggestion.description}</p>
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="space-y-4 py-4">
+            {selectedSuggestion && (
+              <>
                 <div>
-                  <span className="text-gray-500">Event Type:</span>{' '}
-                  <span className="font-medium">{selectedEventType}</span>
+                  <h3 className="font-medium">{selectedSuggestion.title}</h3>
+                  <p className="text-sm text-gray-600">{selectedSuggestion.description}</p>
                 </div>
-                <div>
-                  <span className="text-gray-500">Format:</span>{' '}
-                  <span className="font-medium">{format || "Virtual"}</span>
+                
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-500">Budget:</span>{' '}
+                    <span className="font-medium">${selectedSuggestion.estimatedCost}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Duration:</span>{' '}
+                    <span className="font-medium">{selectedSuggestion.suggestedDuration}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Type:</span>{' '}
+                    <span className="font-medium">{selectedEventType}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Format:</span>{' '}
+                    <span className="font-medium">{format || "Virtual"}</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-500">Budget:</span>{' '}
-                  <span className="font-medium">${selectedSuggestion.estimatedCost}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Complexity:</span>{' '}
-                  <span className="font-medium">{selectedSuggestion.complexity}/5</span>
-                </div>
-              </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Cancel
-            </Button>
-            <Button 
+          <DialogFooter className="sm:justify-start">
+            <Button
+              variant="default"
               onClick={handleSubmitCreateEvent}
               disabled={createEventMutation.isPending}
             >
-              {createEventMutation.isPending ? 'Creating...' : 'Create Event'}
+              {createEventMutation.isPending ? (
+                <span className="flex items-center">
+                  <span className="animate-spin mr-2">⏳</span>
+                  Creating...
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Create Event
+                </span>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowCreateDialog(false)}
+            >
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>
