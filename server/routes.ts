@@ -267,16 +267,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI suggestions routes
   app.post("/api/ai/suggestions", async (req, res) => {
     try {
-      const { eventType, theme, budget } = req.body;
+      const { eventType, theme, budget, preferences } = req.body;
       
       if (!eventType) {
         return res.status(400).json({ message: "Event type is required" });
       }
       
-      const suggestions = await generateAiSuggestions(eventType, theme, budget);
+      // Get event and user data for more personalized suggestions
+      const userPreferences = preferences?.userId ? 
+        await storage.getUserPreferences(preferences.userId) : undefined;
+      
+      // Get previous events if a userId is provided
+      const previousEvents = preferences?.userId ? 
+        await storage.getEventsByOwner(preferences.userId) : [];
+      
+      // Prepare detailed preferences object for AI
+      const detailedPreferences = {
+        guestCount: preferences?.guestCount,
+        format: preferences?.format,
+        duration: preferences?.duration,
+        previousEvents: previousEvents?.map(evt => evt.name),
+        userPreferences: userPreferences ? {
+          preferredThemes: userPreferences.preferredThemes,
+          preferredEventTypes: userPreferences.preferredEventTypes
+        } : undefined
+      };
+      
+      // Generate AI suggestions with enhanced context
+      const suggestions = await generateAiSuggestions(
+        eventType, 
+        theme, 
+        budget,
+        detailedPreferences
+      );
+      
       return res.json(suggestions);
     } catch (error) {
-      return res.status(500).json({ message: "Failed to generate AI suggestions" });
+      console.error("AI suggestion error:", error);
+      return res.status(500).json({ 
+        message: "Failed to generate AI suggestions",
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 

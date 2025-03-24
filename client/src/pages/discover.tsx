@@ -14,9 +14,12 @@ import {
 } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAiSuggestions, AiSuggestions, ThemeSuggestion, EventSuggestion } from "@/lib/ai-service";
-import { Lightbulb, Palette, Sparkles } from "lucide-react";
+import { getAiSuggestions, AiSuggestions, ThemeSuggestion, EventSuggestion, SuggestionPreferences } from "@/lib/ai-service";
+import { Lightbulb, Palette, Sparkles, Sliders, Users, Clock } from "lucide-react";
 import { PlanningTip } from "@shared/schema";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Discover() {
   const [selectedEventType, setSelectedEventType] = useState<string>("conference");

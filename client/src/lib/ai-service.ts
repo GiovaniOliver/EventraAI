@@ -38,16 +38,29 @@ export interface AiSuggestions {
   tasks?: TaskSuggestion[];
 }
 
+export interface SuggestionPreferences {
+  userId?: number;
+  guestCount?: number;
+  format?: 'virtual' | 'in-person' | 'hybrid';
+  duration?: string;
+}
+
 export async function getAiSuggestions(
   eventType: string, 
   theme?: string, 
-  budget?: number
+  budget?: number,
+  preferences?: SuggestionPreferences
 ): Promise<AiSuggestions> {
   try {
     const response = await apiRequest(
       "POST", 
       "/api/ai/suggestions", 
-      { eventType, theme, budget }
+      { 
+        eventType, 
+        theme, 
+        budget,
+        preferences
+      }
     );
     
     return await response.json();

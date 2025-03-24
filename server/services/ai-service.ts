@@ -256,15 +256,22 @@ const eventTypeSuggestions: Record<string, AiSuggestions> = {
 export async function generateAiSuggestions(
   eventType: string,
   theme?: string,
-  budget?: number
+  budget?: number,
+  preferences?: { 
+    guestCount?: number; 
+    format?: string; 
+    duration?: string;
+    previousEvents?: string[];
+    userPreferences?: Record<string, any>;
+  }
 ): Promise<AiSuggestions> {
   try {
     // Attempt to use AI for generating suggestions
-    const suggestions = await generateAiBasedSuggestions(eventType, theme, budget);
+    const suggestions = await generateAiBasedSuggestions(eventType, theme, budget, preferences);
     
     // If budget is provided but not included in AI response, generate budget separately
     if (budget && budget > 0 && !suggestions.budget) {
-      suggestions.budget = await generateAiBudgetSuggestions(eventType, budget);
+      suggestions.budget = await generateAiBudgetSuggestions(eventType, budget, preferences?.guestCount);
     }
     
     return suggestions;
@@ -290,12 +297,47 @@ export async function generateAiSuggestions(
 async function generateAiBasedSuggestions(
   eventType: string,
   theme?: string,
-  budget?: number
+  budget?: number,
+  preferences?: { 
+    guestCount?: number; 
+    format?: string; 
+    duration?: string;
+    previousEvents?: string[];
+    userPreferences?: Record<string, any>;
+  }
 ): Promise<AiSuggestions> {
+  // Build additional context based on preferences
+  const guestCountInfo = preferences?.guestCount ? `The event will have approximately ${preferences.guestCount} guests.` : '';
+  const formatInfo = preferences?.format ? `The event format will be ${preferences.format}.` : '';
+  const durationInfo = preferences?.duration ? `The event duration will be ${preferences.duration}.` : '';
+  
+  // Include information about previous events if available
+  const previousEventsInfo = preferences?.previousEvents && preferences.previousEvents.length > 0 
+    ? `Previous events organized: ${preferences.previousEvents.join(', ')}.` 
+    : '';
+  
+  // Include user preferences if available
+  let userPreferencesInfo = '';
+  if (preferences?.userPreferences) {
+    const preferencesEntries = Object.entries(preferences.userPreferences);
+    if (preferencesEntries.length > 0) {
+      userPreferencesInfo = 'User preferences: ' + 
+        preferencesEntries.map(([key, value]) => `${key}: ${value}`).join(', ') + '.';
+    }
+  }
+
   const systemPrompt = `You are an expert event planning assistant with deep knowledge of virtual and hybrid events.
 Your task is to generate creative, practical, and engaging suggestions for a ${eventType} event.
 ${theme ? `The event has a "${theme}" theme.` : ''}
 ${budget ? `The event has a budget of $${budget}.` : ''}
+${guestCountInfo}
+${formatInfo}
+${durationInfo}
+${previousEventsInfo}
+${userPreferencesInfo}
+
+Your suggestions should be tailored to these specific requirements and preferences.
+
 Provide your response in a JSON format with the following structure:
 {
   "events": [
@@ -374,10 +416,12 @@ Generate 2-3 events, 2-3 themes, and 3-5 important tasks.`;
   return aiSuggestions;
 }
 
-async function generateAiBudgetSuggestions(eventType: string, totalBudget: number): Promise<BudgetSuggestion[]> {
+async function generateAiBudgetSuggestions(eventType: string, totalBudget: number, guestCount?: number): Promise<BudgetSuggestion[]> {
   try {
+    const guestInfo = guestCount ? `The event will have approximately ${guestCount} guests.` : '';
     const systemPrompt = `You are an expert event budget planner specializing in virtual and hybrid ${eventType} events.
 Your task is to suggest a practical budget allocation for a ${eventType} event with a total budget of $${totalBudget}.
+${guestInfo}
 Provide your response in a JSON format with the following structure:
 {
   "budget": [
