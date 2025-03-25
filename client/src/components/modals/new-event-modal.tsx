@@ -115,7 +115,7 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
       format: "virtual",
       ownerId: user?.id,
       description: "",
-      theme: null,
+      theme: undefined,
       budget: undefined,
       coverImage: "",
     },
