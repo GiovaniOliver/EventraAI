@@ -419,6 +419,11 @@ export class MemStorage implements IStorage {
     const event: Event = {
       ...insertEvent,
       id,
+      status: insertEvent.status || "draft", // Ensure status is not undefined
+      estimatedGuests: insertEvent.estimatedGuests ?? null,
+      description: insertEvent.description ?? null,
+      theme: insertEvent.theme ?? null,
+      budget: insertEvent.budget ?? null,
       createdAt: now,
       updatedAt: now
     };
@@ -521,6 +526,7 @@ export class MemStorage implements IStorage {
     const guest: Guest = {
       ...insertGuest,
       id,
+      status: insertGuest.status || "pending", // Ensure status is not undefined
       createdAt: now
     };
     this.guests.set(id, guest);
@@ -578,6 +584,7 @@ export class MemStorage implements IStorage {
       ...insertVendor,
       id,
       createdAt: now,
+      ownerId: insertVendor.ownerId ?? null, // Ensure ownerId is not undefined
       isPartner: insertVendor.isPartner ?? false,
       services: insertVendor.services ?? [],
       logo: insertVendor.logo ?? null,
@@ -625,6 +632,9 @@ export class MemStorage implements IStorage {
     const eventVendor: EventVendor = {
       ...insertEventVendor,
       id,
+      status: insertEventVendor.status || "pending", // Ensure status is not undefined
+      budget: insertEventVendor.budget ?? null,
+      notes: insertEventVendor.notes ?? null,
       createdAt: now
     };
     this.eventVendors.set(id, eventVendor);
@@ -671,6 +681,10 @@ export class MemStorage implements IStorage {
     const userPreference: UserPreference = {
       ...insertPreference,
       id,
+      preferredThemes: insertPreference.preferredThemes ?? {},
+      preferredEventTypes: insertPreference.preferredEventTypes ?? {},
+      notificationsEnabled: insertPreference.notificationsEnabled ?? null,
+      onboardingCompleted: insertPreference.onboardingCompleted ?? null,
       createdAt: now,
       updatedAt: now
     };
@@ -718,6 +732,14 @@ export class MemStorage implements IStorage {
     const eventAnalytics: EventAnalytics = {
       ...insertAnalytics,
       id,
+      attendeeCount: insertAnalytics.attendeeCount ?? null,
+      engagementScore: insertAnalytics.engagementScore ?? null,
+      averageAttendanceTime: insertAnalytics.averageAttendanceTime ?? null,
+      maxConcurrentUsers: insertAnalytics.maxConcurrentUsers ?? null,
+      totalInteractions: insertAnalytics.totalInteractions ?? null,
+      feedbackScore: insertAnalytics.feedbackScore ?? null,
+      analyticsDate: insertAnalytics.analyticsDate ?? now,
+      detailedMetrics: insertAnalytics.detailedMetrics ?? {},
       createdAt: now,
       updatedAt: now
     };
@@ -756,6 +778,11 @@ export class MemStorage implements IStorage {
     const feedback: AttendeeFeedback = {
       ...insertFeedback,
       id,
+      contentRating: insertFeedback.contentRating ?? null,
+      technicalRating: insertFeedback.technicalRating ?? null,
+      engagementRating: insertFeedback.engagementRating ?? null,
+      comments: insertFeedback.comments ?? null,
+      wouldRecommend: insertFeedback.wouldRecommend ?? null,
       createdAt: now
     };
     this.attendeeFeedback.set(id, feedback);
@@ -785,13 +812,13 @@ export class MemStorage implements IStorage {
     
     // Calculate averages
     const sum = (arr: (number | null | undefined)[]) => 
-      arr.filter(Boolean).reduce((acc, val) => acc + (val || 0), 0);
+      arr.filter(Boolean).reduce((acc: number, val) => acc + (val || 0), 0);
     
     const count = (arr: (number | null | undefined)[]) => 
       arr.filter(Boolean).length;
     
     const avg = (arr: (number | null | undefined)[]) => 
-      count(arr) ? sum(arr) / count(arr) : 0;
+      count(arr) > 0 ? sum(arr) / count(arr) : 0;
     
     const recommendCount = feedbacks.filter(f => f.wouldRecommend).length;
     
