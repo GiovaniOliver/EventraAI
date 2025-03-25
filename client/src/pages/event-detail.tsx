@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
-import { useWebSocketContext } from "@/hooks/websocket-provider";
+import { useCollaboration } from "@/hooks/use-collaboration";
 import {
   Card,
   CardContent,
@@ -99,8 +99,14 @@ export default function EventDetail() {
   const [, navigate] = useLocation();
   const [match, params] = useRoute("/events/:id");
   const eventId = match ? parseInt(params.id) : null;
-  const { isConnected, joinEvent, leaveEvent, sendMessage, activeParticipants, connectionFailed } = useWebSocketContext();
   const { user } = useAuth();
+  const { 
+    activeParticipants, 
+    isLoading: isLoadingCollaboration,
+    isError: isCollaborationError,
+    notifyEventUpdate,
+    notifyTaskUpdate
+  } = useCollaboration(eventId);
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedEvent, setEditedEvent] = useState<Partial<Event>>({});
@@ -195,31 +201,8 @@ export default function EventDetail() {
     }
   }, [event]);
   
-  // WebSocket connection for real-time collaboration
-  useEffect(() => {
-    if (!eventId || !user) return;
-    
-    console.log(`Attempting to join event room for event ID: ${eventId}`);
-    
-    // Try to join the event room regardless of connection status
-    // The joinEvent function has fallback handling for when connection fails
-    const success = joinEvent(eventId);
-    
-    if (success) {
-      console.log(`Successfully joined event ${eventId} with WebSocket`);
-    } else if (connectionFailed) {
-      console.log(`Using fallback mode for event ${eventId} due to WebSocket connectivity issues`);
-      // No need to show toast here as it's already handled in WebSocketProvider
-    } else if (!isConnected) {
-      console.log(`Temporarily using fallback mode for event ${eventId} - trying to establish WebSocket connection`);
-    }
-    
-    // Cleanup function - leave the event when unmounting
-    return () => {
-      leaveEvent(eventId);
-      console.log(`Left event room for event ID: ${eventId}`);
-    };
-  }, [eventId, joinEvent, leaveEvent, user, isConnected, connectionFailed]);
+  // Our collaboration hook will automatically handle presence registration
+  // No need for manual connection management anymore!
   
   // Update event mutation
   const updateEventMutation = useMutation({
@@ -233,6 +216,8 @@ export default function EventDetail() {
       });
       setIsEditing(false);
       refetchEvent();
+      // Notify collaborators about the event update
+      if (eventId) notifyEventUpdate(eventId);
     },
     onError: (error) => {
       toast({
@@ -1336,15 +1321,27 @@ export default function EventDetail() {
                 </Button>
               </div>
               
-              {connectionFailed ? (
+              {isLoadingCollaboration ? (
+                <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                  <div className="text-gray-500 mb-4">
+                    <div className="mx-auto mb-2 h-12 w-12 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                    <h3 className="text-lg font-medium">Loading collaborators...</h3>
+                  </div>
+                  <p className="text-gray-600 mb-4">
+                    Getting information about who's working on this event.
+                  </p>
+                </div>
+              ) : isCollaborationError ? (
                 <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                   <div className="text-amber-500 mb-4">
                     <AlertTriangle className="h-12 w-12 mx-auto mb-2" />
-                    <h3 className="text-lg font-medium">Limited Collaboration Mode</h3>
+                    <h3 className="text-lg font-medium">Collaboration Service Issue</h3>
                   </div>
                   <p className="text-gray-600 mb-4">
-                    Real-time collaboration is currently unavailable. You can still work on this event,
-                    but changes won't be synced in real-time with other team members.
+                    We're having trouble retrieving information about who's working on this event.
+                    You can still work on this event, but you won't see other team members.
                   </p>
                   <div className="flex flex-col sm:flex-row justify-center gap-3">
                     <Button 
@@ -1352,7 +1349,7 @@ export default function EventDetail() {
                       onClick={() => window.location.reload()}
                     >
                       <RefreshCw className="h-4 w-4 mr-1" />
-                      Retry Connection
+                      Refresh Page
                     </Button>
                     <Button 
                       variant="outline" 
@@ -1362,19 +1359,6 @@ export default function EventDetail() {
                       Share Link
                     </Button>
                   </div>
-                </div>
-              ) : !isConnected ? (
-                <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                  <div className="text-gray-500 mb-4">
-                    <div className="mx-auto mb-2 h-12 w-12 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                    <h3 className="text-lg font-medium">Connecting...</h3>
-                  </div>
-                  <p className="text-gray-600 mb-4">
-                    Attempting to establish a connection to the collaboration service.
-                    This may take a moment.
-                  </p>
                 </div>
               ) : (
                 <div>
