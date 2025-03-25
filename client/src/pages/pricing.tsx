@@ -38,12 +38,32 @@ export default function PricingPage() {
     }
 
     try {
-      const response = await apiRequest("POST", "/api/create-subscription", { planName });
+      // Get the plan ID from the plan name
+      const plan = plans.find(p => p.name === planName);
+      if (!plan) {
+        throw new Error("Plan not found");
+      }
+      
+      const response = await apiRequest("POST", "/api/get-or-create-subscription", { planId: plan.id });
       const data = await response.json();
       
-      // Redirect to Stripe checkout
-      window.location.href = data.checkoutUrl;
+      if (data.success) {
+        // For plans that don't require payment or already processed
+        toast({
+          title: "Subscription Updated",
+          description: `You are now subscribed to the ${plan.displayName}.`,
+        });
+        // Reload to update UI
+        window.location.reload();
+      } else if (data.checkoutUrl) {
+        // For paid plans, redirect to Stripe checkout
+        window.location.href = data.checkoutUrl;
+      } else if (data.clientSecret) {
+        // Handle subscription with client secret
+        navigate("/checkout?session_id=" + data.subscriptionId);
+      }
     } catch (error) {
+      console.error("Subscription error:", error);
       toast({
         title: "Subscription Error",
         description: "Failed to initiate subscription process. Please try again.",

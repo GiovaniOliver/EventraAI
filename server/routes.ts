@@ -906,8 +906,9 @@ Format your response as a JSON array of improvement objects with the following s
           return res.status(404).json({ message: "Subscription plan not found" });
         }
         
-        // Free plan - just update the user's subscription
-        if (plan.price === 0) {
+        // For starter plan ($9.99) - if we want to bypass payment during development
+        // In production, we would remove this condition and treat all paid plans the same
+        if (plan.name === "starter" && process.env.NODE_ENV === "development") {
           const updatedUser = await storage.updateUserSubscription(
             user.id,
             plan.name,
@@ -1079,7 +1080,7 @@ Format your response as a JSON array of improvement objects with the following s
             const deletedSubscription = event.data.object;
             if (deletedSubscription.metadata.userId) {
               const userId = parseInt(deletedSubscription.metadata.userId);
-              await storage.updateUserSubscription(userId, "free", "inactive");
+              await storage.updateUserSubscription(userId, "starter", "inactive");
             }
             break;
             
