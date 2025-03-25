@@ -39,7 +39,7 @@ export default function PromotionPage() {
       monthlyPrice: 14.99,
       annualPrice: 11.99, // 20% discount
       features: [
-        "Up to 5 virtual events",
+        "Up to 5 events",
         "Basic analytics",
         "Standard templates",
         "50 AI assistant calls per month",
@@ -55,7 +55,7 @@ export default function PromotionPage() {
       monthlyPrice: 29.99,
       annualPrice: 23.99, // 20% discount
       features: [
-        "Up to 15 virtual events",
+        "Up to 15 events",
         "Advanced analytics",
         "Premium templates",
         "Priority support",
@@ -88,7 +88,7 @@ export default function PromotionPage() {
 
   const testimonials = [
     {
-      quote: "This platform has transformed how we manage our virtual conferences. The AI suggestions have saved us countless hours of planning and improved our attendee engagement by 40%.",
+      quote: "This platform has transformed how we manage our events and conferences. The AI suggestions have saved us countless hours of planning and improved our attendee engagement by 40%.",
       author: "Sarah J.",
       role: "Event Director",
       company: "TechCon Global"
@@ -146,7 +146,7 @@ export default function PromotionPage() {
                 20% Off Annual Plans
               </h1>
               <p className="text-xl text-muted-foreground mb-8">
-                Transform your virtual event planning experience with our comprehensive AI-powered platform. Save time, reduce stress, and create exceptional events.
+                Transform your event planning experience with our comprehensive AI-powered platform. Save time, reduce stress, and create exceptional events of any type.
               </p>
               <div className="space-x-4">
                 <Button size="lg" asChild>
@@ -163,7 +163,7 @@ export default function PromotionPage() {
             <div className="rounded-xl overflow-hidden shadow-xl">
               <img 
                 src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
-                alt="Virtual event planning" 
+                alt="Event planning" 
                 className="w-full h-auto"
               />
             </div>
@@ -177,7 +177,7 @@ export default function PromotionPage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Revolutionize Your Event Planning</h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Our platform combines cutting-edge AI with intuitive tools designed specifically for virtual event planners.
+              Our platform combines cutting-edge AI with intuitive tools designed specifically for event planners of all types.
             </p>
           </div>
 
