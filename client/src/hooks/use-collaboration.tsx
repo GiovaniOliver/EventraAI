@@ -111,12 +111,18 @@ export function useCollaboration(eventId: number | null, options: CollaborationH
     queryClient.invalidateQueries({ queryKey: [`/api/events/${taskEventId}/tasks`] });
   }, [queryClient]);
   
+  // Create a function to invalidate guest queries when guests are changed
+  const notifyGuestUpdate = useCallback((guestEventId: number) => {
+    queryClient.invalidateQueries({ queryKey: [`/api/events/${guestEventId}/guests`] });
+  }, [queryClient]);
+  
   return {
     isLoading,
     isError,
     activeParticipants,
     refreshParticipants: refetchParticipants,
     notifyEventUpdate,
-    notifyTaskUpdate
+    notifyTaskUpdate,
+    notifyGuestUpdate
   };
 }

@@ -105,7 +105,8 @@ export default function EventDetail() {
     isLoading: isLoadingCollaboration,
     isError: isCollaborationError,
     notifyEventUpdate,
-    notifyTaskUpdate
+    notifyTaskUpdate,
+    notifyGuestUpdate
   } = useCollaboration(eventId);
   
   const [isEditing, setIsEditing] = useState(false);
@@ -273,6 +274,8 @@ export default function EventDetail() {
         assignedTo: null
       });
       refetchTasks();
+      // Notify collaborators about task update
+      if (eventId) notifyTaskUpdate(eventId);
     },
     onError: (error) => {
       toast({
@@ -291,6 +294,8 @@ export default function EventDetail() {
     },
     onSuccess: () => {
       refetchTasks();
+      // Notify collaborators about task update
+      if (eventId) notifyTaskUpdate(eventId);
     },
     onError: (error) => {
       toast({
@@ -426,6 +431,9 @@ export default function EventDetail() {
       // Refetch guests list
       const guestsQueryKey = [`/api/events/${eventId}/guests`];
       queryClient.invalidateQueries({ queryKey: guestsQueryKey });
+      
+      // Notify collaborators about guest update
+      if (eventId) notifyGuestUpdate(eventId);
     },
     onError: (error) => {
       toast({
