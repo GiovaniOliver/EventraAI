@@ -1215,14 +1215,14 @@ Format your response as a JSON array of improvement objects with the following s
   // Get all vendors (admin only)
   app.get("/api/admin/vendors", isAdmin, async (req, res) => {
     try {
-      // Get all vendors
-      // Use a direct database query to safely handle missing columns
-      const vendors = await db.select().from(vendors);
+      // Get all vendors - using storage interface to avoid direct DB access
+      const allVendors = await storage.getAllVendors();
       
       // Process vendors to ensure all expected properties exist
-      const processedVendors = vendors.map(vendor => ({
+      const processedVendors = allVendors.map(vendor => ({
         ...vendor,
-        isApproved: vendor.isApproved !== undefined ? vendor.isApproved : false
+        isApproved: vendor.isApproved !== undefined ? vendor.isApproved : false,
+        isPartner: vendor.isPartner !== undefined ? vendor.isPartner : false
       }));
       
       return res.json(processedVendors);
