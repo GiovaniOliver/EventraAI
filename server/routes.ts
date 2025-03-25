@@ -406,7 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // User preferences routes
-  app.post("/api/users/:userId/preferences", async (req, res) => {
+  app.post("/api/users/:userId/preferences", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const preferenceData = { ...req.body, userId };
@@ -430,7 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/users/:userId/preferences", async (req, res) => {
+  app.get("/api/users/:userId/preferences", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const preferences = await storage.getUserPreferences(userId);
@@ -447,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Vendor routes
   // Dedicated route for partner vendors - must come before /:id route
-  app.get("/api/vendors/partners", async (req, res) => {
+  app.get("/api/vendors/partners", isAuthenticated, async (req, res) => {
     try {
       const partnerVendors = await storage.getPartnerVendors();
       return res.json(partnerVendors);
@@ -456,7 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/vendors", async (req, res) => {
+  app.get("/api/vendors", isAuthenticated, async (req, res) => {
     try {
       const category = req.query.category as string;
       const isPartner = req.query.isPartner === 'true';
@@ -480,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/vendors/:id", async (req, res) => {
+  app.get("/api/vendors/:id", isAuthenticated, async (req, res) => {
     try {
       const vendorId = parseInt(req.params.id);
       const vendor = await storage.getVendor(vendorId);
