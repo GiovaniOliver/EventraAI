@@ -1,0 +1,95 @@
+Using fallback mode for event 1 due to WebSocket connectivity issues
+[WebSocket] Connecting to wss://dab4be22-65f0-477d-9f49-7d04abc7f4a2-00-10ow1gtl2u80z.kirk.replit.dev/ws
+[WebSocket] Error: 
+Event {isTrusted: true}
+
+[WebSocket] Connection closed 
+CloseEvent {isTrusted: true}
+[WebSocket] Error: 
+Event {isTrusted: true}
+
+[WebSocket] Connection closed 
+CloseEvent {isTrusted: true}
+Left event room for event ID: 1
+Attempting to join event room for event ID: 1
+Using fallback mode for event 1 due to WebSocket connectivity issues
+[WebSocket] Connecting to wss://dab4be22-65f0-477d-9f49-7d04abc7f4a2-00-10ow1gtl2u80z.kirk.replit.dev/ws
+[WebSocket] Error: 
+Event {isTrusted: true}
+
+[WebSocket] Connection closed 
+CloseEvent {isTrusted: true}
+Left event room for event ID: 1
+Attempting to join event room for event ID: 1
+Using fallback mode for event 1 due to WebSocket connectivity issues
+[WebSocket] Connecting to wss://dab4be22-65f0-477d-9f49-7d04abc7f4a2-00-10ow1gtl2u80z.kirk.replit.dev/ws
+Left event room for event ID: 1
+Attempting to join event room for event ID: 1
+Using fallback mode for event 1 due to WebSocket connectivity issues
+[WebSocket] Connecting to wss://dab4be22-65f0-477d-9f49-7d04abc7f4a2-00-10ow1gtl2u80z.kirk.replit.dev/ws
+[WebSocket] Error: 
+Event {isTrusted: true}
+
+[WebSocket] Connection closed 
+CloseEvent {isTrusted: true}
+[WebSocket] Error: 
+Event {isTrusted: true}
+
+[WebSocket] Connection closed 
+CloseEvent {isTrusted: true}
+[WebSocket] Error: 
+Event {isTrusted: true}
+
+[WebSocket] Connection closed 
+CloseEvent {isTrusted: true}
+Left event room for event ID: 1
+Attempting to join event room for event ID: 1
+Using fallback mode for event 1 due to WebSocket connectivity issues
+[WebSocket] Connecting to wss://dab4be22-65f0-477d-9f49-7d04abc7f4a2-00-10ow1gtl2u80z.kirk.replit.dev/ws
+[WebSocket] Error: 
+Event {isTrusted: true}
+
+[WebSocket] Connection closed 
+CloseEvent {isTrusted: true}
+[WebSocket] Error: 
+Event {isTrusted: true}
+
+[WebSocket] Connection closed 
+CloseEvent {isTrusted: true}
+Left event room for event ID: 1
+Attempting to join event room for event ID: 1
+Using fallback mode for event 1 due to WebSocket connectivity issues
+[WebSocket] Connecting to wss://dab4be22-65f0-477d-9f49-7d04abc7f4a2-00-10ow1gtl2u80z.kirk.replit.dev/ws
+Left event room for event ID: 1
+Attempting to join event room for event ID: 1
+Using fallback mode for event 1 due to WebSocket connectivity issues
+[WebSocket] Connecting to wss://dab4be22-65f0-477d-9f49-7d04abc7f4a2-00-10ow1gtl2u80z.kirk.replit.dev/ws
+[WebSocket] Error: 
+Event {isTrusted: true}
+
+[WebSocket] Connection closed 
+CloseEvent {isTrusted: true}
+Left event room for event ID: 1
+Attempting to join event room for event ID: 1
+Using fallback mode for event 1 due to WebSocket connectivity issues
+[WebSocket] Connecting to wss://dab4be22-65f0-477d-9f49-7d04abc7f4a2-00-10ow1gtl2u80z.kirk.replit.dev/ws
+Left event room for event ID: 1
+Attempting to join event room for event ID: 1
+Using fallback mode for event 1 due to WebSocket connectivity issues
+[WebSocket] Connecting to wss://dab4be22-65f0-477d-9f49-7d04abc7f4a2-00-10ow1gtl2u80z.kirk.replit.dev/ws
+[WebSocket] Error: 
+Event {isTrusted: true}
+
+[WebSocket] Connection closed 
+CloseEvent {isTrusted: true}
+Left event room for event ID: 1
+Attempting to join event room for event ID: 1
+Using fallback mode for event 1 due to WebSocket connectivity issues
+[WebSocket] Connecting to wss://dab4be22-65f0-477d-9f49-7d04abc7f4a2-00-10ow1gtl2u80z.kirk.replit.dev/ws
+[WebSocket] Error: 
+Event {isTrusted: true}
+
+[WebSocket] Connection closed 
+CloseEvent {isTrusted: true}
+Left event room for event ID: 1
+Attempting to join event room for event ID: 1

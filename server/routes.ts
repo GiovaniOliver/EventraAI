@@ -37,6 +37,37 @@ if (process.env.STRIPE_SECRET_KEY) {
   });
 }
 
+// In-memory storage for active participants
+interface Participant {
+  userId: number;
+  username: string;
+  lastActive: number;
+}
+
+const eventParticipants: Map<number, Map<number, Participant>> = new Map();
+
+// Cleanup inactive participants periodically (after 5 minutes of inactivity)
+function cleanupInactiveParticipants() {
+  const now = Date.now();
+  const inactivityThreshold = 5 * 60 * 1000; // 5 minutes
+  
+  for (const [eventId, participants] of eventParticipants.entries()) {
+    for (const [userId, participant] of participants.entries()) {
+      if (now - participant.lastActive > inactivityThreshold) {
+        participants.delete(userId);
+      }
+    }
+    
+    // If no participants left, remove the event entry
+    if (participants.size === 0) {
+      eventParticipants.delete(eventId);
+    }
+  }
+}
+
+// Set up cleanup interval
+setInterval(cleanupInactiveParticipants, 5 * 60 * 1000); // Run every 5 minutes
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
@@ -1046,6 +1077,55 @@ Format your response as a JSON array of improvement objects with the following s
     });
   }
   
+  // REST-based collaboration APIs as WebSocket fallback
+  app.post('/api/events/:id/presence', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    const eventId = parseInt(req.params.id);
+    const { userId, username } = req.body;
+    
+    // Verify the user only registers their own presence
+    if (userId !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    
+    // Create event entry if it doesn't exist
+    if (!eventParticipants.has(eventId)) {
+      eventParticipants.set(eventId, new Map());
+    }
+    
+    // Add or update participant
+    const participants = eventParticipants.get(eventId);
+    participants.set(userId, {
+      userId,
+      username,
+      lastActive: Date.now()
+    });
+    
+    return res.status(200).json({ message: 'Presence registered' });
+  });
+  
+  app.get('/api/events/:id/participants', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    const eventId = parseInt(req.params.id);
+    
+    // Return empty array if no participants
+    if (!eventParticipants.has(eventId)) {
+      return res.status(200).json([]);
+    }
+    
+    // Convert Map to array of participants (without lastActive timestamp)
+    const participants = Array.from(eventParticipants.get(eventId).values())
+      .map(({ userId, username }) => ({ userId, username }));
+    
+    return res.status(200).json(participants);
+  });
+
   const httpServer = createServer(app);
   
   // Initialize WebSocket service
