@@ -210,22 +210,25 @@ export class MemStorage implements IStorage {
   private initSubscriptionPlans() {
     const plans: InsertSubscriptionPlan[] = [
       {
-        name: "free",
-        displayName: "Free Plan",
+        name: "starter",
+        displayName: "Starter Plan",
         description: "Basic features for personal use",
-        price: 0,
+        price: 999, // $9.99 in cents
         currency: "usd",
         interval: "month",
         billingCycle: "monthly",
         features: JSON.stringify([
           "Up to 3 virtual events",
           "Basic analytics",
-          "Standard templates"
+          "Standard templates",
+          "Email support",
+          "1 month analytics history"
         ]),
         eventLimit: 3,
         guestLimit: 50,
         vendorLimit: 5,
         analyticsPeriod: 1,
+        aiCallLimit: 10,
         isActive: true
       },
       {
@@ -237,16 +240,18 @@ export class MemStorage implements IStorage {
         interval: "month",
         billingCycle: "monthly",
         features: JSON.stringify([
-          "Unlimited virtual events",
+          "Up to 10 virtual events",
           "Advanced analytics",
           "Premium templates",
           "Priority support",
-          "Custom branding"
+          "Custom branding",
+          "3 months analytics history"
         ]),
         eventLimit: 10,
         guestLimit: 200,
         vendorLimit: 15,
         analyticsPeriod: 3,
+        aiCallLimit: 30,
         isActive: true
       },
       {
@@ -258,17 +263,20 @@ export class MemStorage implements IStorage {
         interval: "month",
         billingCycle: "monthly",
         features: JSON.stringify([
-          "Everything in Pro",
+          "Up to 30 virtual events",
+          "Comprehensive analytics",
+          "All premium templates",
           "Dedicated support",
           "Team collaboration",
           "API access",
           "White labeling",
-          "Custom integrations"
+          "6 months analytics history"
         ]),
         eventLimit: 30,
         guestLimit: 500,
         vendorLimit: 30,
         analyticsPeriod: 6,
+        aiCallLimit: 100,
         isActive: true
       },
       {
@@ -280,17 +288,22 @@ export class MemStorage implements IStorage {
         interval: "month",
         billingCycle: "monthly",
         features: JSON.stringify([
-          "Everything in Business",
+          "Unlimited virtual events",
+          "Full analytics suite",
+          "Custom template development",
           "Dedicated account manager",
-          "Custom development",
+          "Team collaboration with roles",
+          "Full API access",
+          "White labeling & branding",
           "SLA guarantees",
           "Advanced security features",
-          "Bulk event management"
+          "12 months analytics history"
         ]),
         eventLimit: null, // Unlimited
         guestLimit: null, // Unlimited
         vendorLimit: null, // Unlimited
         analyticsPeriod: 12,
+        aiCallLimit: null, // Unlimited
         isActive: true
       }
     ];
@@ -984,22 +997,25 @@ export class DatabaseStorage implements IStorage {
     
     const plans: InsertSubscriptionPlan[] = [
       {
-        name: "free",
-        displayName: "Free Plan",
+        name: "starter",
+        displayName: "Starter Plan",
         description: "Basic features for personal use",
-        price: 0,
+        price: 999, // $9.99 in cents
         currency: "usd",
         interval: "month",
         billingCycle: "monthly",
         features: JSON.stringify([
           "Up to 3 virtual events",
           "Basic analytics",
-          "Standard templates"
+          "Standard templates",
+          "Email support",
+          "1 month analytics history"
         ]),
         eventLimit: 3,
         guestLimit: 50,
         vendorLimit: 5,
         analyticsPeriod: 1,
+        aiCallLimit: 10,
         isActive: true
       },
       {
@@ -1011,16 +1027,18 @@ export class DatabaseStorage implements IStorage {
         interval: "month",
         billingCycle: "monthly",
         features: JSON.stringify([
-          "Unlimited virtual events",
+          "Up to 10 virtual events",
           "Advanced analytics",
           "Premium templates",
           "Priority support",
-          "Custom branding"
+          "Custom branding",
+          "3 months analytics history"
         ]),
         eventLimit: 10,
         guestLimit: 200,
         vendorLimit: 15,
         analyticsPeriod: 3,
+        aiCallLimit: 30,
         isActive: true
       },
       {
@@ -1032,17 +1050,20 @@ export class DatabaseStorage implements IStorage {
         interval: "month",
         billingCycle: "monthly",
         features: JSON.stringify([
-          "Everything in Pro",
+          "Up to 30 virtual events",
+          "Comprehensive analytics",
+          "All premium templates",
           "Dedicated support",
           "Team collaboration",
           "API access",
           "White labeling",
-          "Custom integrations"
+          "6 months analytics history"
         ]),
         eventLimit: 30,
         guestLimit: 500,
         vendorLimit: 30,
         analyticsPeriod: 6,
+        aiCallLimit: 100,
         isActive: true
       },
       {
