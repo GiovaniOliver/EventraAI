@@ -39,15 +39,16 @@ export class WebSocketService {
   private eventRooms: Map<number, Set<number>> = new Map(); // eventId -> Set of userIds
 
   constructor(server: Server) {
+    // Simple configuration for Replit environment
     this.wss = new WebSocketServer({ 
       server, 
       path: '/ws',
-      // Add more permissive options for development
-      perMessageDeflate: false,
-      clientTracking: true
+      // Disable extensions for compatibility
+      perMessageDeflate: false
     });
+    
     this.setupWebSocketServer();
-    log('WebSocket server initialized', 'websocket');
+    log('WebSocket server initialized on path: /ws', 'websocket');
   }
 
   private setupWebSocketServer() {
