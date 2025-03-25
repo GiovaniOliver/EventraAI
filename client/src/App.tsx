@@ -15,9 +15,11 @@ import Analytics from "@/pages/analytics";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
+import AdminDashboard from "@/pages/admin-dashboard";
 
 import OnboardingModal from "@/components/modals/onboarding-modal";
 import { ProtectedRoute } from "@/lib/protected-route";
+import { AdminRoute } from "@/lib/admin-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import { WebSocketProvider } from "@/hooks/websocket-provider";
 
@@ -59,6 +61,7 @@ function Router() {
           <ProtectedRoute path="/analytics" component={Analytics} />
           <ProtectedRoute path="/profile" component={Profile} />
           <ProtectedRoute path="/settings" component={Settings} />
+          <AdminRoute path="/admin" component={AdminDashboard} />
           <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
         </Switch>
