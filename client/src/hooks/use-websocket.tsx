@@ -56,7 +56,10 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     // Configure WebSocket connection with correct protocol and path
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/ws`;
+    
+    // Add explicit port for development environment
+    const port = window.location.port || (protocol === "wss:" ? "443" : "80");
+    const wsUrl = `${protocol}//${window.location.hostname}:${port}/ws`;
     
     console.log(`Attempting to connect to WebSocket at ${wsUrl}`);
     

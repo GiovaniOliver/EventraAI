@@ -39,7 +39,13 @@ export class WebSocketService {
   private eventRooms: Map<number, Set<number>> = new Map(); // eventId -> Set of userIds
 
   constructor(server: Server) {
-    this.wss = new WebSocketServer({ server, path: '/ws' });
+    this.wss = new WebSocketServer({ 
+      server, 
+      path: '/ws',
+      // Add more permissive options for development
+      perMessageDeflate: false,
+      clientTracking: true
+    });
     this.setupWebSocketServer();
     log('WebSocket server initialized', 'websocket');
   }
@@ -274,9 +280,9 @@ export class WebSocketService {
 
   private handleClientDisconnect(client: Client) {
     // Notify all event rooms this client was in
-    for (const eventId of client.eventRooms) {
+    Array.from(client.eventRooms).forEach(eventId => {
       this.handleLeaveEvent(client, eventId);
-    }
+    });
 
     // Remove client from clients map
     this.clients.delete(client.userId);
@@ -291,12 +297,12 @@ export class WebSocketService {
     const msgStr = JSON.stringify(message);
     const userIds = this.eventRooms.get(eventId)!;
 
-    for (const userId of userIds) {
+    Array.from(userIds).forEach(userId => {
       const client = this.clients.get(userId);
       if (client && client.ws.readyState === WebSocket.OPEN) {
         client.ws.send(msgStr);
       }
-    }
+    });
   }
 
   private getActiveUsersInEvent(eventId: number): { userId: number; username: string }[] {
@@ -307,7 +313,7 @@ export class WebSocketService {
     const activeUsers: { userId: number; username: string }[] = [];
     const userIds = this.eventRooms.get(eventId)!;
 
-    for (const userId of userIds) {
+    Array.from(userIds).forEach(userId => {
       const client = this.clients.get(userId);
       if (client) {
         activeUsers.push({
@@ -315,7 +321,7 @@ export class WebSocketService {
           username: client.username
         });
       }
-    }
+    });
 
     return activeUsers;
   }
