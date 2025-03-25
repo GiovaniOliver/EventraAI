@@ -22,6 +22,7 @@ import {
   openai, 
   MODEL 
 } from "./services/ai-service";
+import { initializeWebSocketService, getWebSocketService } from "./services/websocket-service";
 
 // Initialize Stripe
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -180,6 +181,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Parsed task data:", JSON.stringify(taskData, null, 2));
       
       const task = await storage.createTask(taskData);
+      
+      // Broadcast task creation via WebSockets
+      const wsService = getWebSocketService();
+      if (wsService) {
+        wsService.broadcastTaskUpdate(task.eventId, task, 'create');
+      }
+      
       return res.status(201).json(task);
     } catch (error) {
       console.error("Task creation error:", error);
@@ -213,6 +221,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Task not found" });
       }
       
+      // Broadcast task update via WebSockets
+      const wsService = getWebSocketService();
+      if (wsService) {
+        wsService.broadcastTaskUpdate(updatedTask.eventId, updatedTask, 'update');
+      }
+      
       return res.json(updatedTask);
     } catch (error) {
       return res.status(500).json({ message: "Failed to update task" });
@@ -222,10 +236,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/tasks/:id", async (req, res) => {
     try {
       const taskId = parseInt(req.params.id);
+      
+      // Get the task to know its eventId before deletion
+      const task = await storage.getTask(taskId);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
       const success = await storage.deleteTask(taskId);
       if (!success) {
         return res.status(404).json({ message: "Task not found" });
       }
+      
+      // Broadcast task deletion via WebSockets
+      const wsService = getWebSocketService();
+      if (wsService) {
+        wsService.broadcastTaskUpdate(task.eventId, { ...task, id: taskId }, 'delete');
+      }
+      
       return res.json({ success: true });
     } catch (error) {
       return res.status(500).json({ message: "Failed to delete task" });
@@ -992,5 +1020,9 @@ Format your response as a JSON array of improvement objects with the following s
   }
   
   const httpServer = createServer(app);
+  
+  // Initialize WebSocket service
+  const wsService = initializeWebSocketService(httpServer);
+  
   return httpServer;
 }
