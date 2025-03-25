@@ -3,6 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
 import { useWebSocketContext } from "@/hooks/websocket-provider";
 import {
   Card,
@@ -1320,6 +1321,73 @@ export default function EventDetail() {
             {/* Vendors tab */}
             <TabsContent value="vendors">
               {event && <EventVendors event={event} />}
+            </TabsContent>
+
+            {/* Collaborators tab */}
+            <TabsContent value="collaborators">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Active Collaborators</h3>
+                <Button 
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigator.clipboard.writeText(window.location.href)}
+                >
+                  <Share2 className="h-4 w-4 mr-1" />
+                  Share Link
+                </Button>
+              </div>
+              
+              {isConnected ? (
+                <div>
+                  {activeParticipants.length > 0 ? (
+                    <div className="space-y-3">
+                      {activeParticipants.map((participant) => (
+                        <Card key={participant.userId}>
+                          <CardContent className="p-4 flex items-center">
+                            <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-medium text-lg mr-3">
+                              {participant.username.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="font-medium">{participant.username}</h4>
+                              <p className="text-sm text-gray-500">
+                                {participant.userId === user?.id ? 'You' : 'Collaborator'}
+                              </p>
+                            </div>
+                            <div className="ml-auto">
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                Online
+                              </Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                      <Users className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+                      <h3 className="text-lg font-medium mb-2">No other collaborators</h3>
+                      <p className="text-gray-500 mb-4">
+                        You're the only one working on this event right now.
+                      </p>
+                      <Button variant="outline" onClick={() => navigator.clipboard.writeText(window.location.href)}>
+                        <Share2 className="h-4 w-4 mr-1" />
+                        Share Link to Invite
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                  <div className="text-red-500 mb-4">
+                    <X className="h-12 w-12 mx-auto mb-2" />
+                    <h3 className="text-lg font-medium">Connection Issue</h3>
+                  </div>
+                  <p className="text-gray-600 mb-4">
+                    Could not connect to the collaboration service. 
+                    Please check your internet connection and refresh the page.
+                  </p>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
           

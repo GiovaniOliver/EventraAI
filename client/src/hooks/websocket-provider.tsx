@@ -30,8 +30,11 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   
   // Function to handle incoming WebSocket messages
   const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
-    if (message.type === MessageType.USER_PRESENCE && message.payload?.activeUsers) {
-      setActiveParticipants(message.payload.activeUsers);
+    if (message.type === MessageType.USER_PRESENCE && message.payload?.allUsers) {
+      setActiveParticipants(message.payload.allUsers);
+    }
+    if (message.type === MessageType.JOIN_EVENT && message.payload?.users) {
+      setActiveParticipants(message.payload.users);
     }
   }, []);
   
