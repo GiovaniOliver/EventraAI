@@ -620,9 +620,9 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                     <div className="flex">
                       <Lightbulb className="h-5 w-5 text-amber-500 mr-2 flex-shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="font-medium text-amber-800">Virtual Event Tip</h4>
+                        <h4 className="font-medium text-amber-800">Event Tip</h4>
                         <p className="text-sm text-amber-700">
-                          Consider testing your platform 24-48 hours before the event to ensure 
+                          Consider testing your technology 24-48 hours before the event to ensure 
                           everything works properly and to familiarize yourself with the features.
                         </p>
                       </div>
@@ -685,7 +685,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                 {eventData.format === "virtual" && (
                   <Card className="border-primary/20 bg-primary/5">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">Platform Considerations</CardTitle>
+                      <CardTitle className="text-base">Technology Considerations</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
                       <div className="flex items-start">
@@ -693,7 +693,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                           <Users className="h-3.5 w-3.5 text-primary" />
                         </span>
                         <span>
-                          For <strong>{eventData.estimatedGuests}</strong> attendees, ensure your platform 
+                          For <strong>{eventData.estimatedGuests}</strong> attendees, ensure your virtual platform 
                           supports this capacity without performance issues
                         </span>
                       </div>
@@ -804,7 +804,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                         <Badge variant="outline" className="mr-1">Promotion</Badge>
                         <Badge variant="outline" className="mr-1">Attendee Experience</Badge>
                         {eventData.format === "virtual" && (
-                          <Badge variant="outline" className="mr-1">Platform Testing</Badge>
+                          <Badge variant="outline" className="mr-1">Technology Testing</Badge>
                         )}
                         {eventData.budget && (
                           <Badge variant="outline" className="mr-1">Budget Management</Badge>
