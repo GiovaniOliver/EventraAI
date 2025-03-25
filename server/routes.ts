@@ -271,7 +271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Task routes
-  app.post("/api/tasks", async (req, res) => {
+  app.post("/api/tasks", isSubscribedUser, async (req, res) => {
     try {
       console.log("Received task data:", JSON.stringify(req.body, null, 2));
       
@@ -583,7 +583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // AI suggestions routes
-  app.post("/api/ai/suggestions", async (req, res) => {
+  app.post("/api/ai/suggestions", isSubscribedUser, async (req, res) => {
     try {
       const { eventType, theme, budget, preferences } = req.body;
       
@@ -630,7 +630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // AI Event Improvement Suggestions
-  app.post("/api/ai/improve-event", async (req, res) => {
+  app.post("/api/ai/improve-event", isSubscribedUser, async (req, res) => {
     try {
       const { event } = req.body;
       
@@ -710,7 +710,7 @@ Format your response as a JSON array of improvement objects with the following s
   });
 
   // AI Budget Optimization
-  app.post("/api/ai/optimize-budget", async (req, res) => {
+  app.post("/api/ai/optimize-budget", isSubscribedUser, async (req, res) => {
     try {
       const { event, currentBudgetItems, similarEvents } = req.body;
       
@@ -743,7 +743,7 @@ Format your response as a JSON array of improvement objects with the following s
   });
 
   // Analytics routes
-  app.post("/api/events/:eventId/analytics", async (req, res) => {
+  app.post("/api/events/:eventId/analytics", isSubscribedUser, async (req, res) => {
     try {
       const eventId = parseInt(req.params.eventId);
       
@@ -770,7 +770,7 @@ Format your response as a JSON array of improvement objects with the following s
     }
   });
   
-  app.get("/api/events/:eventId/analytics", async (req, res) => {
+  app.get("/api/events/:eventId/analytics", isSubscribedUser, async (req, res) => {
     try {
       const eventId = parseInt(req.params.eventId);
       
@@ -782,7 +782,7 @@ Format your response as a JSON array of improvement objects with the following s
     }
   });
   
-  app.put("/api/analytics/:id", async (req, res) => {
+  app.put("/api/analytics/:id", isSubscribedUser, async (req, res) => {
     try {
       const analyticsId = parseInt(req.params.id);
       const updatedAnalytics = await storage.updateEventAnalytics(analyticsId, req.body);
@@ -798,7 +798,7 @@ Format your response as a JSON array of improvement objects with the following s
   });
   
   // Attendee Feedback routes
-  app.post("/api/events/:eventId/feedback", async (req, res) => {
+  app.post("/api/events/:eventId/feedback", isSubscribedUser, async (req, res) => {
     try {
       const eventId = parseInt(req.params.eventId);
       
@@ -825,7 +825,7 @@ Format your response as a JSON array of improvement objects with the following s
     }
   });
   
-  app.get("/api/events/:eventId/feedback", async (req, res) => {
+  app.get("/api/events/:eventId/feedback", isSubscribedUser, async (req, res) => {
     try {
       const eventId = parseInt(req.params.eventId);
       
@@ -837,7 +837,7 @@ Format your response as a JSON array of improvement objects with the following s
     }
   });
   
-  app.get("/api/events/:eventId/feedback-summary", async (req, res) => {
+  app.get("/api/events/:eventId/feedback-summary", isSubscribedUser, async (req, res) => {
     try {
       const eventId = parseInt(req.params.eventId);
       
