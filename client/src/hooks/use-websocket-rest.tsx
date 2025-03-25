@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { queryClient } from "@/lib/queryClient";
 
+// Reusing the same enum values for message types
 export enum MessageType {
   JOIN_EVENT = 'join_event',
   LEAVE_EVENT = 'leave_event',
@@ -36,20 +37,20 @@ type WebSocketHookOptions = {
 };
 
 /**
- * REST-only implementation that doesn't attempt WebSocket connections
- * Used to completely bypass WebSocket issues in Replit environments
+ * REST-only implementation of the WebSocket hook that doesn't attempt connections
+ * but provides the same interface for compatibility
  */
 export function useWebSocket(options: WebSocketHookOptions = {}) {
-  // Always report as not connected - we're using REST fallback instead
+  // Set up mock state values - always show as not connected
   const isConnected = false;
   const isConnecting = false;
   
-  // Call onClose callback to notify we're not using WebSockets
+  // Call onClose callback to indicate we're not connected
   if (options.onClose) {
     options.onClose();
   }
   
-  // Function to handle different message types and update application state - kept for compatibility
+  // Function to handle different message types and update application state
   const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
     switch (message.type) {
       case MessageType.EVENT_UPDATE:
@@ -82,27 +83,28 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     }
   }, [options]);
   
-  // Send a message - no-op function since we're not using WebSockets
+  // Send a message - always returns false since we're not connected
   const sendMessage = useCallback((message: WebSocketMessage) => {
+    // Log the message for debugging but don't attempt to send
     console.info('[WebSocket-REST] Message not sent (using REST fallback):', message.type);
     return false;
   }, []);
   
-  // Join an event room - no-op function
+  // Join an event room - noop function
   const joinEvent = useCallback((eventId: number, userId: number, username: string) => {
     console.info('[WebSocket-REST] Join event not sent (using REST fallback):', eventId);
     return false;
   }, []);
   
-  // Leave an event room - no-op function
+  // Leave an event room - noop function
   const leaveEvent = useCallback((eventId: number) => {
     console.info('[WebSocket-REST] Leave event not sent (using REST fallback):', eventId);
     return false;
   }, []);
   
-  // Reconnect function - no-op
-  const connect = useCallback(() => {
-    console.info('[WebSocket-REST] Using REST-based collaboration instead of WebSockets');
+  // Reconnect function - noop
+  const reconnect = useCallback(() => {
+    console.info('[WebSocket-REST] Reconnect not attempted (using REST fallback)');
   }, []);
   
   return {
@@ -111,6 +113,6 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     sendMessage,
     joinEvent,
     leaveEvent,
-    reconnect: connect
+    reconnect
   };
 }
