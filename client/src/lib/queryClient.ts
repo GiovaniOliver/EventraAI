@@ -7,20 +7,52 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
-  url: string,
+export async function apiRequest<T = any>(
+  methodOrConfig: string | { 
+    url: string; 
+    method: string; 
+    data?: unknown 
+  },
+  urlOrData?: string | unknown,
   data?: unknown | undefined,
-): Promise<Response> {
-  const res = await fetch(url, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+): Promise<T | Response> {
+  let method: string;
+  let url: string;
+  let body: unknown | undefined;
 
-  await throwIfResNotOk(res);
-  return res;
+  // Handle both formats of calling the function
+  if (typeof methodOrConfig === 'string') {
+    // Old format: apiRequest('GET', '/api/users', data)
+    method = methodOrConfig;
+    url = urlOrData as string;
+    body = data;
+  } else {
+    // New format: apiRequest({ url: '/api/users', method: 'GET', data })
+    method = methodOrConfig.method;
+    url = methodOrConfig.url;
+    body = methodOrConfig.data;
+  }
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : {},
+      body: body ? JSON.stringify(body) : undefined,
+      credentials: "include",
+    });
+
+    await throwIfResNotOk(res);
+    
+    // For GET requests, always try to return JSON
+    if (method === 'GET') {
+      return await res.json() as T;
+    }
+    
+    return res;
+  } catch (error) {
+    console.error(`API Request failed for ${method} ${url}:`, error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

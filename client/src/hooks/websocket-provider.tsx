@@ -34,6 +34,12 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const [connectionFailed, setConnectionFailed] = useState(false);
   const connectionAttempts = useRef(0);
   const connectionFailedNotified = useRef(false);
+  const toastRef = useRef(toast);
+  
+  // Store toast in ref to avoid dependencies changing
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
   
   // Function to handle incoming WebSocket messages
   const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
@@ -42,6 +48,40 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     }
     if (message.type === MessageType.JOIN_EVENT && message.payload?.users) {
       setActiveParticipants(message.payload.users);
+    }
+  }, []);
+
+  // Define callbacks outside useWebSocket to avoid recreating the hook on every render
+  const handleOpen = useCallback(() => {
+    connectionAttempts.current = 0;
+    setConnectionFailed(false);
+    
+    if (connectionFailedNotified.current) {
+      toastRef.current({
+        title: "Collaboration enabled",
+        description: "Real-time collaboration is now available.",
+      });
+      connectionFailedNotified.current = false;
+    }
+  }, []);
+  
+  const handleClose = useCallback(() => {
+    // This will be called when the connection is closed
+    connectionAttempts.current += 1;
+    
+    // If we've tried reconnecting too many times, mark connection as failed
+    if (connectionAttempts.current >= 5) {
+      setConnectionFailed(true);
+      
+      // Only show the toast once
+      if (!connectionFailedNotified.current) {
+        toastRef.current({
+          title: "Collaboration limited",
+          description: "Unable to establish real-time connection. Some collaboration features may be limited.",
+          variant: "default"
+        });
+        connectionFailedNotified.current = true;
+      }
     }
   }, []);
 
@@ -58,37 +98,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     maxReconnectAttempts: 5,
     reconnectInterval: 3000,
     onMessage: handleWebSocketMessage,
-    onOpen: () => {
-      connectionAttempts.current = 0;
-      setConnectionFailed(false);
-      
-      if (connectionFailedNotified.current) {
-        toast({
-          title: "Collaboration enabled",
-          description: "Real-time collaboration is now available.",
-        });
-        connectionFailedNotified.current = false;
-      }
-    },
-    onClose: () => {
-      // This will be called when the connection is closed
-      connectionAttempts.current += 1;
-      
-      // If we've tried reconnecting too many times, mark connection as failed
-      if (connectionAttempts.current >= 5) {
-        setConnectionFailed(true);
-        
-        // Only show the toast once
-        if (!connectionFailedNotified.current) {
-          toast({
-            title: "Collaboration limited",
-            description: "Unable to establish real-time connection. Some collaboration features may be limited.",
-            variant: "default"
-          });
-          connectionFailedNotified.current = true;
-        }
-      }
-    }
+    onOpen: handleOpen,
+    onClose: handleClose
   });
   
   // Wrapper around joinEvent that includes current user information

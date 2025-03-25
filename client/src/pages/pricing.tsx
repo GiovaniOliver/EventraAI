@@ -13,7 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 export default function PricingPage() {
   const { toast } = useToast();
   const { user, isLoading: authLoading } = useAuth();
-  const [_, navigate] = useLocation();
+  const [_, setLocation] = useLocation();
 
   const { data: plans, isLoading, error } = useQuery({
     queryKey: ["/api/subscription-plans"],
@@ -33,7 +33,7 @@ export default function PricingPage() {
         description: "Please sign in before subscribing to a plan",
         variant: "destructive",
       });
-      navigate("/auth");
+      setLocation("/auth");
       return;
     }
 
@@ -60,7 +60,7 @@ export default function PricingPage() {
         window.location.href = data.checkoutUrl;
       } else if (data.clientSecret) {
         // Handle subscription with client secret
-        navigate("/checkout?session_id=" + data.subscriptionId);
+        setLocation("/checkout?session_id=" + data.subscriptionId);
       }
     } catch (error) {
       console.error("Subscription error:", error);

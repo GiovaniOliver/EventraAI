@@ -920,66 +920,29 @@ Format your response as a JSON array of improvement objects with the following s
           return res.status(401).json({ message: "You must be logged in to manage subscriptions" });
         }
         
+        const user = req.user;
         const { planId } = req.body;
         
-        if (!planId) {
-          return res.status(400).json({ message: "Plan ID is required" });
+        // Default to pro plan if not specified
+        let plan;
+        if (planId) {
+          plan = await storage.getSubscriptionPlan(parseInt(planId));
+        } else {
+          plan = await storage.getSubscriptionPlanByName("pro");
         }
-        
-        const user = req.user;
-        const plan = await storage.getSubscriptionPlan(parseInt(planId));
         
         if (!plan) {
           return res.status(404).json({ message: "Subscription plan not found" });
         }
         
-        // For starter plan ($9.99) - if we want to bypass payment during development
-        // In production, we would remove this condition and treat all paid plans the same
-        if (plan.name === "starter" && process.env.NODE_ENV === "development") {
-          const updatedUser = await storage.updateUserSubscription(
-            user.id,
-            plan.name,
-            "active"
-          );
-          
-          return res.json({
-            success: true,
-            subscription: {
-              tier: plan.name,
-              status: "active",
-              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
-            }
-          });
-        }
-        
-        // Paid subscription
-        if (user.stripeCustomerId) {
-          // Get existing subscription
-          const subscriptions = await stripe.subscriptions.list({
-            customer: user.stripeCustomerId,
-            status: 'active',
-            limit: 1
-          });
-          
-          if (subscriptions.data.length > 0) {
-            const subscription = subscriptions.data[0];
-            
-            res.json({
-              subscriptionId: subscription.id,
-              clientSecret: subscription.latest_invoice?.payment_intent?.client_secret,
-              status: subscription.status
-            });
-            
-            return;
-          }
-        }
+        console.log(`Creating subscription for user ${user.id} with plan ${plan.name} ($${plan.price}/month)`);
         
         // Create new customer if needed
         let customerId = user.stripeCustomerId;
         
         if (!customerId) {
           const customer = await stripe.customers.create({
-            email: user.email,
+            email: user.email || 'test@example.com',
             name: user.displayName || user.username,
             metadata: {
               userId: user.id.toString()
@@ -990,27 +953,16 @@ Format your response as a JSON array of improvement objects with the following s
           await storage.updateStripeCustomerId(user.id, customerId);
         }
         
-        // Create subscription
-        const subscription = await stripe.subscriptions.create({
+        // Create a payment intent for testing purposes
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: Math.round(plan.price * 100), // Convert to cents
+          currency: 'usd',
           customer: customerId,
-          items: [{
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: plan.displayName || plan.name,
-                description: plan.description || ''
-              },
-              unit_amount: Math.round(plan.price * 100), // Convert to cents
-              recurring: {
-                interval: plan.billingCycle || 'month'
-              }
-            }
-          }],
-          payment_behavior: 'default_incomplete',
-          expand: ['latest_invoice.payment_intent'],
           metadata: {
+            integration_check: 'accept_a_payment',
             userId: user.id.toString(),
-            planId: plan.id.toString()
+            planId: plan.id.toString(),
+            planName: plan.name
           }
         });
         
@@ -1018,7 +970,7 @@ Format your response as a JSON array of improvement objects with the following s
         await storage.updateUserSubscription(
           user.id,
           plan.name,
-          subscription.status
+          "pending" // Will be updated to active after successful payment
         );
         
         // Create a transaction record
@@ -1028,14 +980,14 @@ Format your response as a JSON array of improvement objects with the following s
           userId: user.id,
           amount: plan.price,
           currency: "usd",
-          stripeInvoiceId: subscription.latest_invoice?.id || null,
+          stripePaymentIntentId: paymentIntent.id,
           description: `Subscription to ${plan.displayName || plan.name}`
         });
         
         res.json({
-          subscriptionId: subscription.id,
-          clientSecret: subscription.latest_invoice?.payment_intent?.client_secret,
-          status: subscription.status
+          clientSecret: paymentIntent.client_secret,
+          planName: plan.name,
+          planPrice: plan.price
         });
       } catch (error) {
         console.error("Subscription error:", error);

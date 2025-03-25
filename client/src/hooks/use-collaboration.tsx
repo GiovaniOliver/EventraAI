@@ -87,6 +87,7 @@ export function useCollaboration(eventId: number | null, options: CollaborationH
   // Register presence on mount and when dependencies change
   useEffect(() => {
     if (eventId && user) {
+      // Call it once right away
       registerPresence();
       
       // Register presence periodically
@@ -98,7 +99,9 @@ export function useCollaboration(eventId: number | null, options: CollaborationH
         clearInterval(interval);
       };
     }
-  }, [eventId, user, registerPresence, pollingInterval]);
+  // Remove registerPresence from dependencies to avoid potential infinite loop
+  // The registerPresence function will close over the latest eventId and user values
+  }, [eventId, user, pollingInterval]);
   
   // Create a function to notify others and invalidate related queries when an event is updated
   const notifyEventUpdate = useCallback(async (updatedEventId: number) => {

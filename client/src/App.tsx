@@ -21,6 +21,8 @@ import AboutPage from "@/pages/about";
 import BlogPage from "@/pages/blog";
 import PromotionPage from "@/pages/promotion";
 import Dashboard from "@/pages/home";
+import Subscribe from "@/pages/subscribe";
+import Checkout from "@/pages/checkout";
 
 import OnboardingModal from "@/components/modals/onboarding-modal";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -71,6 +73,8 @@ function Router() {
           <ProtectedRoute path="/analytics" component={Analytics} />
           <ProtectedRoute path="/profile" component={Profile} />
           <ProtectedRoute path="/settings" component={Settings} />
+          <ProtectedRoute path="/subscribe" component={Subscribe} />
+          <ProtectedRoute path="/checkout" component={Checkout} />  
           <AdminRoute path="/admin" component={AdminDashboard} />
           <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
