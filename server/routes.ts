@@ -388,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Planning tips routes
-  app.get("/api/planning-tips", async (req, res) => {
+  app.get("/api/planning-tips", isSubscribedUser, async (req, res) => {
     try {
       const category = req.query.category as string | undefined;
       let tips;
@@ -495,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/vendors", async (req, res) => {
+  app.post("/api/vendors", isSubscribedUser, async (req, res) => {
     try {
       const vendorData = insertVendorSchema.parse(req.body);
       const vendor = await storage.createVendor(vendorData);
@@ -508,7 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/vendors/:id", async (req, res) => {
+  app.put("/api/vendors/:id", isSubscribedUser, async (req, res) => {
     try {
       const vendorId = parseInt(req.params.id);
       const vendorData = req.body;
@@ -524,7 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete("/api/vendors/:id", async (req, res) => {
+  app.delete("/api/vendors/:id", isSubscribedUser, async (req, res) => {
     try {
       const vendorId = parseInt(req.params.id);
       const success = await storage.deleteVendor(vendorId);
@@ -540,7 +540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Event-Vendor routes
-  app.get("/api/events/:eventId/vendors", async (req, res) => {
+  app.get("/api/events/:eventId/vendors", isAuthenticated, async (req, res) => {
     try {
       const eventId = parseInt(req.params.eventId);
       const eventVendors = await storage.getVendorsByEvent(eventId);
@@ -562,7 +562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/events/:eventId/vendors", async (req, res) => {
+  app.post("/api/events/:eventId/vendors", isSubscribedUser, async (req, res) => {
     try {
       const eventId = parseInt(req.params.eventId);
       
