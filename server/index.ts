@@ -38,6 +38,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Set up the admin user with specified credentials
+  await setupAdminUser();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

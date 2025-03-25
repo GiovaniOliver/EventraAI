@@ -74,10 +74,13 @@ function isAdmin(req: any, res: any, next: any) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   
+  // Check the isAdmin flag from user schema
   if (!req.user.isAdmin) {
+    console.log("Access denied: User is not an admin", req.user.username);
     return res.status(403).json({ message: "Forbidden: Admin access required" });
   }
   
+  console.log("Admin access granted for user:", req.user.username);
   next();
 }
 
