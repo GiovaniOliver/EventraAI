@@ -1125,6 +1125,59 @@ Format your response as a JSON array of improvement objects with the following s
     
     return res.status(200).json(participants);
   });
+  
+  // Synchronization notifications for client-side cache invalidation
+  app.post('/api/events/:id/notify/event-update', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    const eventId = parseInt(req.params.id);
+    
+    // Try to use WebSocket for real-time notification if available
+    const wsService = getWebSocketService();
+    if (wsService) {
+      wsService.broadcastEventUpdate(eventId, { updated: true });
+    }
+    
+    return res.status(200).json({ message: 'Notification sent' });
+  });
+  
+  app.post('/api/events/:id/notify/task-update', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    const eventId = parseInt(req.params.id);
+    
+    // Try to use WebSocket for real-time notification if available
+    const wsService = getWebSocketService();
+    if (wsService) {
+      wsService.broadcastTaskUpdate(eventId, { updated: true }, 'update');
+    }
+    
+    return res.status(200).json({ message: 'Notification sent' });
+  });
+  
+  app.post('/api/events/:id/notify/guest-update', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+    
+    const eventId = parseInt(req.params.id);
+    
+    // Try to use WebSocket for real-time notification if available
+    const wsService = getWebSocketService();
+    if (wsService) {
+      // Use event update as there's no specific guest update message type
+      wsService.broadcastEventUpdate(eventId, { 
+        guestUpdate: true,
+        timestamp: Date.now()
+      });
+    }
+    
+    return res.status(200).json({ message: 'Notification sent' });
+  });
 
   const httpServer = createServer(app);
   

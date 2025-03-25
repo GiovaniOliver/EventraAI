@@ -100,20 +100,47 @@ export function useCollaboration(eventId: number | null, options: CollaborationH
     }
   }, [eventId, user, registerPresence, pollingInterval]);
   
-  // Create a function to invalidate related queries when an event is updated
-  const notifyEventUpdate = useCallback((updatedEventId: number) => {
+  // Create a function to notify others and invalidate related queries when an event is updated
+  const notifyEventUpdate = useCallback(async (updatedEventId: number) => {
+    // Invalidate our own caches immediately
     queryClient.invalidateQueries({ queryKey: ['/api/events'] });
     queryClient.invalidateQueries({ queryKey: [`/api/events/${updatedEventId}`] });
+    
+    // Try to send a notification to other clients via the server
+    try {
+      await apiRequest("POST", `/api/events/${updatedEventId}/notify/event-update`);
+    } catch (err) {
+      console.error("Failed to send event update notification:", err);
+      // Continue even if notification fails - local invalidation still works
+    }
   }, [queryClient]);
   
-  // Create a function to invalidate task queries when tasks are changed
-  const notifyTaskUpdate = useCallback((taskEventId: number) => {
+  // Create a function to notify others and invalidate task queries when tasks are changed
+  const notifyTaskUpdate = useCallback(async (taskEventId: number) => {
+    // Invalidate our own cache immediately
     queryClient.invalidateQueries({ queryKey: [`/api/events/${taskEventId}/tasks`] });
+    
+    // Try to send a notification to other clients via the server
+    try {
+      await apiRequest("POST", `/api/events/${taskEventId}/notify/task-update`);
+    } catch (err) {
+      console.error("Failed to send task update notification:", err);
+      // Continue even if notification fails - local invalidation still works
+    }
   }, [queryClient]);
   
-  // Create a function to invalidate guest queries when guests are changed
-  const notifyGuestUpdate = useCallback((guestEventId: number) => {
+  // Create a function to notify others and invalidate guest queries when guests are changed
+  const notifyGuestUpdate = useCallback(async (guestEventId: number) => {
+    // Invalidate our own cache immediately
     queryClient.invalidateQueries({ queryKey: [`/api/events/${guestEventId}/guests`] });
+    
+    // Try to send a notification to other clients via the server
+    try {
+      await apiRequest("POST", `/api/events/${guestEventId}/notify/guest-update`);
+    } catch (err) {
+      console.error("Failed to send guest update notification:", err);
+      // Continue even if notification fails - local invalidation still works
+    }
   }, [queryClient]);
   
   return {
