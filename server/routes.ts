@@ -1198,13 +1198,13 @@ Format your response as a JSON array of improvement objects with the following s
   // Admin routes
   app.get("/api/admin/users", isAdmin, async (req, res) => {
     try {
-      // Get all admin users
-      const adminUsers = await storage.getAdminUsers();
-      return res.json(adminUsers);
+      // Get all users
+      const users = await storage.getAllUsers();
+      return res.json(users);
     } catch (error) {
-      console.error("Error getting admin users:", error);
+      console.error("Error getting users:", error);
       return res.status(500).json({ 
-        message: "Failed to get admin users",
+        message: "Failed to get users",
         error: error instanceof Error ? error.message : String(error)
       });
     }

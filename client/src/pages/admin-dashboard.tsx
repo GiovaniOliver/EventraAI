@@ -431,7 +431,7 @@ export default function AdminDashboard() {
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {vendor.userId ? `User #${vendor.userId}` : 'System'}
+                          {vendor.ownerId ? `User #${vendor.ownerId}` : 'System'}
                         </TableCell>
                       </TableRow>
                     ))}

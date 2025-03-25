@@ -53,6 +53,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   getAdminUsers(): Promise<User[]>;
   createAdminUser(user: InsertUser): Promise<User>;
   updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
@@ -361,6 +362,10 @@ export class MemStorage implements IStorage {
     
     this.users.set(id, updatedUser);
     return updatedUser;
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
   }
   
   async getAdminUsers(): Promise<User[]> {
@@ -1128,6 +1133,10 @@ export class DatabaseStorage implements IStorage {
     return updatedUser;
   }
   
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
+
   async getAdminUsers(): Promise<User[]> {
     return db.select().from(users).where(eq(users.isAdmin, true));
   }
