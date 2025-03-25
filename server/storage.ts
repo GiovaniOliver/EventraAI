@@ -1086,6 +1086,7 @@ export class DatabaseStorage implements IStorage {
         guestLimit: null, // Unlimited
         vendorLimit: null, // Unlimited
         analyticsPeriod: 12,
+        aiCallLimit: null, // Unlimited
         isActive: true
       }
     ];

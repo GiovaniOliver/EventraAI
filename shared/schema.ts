@@ -11,7 +11,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   isAdmin: boolean("is_admin").default(false).notNull(),
   stripeCustomerId: text("stripe_customer_id"),
-  subscriptionTier: text("subscription_tier").default("free").notNull(), // free, basic, premium, enterprise
+  subscriptionTier: text("subscription_tier").default("starter").notNull(), // starter, pro, business, enterprise
   subscriptionStatus: text("subscription_status").default("active").notNull(), // active, past_due, canceled, unpaid
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
