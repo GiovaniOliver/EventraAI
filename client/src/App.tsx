@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useState, useEffect } from "react";
 
 import Layout from "@/components/layout/layout";
-import Home from "@/pages/home";
+import HomePage from "@/pages/home-page";
 import Events from "@/pages/events";
 import EventDetail from "@/pages/event-detail";
 import Discover from "@/pages/discover";
@@ -17,6 +17,9 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import AdminDashboard from "@/pages/admin-dashboard";
 import PricingPage from "@/pages/pricing";
+import AboutPage from "@/pages/about";
+import BlogPage from "@/pages/blog";
+import PromotionPage from "@/pages/promotion";
 
 import OnboardingModal from "@/components/modals/onboarding-modal";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -54,7 +57,11 @@ function Router() {
     <>
       <Layout currentPath={location}>
         <Switch>
-          <ProtectedRoute path="/" component={Home} />
+          <Route path="/" component={HomePage} />
+          <Route path="/about" component={AboutPage} />
+          <Route path="/blog" component={BlogPage} />
+          <Route path="/promotion" component={PromotionPage} />
+          <Route path="/pricing" component={PricingPage} />
           <ProtectedRoute path="/events" component={Events} />
           <ProtectedRoute path="/events/:id" component={EventDetail} />
           <ProtectedRoute path="/discover" component={Discover} />
@@ -63,7 +70,6 @@ function Router() {
           <ProtectedRoute path="/profile" component={Profile} />
           <ProtectedRoute path="/settings" component={Settings} />
           <AdminRoute path="/admin" component={AdminDashboard} />
-          <Route path="/pricing" component={PricingPage} />
           <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
         </Switch>

@@ -38,13 +38,28 @@ export default function Header() {
   return (
     <header className="bg-background border-b border-border fixed top-0 left-0 right-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
-        <div className="flex items-center">
+        <div className="flex items-center gap-8">
           <Link href="/">
             <h1 className="text-xl font-bold text-primary flex items-center gap-1.5">
               <Calendar className="h-5 w-5" />
               <span>EventFlow</span>
             </h1>
           </Link>
+          
+          <nav className="hidden md:flex space-x-6">
+            <Link href="/about" className="text-sm font-medium hover:text-primary transition-colors">
+              About
+            </Link>
+            <Link href="/blog" className="text-sm font-medium hover:text-primary transition-colors">
+              Blog
+            </Link>
+            <Link href="/promotion" className="text-sm font-medium hover:text-primary transition-colors">
+              Special Offer
+            </Link>
+            <Link href="/pricing" className="text-sm font-medium hover:text-primary transition-colors">
+              Pricing
+            </Link>
+          </nav>
         </div>
         
         <div className="flex items-center gap-2">
