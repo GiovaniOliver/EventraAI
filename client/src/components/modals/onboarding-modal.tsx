@@ -19,8 +19,8 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
         </div>
         
         <div className="p-6">
-          <DialogTitle className="text-2xl font-semibold mb-2 text-center">Welcome to EventFlow</DialogTitle>
-          <DialogDescription id="onboarding-description" className="text-gray-600 text-center mb-6">Your AI-powered assistant for planning amazing virtual and hybrid events</DialogDescription>
+          <DialogTitle className="text-2xl font-semibold mb-2 text-center">Welcome to Eventra AI</DialogTitle>
+          <DialogDescription id="onboarding-description" className="text-gray-600 text-center mb-6">Your AI-powered assistant for planning amazing events of all types</DialogDescription>
           
           <div className="space-y-4 mb-6">
             <div className="flex items-start">

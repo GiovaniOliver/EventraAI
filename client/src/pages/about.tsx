@@ -117,19 +117,19 @@ export default function AboutPage() {
           
           <div className="prose prose-lg max-w-none">
             <p>
-              Founded in 2023, our platform emerged from a simple observation: virtual event planning was unnecessarily complex and stressful. Our team of event industry veterans and technology experts came together with a shared vision to revolutionize how virtual events are planned and executed.
+              Founded in 2023, Eventra AI emerged from a simple observation: event planning was unnecessarily complex and stressful. Our team of event industry veterans and technology experts came together with a shared vision to revolutionize how all types of events are planned and executed.
             </p>
             <p>
-              We recognized that while virtual events offer incredible opportunities for global reach and engagement, the tools available to planners weren't evolving quickly enough to meet their needs. Fragmented solutions, tedious manual processes, and a lack of collaborative features were making event planning more difficult than it needed to be.
+              We recognized that while events offer incredible opportunities for engagement and connection, the tools available to planners weren't evolving quickly enough to meet their needs. Fragmented solutions, tedious manual processes, and a lack of collaborative features were making event planning more difficult than it needed to be.
             </p>
             <p>
               Our answer was to create an all-in-one platform that combines the power of artificial intelligence with user-friendly tools designed specifically for the needs of modern event planners. By focusing on intuitive workflows, real-time collaboration, and data-driven insights, we've built a solution that transforms the event planning experience.
             </p>
             <p>
-              Today, we're proud to serve thousands of event planners worldwide, from individual professionals to large enterprise teams. Our platform helps them create seamless, engaging virtual events while saving time, reducing stress, and increasing attendee satisfaction.
+              Today, we're proud to serve thousands of event planners worldwide, from individual professionals to large enterprise teams. Eventra AI helps them create seamless, engaging events while saving time, reducing stress, and increasing attendee satisfaction.
             </p>
             <p>
-              As we continue to grow, our commitment remains the same: to empower event professionals with innovative tools that make their work easier and more effective, allowing them to focus on what truly matters – creating exceptional experiences for their attendees.
+              As we continue to grow, our commitment remains the same: to empower event professionals with innovative AI-powered tools that make their work easier and more effective, allowing them to focus on what truly matters – creating exceptional experiences for their attendees.
             </p>
           </div>
         </div>
@@ -195,12 +195,12 @@ export default function AboutPage() {
         <div className="container mx-auto max-w-6xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Join Us on Our Mission</h2>
           <p className="text-xl mb-8 max-w-3xl mx-auto opacity-90">
-            Experience the difference our platform can make for your next virtual event.
+            Experience the difference Eventra AI can make for planning your next event.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" variant="secondary" asChild>
               <Link href="/auth">
-                Create Free Account
+                Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>

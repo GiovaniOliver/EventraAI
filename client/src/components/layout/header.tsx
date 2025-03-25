@@ -42,7 +42,7 @@ export default function Header() {
           <Link href="/">
             <h1 className="text-xl font-bold text-primary flex items-center gap-1.5">
               <Calendar className="h-5 w-5" />
-              <span>EventFlow</span>
+              <span>Eventra AI</span>
             </h1>
           </Link>
           
