@@ -34,6 +34,7 @@ import {
   CollapsibleTrigger
 } from "@/components/ui/collapsible";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   TrendingUp,
@@ -49,6 +50,7 @@ import {
   MapPin,
   MoreVertical,
   Plus,
+  RefreshCw,
   Share2,
   Sparkles,
   Tag,
@@ -1334,7 +1336,47 @@ export default function EventDetail() {
                 </Button>
               </div>
               
-              {isConnected ? (
+              {connectionFailed ? (
+                <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                  <div className="text-amber-500 mb-4">
+                    <AlertTriangle className="h-12 w-12 mx-auto mb-2" />
+                    <h3 className="text-lg font-medium">Limited Collaboration Mode</h3>
+                  </div>
+                  <p className="text-gray-600 mb-4">
+                    Real-time collaboration is currently unavailable. You can still work on this event,
+                    but changes won't be synced in real-time with other team members.
+                  </p>
+                  <div className="flex flex-col sm:flex-row justify-center gap-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => window.location.reload()}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Retry Connection
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigator.clipboard.writeText(window.location.href)}
+                    >
+                      <Share2 className="h-4 w-4 mr-1" />
+                      Share Link
+                    </Button>
+                  </div>
+                </div>
+              ) : !isConnected ? (
+                <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                  <div className="text-gray-500 mb-4">
+                    <div className="mx-auto mb-2 h-12 w-12 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                    <h3 className="text-lg font-medium">Connecting...</h3>
+                  </div>
+                  <p className="text-gray-600 mb-4">
+                    Attempting to establish a connection to the collaboration service.
+                    This may take a moment.
+                  </p>
+                </div>
+              ) : (
                 <div>
                   {activeParticipants.length > 0 ? (
                     <div className="space-y-3">
@@ -1372,17 +1414,6 @@ export default function EventDetail() {
                       </Button>
                     </div>
                   )}
-                </div>
-              ) : (
-                <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                  <div className="text-red-500 mb-4">
-                    <X className="h-12 w-12 mx-auto mb-2" />
-                    <h3 className="text-lg font-medium">Connection Issue</h3>
-                  </div>
-                  <p className="text-gray-600 mb-4">
-                    Could not connect to the collaboration service. 
-                    Please check your internet connection and refresh the page.
-                  </p>
                 </div>
               )}
             </TabsContent>
