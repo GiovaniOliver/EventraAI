@@ -3,6 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
+import { useWebSocketContext } from "@/hooks/websocket-provider";
 import {
   Card,
   CardContent,

@@ -102,6 +102,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Parsed event data:", eventData);
       
       const event = await storage.createEvent(eventData);
+      
+      // Broadcast event creation via WebSockets
+      const wsService = getWebSocketService();
+      if (wsService) {
+        wsService.broadcastEventUpdate(event.id, event);
+      }
+      
       return res.status(201).json(event);
     } catch (error) {
       console.error("Event creation error:", error);
@@ -148,6 +155,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Event not found" });
       }
       
+      // Broadcast event update via WebSockets
+      const wsService = getWebSocketService();
+      if (wsService) {
+        wsService.broadcastEventUpdate(eventId, updatedEvent);
+      }
+      
       return res.json(updatedEvent);
     } catch (error) {
       return res.status(500).json({ message: "Failed to update event" });
@@ -157,10 +170,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/events/:id", async (req, res) => {
     try {
       const eventId = parseInt(req.params.id);
+      
+      // Get the event before deleting it to have data for the broadcast
+      const event = await storage.getEvent(eventId);
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+      
       const success = await storage.deleteEvent(eventId);
       if (!success) {
         return res.status(404).json({ message: "Event not found" });
       }
+      
+      // Broadcast event deletion via WebSockets
+      const wsService = getWebSocketService();
+      if (wsService) {
+        wsService.broadcastEventUpdate(eventId, { ...event, deleted: true });
+      }
+      
       return res.json({ success: true });
     } catch (error) {
       return res.status(500).json({ message: "Failed to delete event" });

@@ -19,6 +19,7 @@ import AuthPage from "@/pages/auth-page";
 import OnboardingModal from "@/components/modals/onboarding-modal";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
+import { WebSocketProvider } from "@/hooks/websocket-provider";
 
 function Router() {
   const [location] = useLocation();
@@ -76,8 +77,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router />
-        <Toaster />
+        <WebSocketProvider>
+          <Router />
+          <Toaster />
+        </WebSocketProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
