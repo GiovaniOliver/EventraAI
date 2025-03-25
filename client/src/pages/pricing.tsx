@@ -170,7 +170,7 @@ export default function PricingPage() {
             <CardContent className="flex-grow">
               <h4 className="font-medium mb-3">Features include:</h4>
               <ul className="space-y-2">
-                {JSON.parse(plan.features).map((feature, i) => (
+                {(typeof plan.features === 'string' ? JSON.parse(plan.features) : plan.features).map((feature: string, i: number) => (
                   <li key={i} className="flex items-start gap-2">
                     <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                     <span>{feature}</span>

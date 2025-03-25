@@ -11,9 +11,9 @@ export default function BlogPage() {
 
   const featuredPosts = [
     {
-      id: "virtual-event-trends-2025",
-      title: "Virtual Event Trends in 2025: What to Expect",
-      excerpt: "Explore the emerging trends that will shape the virtual event landscape in 2025, from AI integrations to immersive experiences.",
+      id: "event-trends-2025",
+      title: "Event Industry Trends in 2025: What to Expect",
+      excerpt: "Explore the emerging trends that will shape the event landscape in 2025, from AI integrations to immersive experiences across all event formats.",
       image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       date: "March 18, 2025",
       author: "James Wilson",
@@ -23,7 +23,7 @@ export default function BlogPage() {
     {
       id: "hybrid-events-best-practices",
       title: "Hybrid Events: Best Practices for Seamless Integration",
-      excerpt: "Learn how to create hybrid events that offer equally engaging experiences for both in-person and virtual attendees.",
+      excerpt: "Learn how to create hybrid events that offer equally engaging experiences for both in-person and remote attendees.",
       image: "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       date: "March 10, 2025",
       author: "Sophia Chen",
@@ -33,7 +33,7 @@ export default function BlogPage() {
     {
       id: "ai-event-planning",
       title: "How AI is Revolutionizing Event Planning and Execution",
-      excerpt: "Discover how artificial intelligence is transforming the way events are planned, managed, and optimized for attendee engagement.",
+      excerpt: "Discover how artificial intelligence is transforming the way events are planned, managed, and optimized for attendee engagement for any event type.",
       image: "https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       date: "February 27, 2025",
       author: "Marcus Johnson",
@@ -45,9 +45,9 @@ export default function BlogPage() {
   const allPosts = [
     ...featuredPosts,
     {
-      id: "virtual-networking-strategies",
-      title: "10 Virtual Networking Strategies That Actually Work",
-      excerpt: "Effective strategies to foster meaningful connections and networking opportunities in virtual event settings.",
+      id: "digital-networking-strategies",
+      title: "10 Networking Strategies That Actually Work at Any Event",
+      excerpt: "Effective strategies to foster meaningful connections and networking opportunities at in-person, hybrid, and digital event settings.",
       image: "https://images.unsplash.com/photo-1543269865-cbf427effbad?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       date: "February 21, 2025",
       author: "Emma Davis",
@@ -55,9 +55,9 @@ export default function BlogPage() {
       readTime: "8 min read"
     },
     {
-      id: "budget-friendly-virtual-events",
-      title: "Budget-Friendly Virtual Events: Do More With Less",
-      excerpt: "Practical tips for creating impressive virtual events even with limited resources and budget constraints.",
+      id: "budget-friendly-events",
+      title: "Budget-Friendly Events: Do More With Less",
+      excerpt: "Practical tips for creating impressive events even with limited resources and budget constraints, regardless of format.",
       image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       date: "February 15, 2025",
       author: "David Martinez",
@@ -65,9 +65,9 @@ export default function BlogPage() {
       readTime: "5 min read"
     },
     {
-      id: "measuring-virtual-event-success",
-      title: "Beyond Attendance: Measuring Virtual Event Success",
-      excerpt: "Key metrics and KPIs to evaluate the true impact and ROI of your virtual events beyond simple attendance numbers.",
+      id: "measuring-event-success",
+      title: "Beyond Attendance: Measuring Event Success",
+      excerpt: "Key metrics and KPIs to evaluate the true impact and ROI of your events beyond simple attendance numbers.",
       image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       date: "February 8, 2025",
       author: "Olivia Thompson",
@@ -75,9 +75,9 @@ export default function BlogPage() {
       readTime: "7 min read"
     },
     {
-      id: "virtual-event-accessibility",
-      title: "Making Virtual Events Accessible to Everyone",
-      excerpt: "Best practices for ensuring your virtual events are inclusive and accessible to attendees with various needs and abilities.",
+      id: "event-accessibility",
+      title: "Making Events Accessible to Everyone",
+      excerpt: "Best practices for ensuring your events are inclusive and accessible to attendees with various needs and abilities.",
       image: "https://images.unsplash.com/photo-1573164574001-618f4a00a69b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       date: "January 30, 2025",
       author: "Michael Brown",
@@ -85,9 +85,9 @@ export default function BlogPage() {
       readTime: "6 min read"
     },
     {
-      id: "engaging-virtual-presentations",
-      title: "Creating Engaging Virtual Presentations That Captivate",
-      excerpt: "Techniques and tools to design and deliver virtual presentations that keep attendees engaged and interested.",
+      id: "engaging-presentations",
+      title: "Creating Engaging Presentations That Captivate",
+      excerpt: "Techniques and tools to design and deliver presentations that keep attendees engaged and interested at any event format.",
       image: "https://images.unsplash.com/photo-1558403194-611308249627?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       date: "January 23, 2025",
       author: "Rachel Kim",
@@ -95,9 +95,9 @@ export default function BlogPage() {
       readTime: "8 min read"
     },
     {
-      id: "virtual-event-security",
-      title: "Ensuring Security and Privacy in Virtual Events",
-      excerpt: "Essential practices for protecting your virtual events from security threats and safeguarding attendee privacy.",
+      id: "event-security",
+      title: "Ensuring Security and Privacy in Modern Events",
+      excerpt: "Essential practices for protecting your events from security threats and safeguarding attendee privacy across all formats.",
       image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       date: "January 15, 2025",
       author: "Thomas Walker",
@@ -136,7 +136,7 @@ export default function BlogPage() {
               Event Planning Insights
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-              Expert advice, trends, and strategies to elevate your virtual event planning
+              Expert advice, trends, and strategies to elevate your event planning for any occasion
             </p>
           </div>
           
