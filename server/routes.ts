@@ -48,6 +48,33 @@ interface Participant {
 
 const eventParticipants: Map<number, Map<number, Participant>> = new Map();
 
+// Middleware to check if user is authenticated
+function isAuthenticated(req: any, res: any, next: any) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+  next();
+}
+
+// Middleware to check if user has an active subscription
+function hasActiveSubscription(req: any, res: any, next: any) {
+  const user = req.user;
+  if (!user || !user.subscriptionTier || user.subscriptionStatus !== 'active') {
+    return res.status(403).json({ 
+      message: 'Active subscription required',
+      redirectTo: '/pricing'
+    });
+  }
+  next();
+}
+
+// Combined middleware for protected routes that require subscription
+function isSubscribedUser(req: any, res: any, next: any) {
+  isAuthenticated(req, res, () => {
+    hasActiveSubscription(req, res, next);
+  });
+}
+
 // Cleanup inactive participants periodically (after 5 minutes of inactivity)
 function cleanupInactiveParticipants() {
   const now = Date.now();
@@ -93,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // All routes are prefixed with /api
   
   // Route to get all events
-  app.get("/api/events", async (req, res) => {
+  app.get("/api/events", isSubscribedUser, async (req, res) => {
     try {
       // For now, just return all events from user with ID 1 as a default
       const events = await storage.getEventsByOwner(1);
@@ -138,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Event routes
-  app.post("/api/events", async (req, res) => {
+  app.post("/api/events", isSubscribedUser, async (req, res) => {
     try {
       // Parse the incoming data, but convert ISO date string to Date
       if (req.body.date && typeof req.body.date === 'string') {
