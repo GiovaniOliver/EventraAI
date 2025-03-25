@@ -97,7 +97,7 @@ export default function EventDetail() {
   const [, navigate] = useLocation();
   const [match, params] = useRoute("/events/:id");
   const eventId = match ? parseInt(params.id) : null;
-  const { isConnected, joinEvent, leaveEvent, sendMessage, activeParticipants } = useWebSocketContext();
+  const { isConnected, joinEvent, leaveEvent, sendMessage, activeParticipants, connectionFailed } = useWebSocketContext();
   const { user } = useAuth();
   
   const [isEditing, setIsEditing] = useState(false);
@@ -195,32 +195,29 @@ export default function EventDetail() {
   
   // WebSocket connection for real-time collaboration
   useEffect(() => {
-    if (!eventId || !isConnected || !user) return;
+    if (!eventId || !user) return;
     
     console.log(`Attempting to join event room for event ID: ${eventId}`);
     
-    // Join the event room
+    // Try to join the event room regardless of connection status
+    // The joinEvent function has fallback handling for when connection fails
     const success = joinEvent(eventId);
     
     if (success) {
-      console.log(`Successfully joined event ${eventId}`);
-    } else {
-      console.log(`Failed to join event ${eventId} - WebSocket may not be connected`);
-      toast({
-        title: "Connection Issue",
-        description: "Could not connect to collaboration service. Some features may be limited.",
-        variant: "destructive"
-      });
+      console.log(`Successfully joined event ${eventId} with WebSocket`);
+    } else if (connectionFailed) {
+      console.log(`Using fallback mode for event ${eventId} due to WebSocket connectivity issues`);
+      // No need to show toast here as it's already handled in WebSocketProvider
+    } else if (!isConnected) {
+      console.log(`Temporarily using fallback mode for event ${eventId} - trying to establish WebSocket connection`);
     }
     
     // Cleanup function - leave the event when unmounting
     return () => {
-      if (isConnected) {
-        leaveEvent(eventId);
-        console.log(`Left event room for event ID: ${eventId}`);
-      }
+      leaveEvent(eventId);
+      console.log(`Left event room for event ID: ${eventId}`);
     };
-  }, [eventId, isConnected, joinEvent, leaveEvent, user, toast]);
+  }, [eventId, joinEvent, leaveEvent, user, isConnected, connectionFailed]);
   
   // Update event mutation
   const updateEventMutation = useMutation({

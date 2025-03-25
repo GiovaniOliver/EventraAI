@@ -1,6 +1,7 @@
-import React, { createContext, ReactNode, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, ReactNode, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useWebSocket, WebSocketMessage, MessageType } from "./use-websocket";
 import { useAuth } from "./use-auth";
+import { useToast } from "./use-toast";
 
 // Active participant type
 export interface ActiveParticipant {
@@ -17,6 +18,7 @@ type WebSocketContextType = {
   sendMessage: (message: WebSocketMessage) => boolean;
   reconnect: () => void;
   activeParticipants: ActiveParticipant[];
+  connectionFailed: boolean;
 };
 
 // Create the context with default values
@@ -25,8 +27,12 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(undefin
 // Provider component that will wrap parts of the app that need WebSocket access
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [activeParticipants, setActiveParticipants] = useState<ActiveParticipant[]>([]);
   const [currentEventId, setCurrentEventId] = useState<number | null>(null);
+  const [connectionFailed, setConnectionFailed] = useState(false);
+  const connectionAttempts = useRef(0);
+  const connectionFailedNotified = useRef(false);
   
   // Function to handle incoming WebSocket messages
   const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
@@ -37,7 +43,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setActiveParticipants(message.payload.users);
     }
   }, []);
-  
+
   // Initialize WebSocket hook with default options
   const {
     isConnected,
@@ -50,12 +56,59 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     autoReconnect: true,
     maxReconnectAttempts: 5,
     reconnectInterval: 3000,
-    onMessage: handleWebSocketMessage
+    onMessage: handleWebSocketMessage,
+    onOpen: () => {
+      connectionAttempts.current = 0;
+      setConnectionFailed(false);
+      
+      if (connectionFailedNotified.current) {
+        toast({
+          title: "Collaboration enabled",
+          description: "Real-time collaboration is now available.",
+        });
+        connectionFailedNotified.current = false;
+      }
+    },
+    onClose: () => {
+      // This will be called when the connection is closed
+      connectionAttempts.current += 1;
+      
+      // If we've tried reconnecting too many times, mark connection as failed
+      if (connectionAttempts.current >= 5) {
+        setConnectionFailed(true);
+        
+        // Only show the toast once
+        if (!connectionFailedNotified.current) {
+          toast({
+            title: "Collaboration limited",
+            description: "Unable to establish real-time connection. Some collaboration features may be limited.",
+            variant: "default"
+          });
+          connectionFailedNotified.current = true;
+        }
+      }
+    }
   });
   
   // Wrapper around joinEvent that includes current user information
   const joinEvent = (eventId: number): boolean => {
     if (!user) return false;
+    
+    // If WebSocket connection failed, just update the local state
+    // so the UI can still display correctly, but return false
+    if (connectionFailed || !isConnected) {
+      setCurrentEventId(eventId);
+      
+      // Add just the current user to the participants list as a fallback
+      setActiveParticipants([{
+        userId: user.id,
+        username: user.username
+      }]);
+      
+      return false;
+    }
+    
+    // Normal path when WebSocket is connected
     setCurrentEventId(eventId);
     return joinEventRaw(eventId, user.id, user.username);
   };
@@ -64,6 +117,12 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const leaveEvent = (eventId: number): boolean => {
     setCurrentEventId(null);
     setActiveParticipants([]);
+    
+    // Don't try to send the leave message if connection failed
+    if (connectionFailed || !isConnected) {
+      return false;
+    }
+    
     return leaveEventRaw(eventId);
   };
   
@@ -75,7 +134,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     leaveEvent,
     sendMessage,
     reconnect,
-    activeParticipants
+    activeParticipants,
+    connectionFailed
   };
   
   return (

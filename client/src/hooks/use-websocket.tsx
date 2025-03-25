@@ -119,9 +119,23 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     
     setIsConnecting(true);
     
-    // Simplest approach for WebSocket connection in Replit
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+    // Replit-specific approach for WebSocket connections
+    // Try to use a direct WebSocket URL construction compatible with Replit's environment
+    let wsUrl;
+    
+    // Use a simplified WebSocket URL that works with Replit
+    if (window.location.hostname.includes('replit')) {
+      // When in Replit environment, construct URL by replacing https:// with wss:// 
+      // or http:// with ws:// but keep the domain and path
+      const fullUrl = window.location.href;
+      wsUrl = fullUrl.replace(/(https?:\/\/)/, (match) => {
+        return match === 'https://' ? 'wss://' : 'ws://';
+      }).replace(/\/$/, '') + '/ws';
+    } else {
+      // Standard approach for local development or other environments
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+    }
     
     console.log(`Attempting to connect to WebSocket at ${wsUrl}`);
     
