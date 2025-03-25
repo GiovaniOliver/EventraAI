@@ -15,9 +15,40 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { User, Event, Vendor, SubscriptionPlan } from '@shared/schema';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { 
   Users, 
   Store, 
@@ -31,12 +62,57 @@ import {
   Check,
   X,
   UserPlus,
-  FileText
+  FileText,
+  Plus,
+  Link,
+  Upload
 } from 'lucide-react';
+
+// Vendor form schema
+const vendorFormSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters"),
+  category: z.string().min(2, "Please select or enter a category"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  contactEmail: z.string().email("Please enter a valid email address"),
+  contactPhone: z.string().optional(),
+  website: z.string().url("Please enter a valid URL").optional().or(z.literal('')),
+  services: z.string().transform((val) => val.split(',').map(s => s.trim())),
+  isPartner: z.boolean().default(true),
+  affiliateLinks: z.string().transform((val) => {
+    if (!val) return [];
+    try {
+      // Parse if it's a valid JSON string, otherwise treat as comma-separated
+      return val.includes('{') ? JSON.parse(val) : val.split(',').map(s => ({ url: s.trim() }));
+    } catch {
+      return val.split(',').map(s => ({ url: s.trim() }));
+    }
+  }),
+  featured: z.boolean().default(false),
+});
+
+type VendorFormValues = z.infer<typeof vendorFormSchema>;
 
 export default function AdminDashboard() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
+  const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
+  
+  // Form setup
+  const form = useForm<VendorFormValues>({
+    resolver: zodResolver(vendorFormSchema),
+    defaultValues: {
+      name: "",
+      category: "",
+      description: "",
+      contactEmail: "",
+      contactPhone: "",
+      website: "",
+      services: "",
+      isPartner: true,
+      affiliateLinks: "",
+      featured: false
+    }
+  });
   
   // Queries
   const { data: users, isLoading: isLoadingUsers } = useQuery<User[]>({
@@ -97,6 +173,33 @@ export default function AdminDashboard() {
       toast({
         title: 'Error',
         description: `Failed to update partner status: ${error.message}`,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  const createVendorMutation = useMutation({
+    mutationFn: async (vendorData: VendorFormValues) => {
+      const response = await apiRequest('POST', '/api/admin/vendors', {
+        ...vendorData,
+        // Mark as approved and verified since it's coming from admin
+        isApproved: true
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/vendors'] });
+      toast({
+        title: 'Vendor created',
+        description: 'The partner vendor was created successfully with affiliate links',
+      });
+      setIsAddVendorOpen(false);
+      form.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: `Failed to create vendor: ${error.message}`,
         variant: 'destructive',
       });
     },

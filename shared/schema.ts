@@ -109,6 +109,8 @@ export const vendors = pgTable("vendors", {
   services: jsonb("services").default("[]"), // List of services offered
   rating: integer("rating"), // 1-5 rating
   ownerId: integer("owner_id"), // User who added this vendor (null for partner vendors)
+  affiliateLinks: jsonb("affiliate_links").default("[]"), // Array of affiliate links with product info
+  featured: boolean("featured").default(false), // Whether this is a featured vendor
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -125,6 +127,8 @@ export const insertVendorSchema = createInsertSchema(vendors).pick({
   services: true,
   rating: true,
   ownerId: true,
+  affiliateLinks: true,
+  featured: true,
 });
 
 // Event-Vendor relationship schema

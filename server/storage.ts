@@ -599,7 +599,9 @@ export class MemStorage implements IStorage {
       description: insertVendor.description ?? null,
       contactEmail: insertVendor.contactEmail ?? null,
       contactPhone: insertVendor.contactPhone ?? null,
-      website: insertVendor.website ?? null
+      website: insertVendor.website ?? null,
+      affiliateLinks: insertVendor.affiliateLinks ?? [],
+      featured: insertVendor.featured ?? false
     };
     this.vendors.set(id, vendor);
     return vendor;
