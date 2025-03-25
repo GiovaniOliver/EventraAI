@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import { z } from "zod";
 import { setupAuth } from "./auth";
 import Stripe from "stripe";
@@ -13,7 +14,8 @@ import {
   insertEventVendorSchema,
   insertUserPreferenceSchema,
   insertSubscriptionPlanSchema,
-  insertTransactionSchema
+  insertTransactionSchema,
+  vendors as vendorsTable
 } from "@shared/schema";
 import { 
   generateAiSuggestions, 
@@ -1214,8 +1216,16 @@ Format your response as a JSON array of improvement objects with the following s
   app.get("/api/admin/vendors", isAdmin, async (req, res) => {
     try {
       // Get all vendors
-      const vendors = await storage.getAllVendors();
-      return res.json(vendors);
+      // Use a direct database query to safely handle missing columns
+      const vendors = await db.select().from(vendors);
+      
+      // Process vendors to ensure all expected properties exist
+      const processedVendors = vendors.map(vendor => ({
+        ...vendor,
+        isApproved: vendor.isApproved !== undefined ? vendor.isApproved : false
+      }));
+      
+      return res.json(processedVendors);
     } catch (error) {
       console.error("Error getting vendors for admin:", error);
       return res.status(500).json({ 
