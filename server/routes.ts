@@ -1179,6 +1179,156 @@ Format your response as a JSON array of improvement objects with the following s
     return res.status(200).json({ message: 'Notification sent' });
   });
 
+  // Admin routes
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      // Check if the user is authenticated and is an admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const user = req.user as any;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden: Admin access required" });
+      }
+      
+      // Get all admin users
+      const adminUsers = await storage.getAdminUsers();
+      return res.json(adminUsers);
+    } catch (error) {
+      console.error("Error getting admin users:", error);
+      return res.status(500).json({ 
+        message: "Failed to get admin users",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  app.get("/api/admin/vendors", async (req, res) => {
+    try {
+      // Check if the user is authenticated and is an admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const user = req.user as any;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden: Admin access required" });
+      }
+      
+      // Get all vendors
+      const vendors = await storage.getAllVendors();
+      return res.json(vendors);
+    } catch (error) {
+      console.error("Error getting vendors for admin:", error);
+      return res.status(500).json({ 
+        message: "Failed to get vendors",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  app.post("/api/admin/vendor-approval/:id", async (req, res) => {
+    try {
+      // Check if the user is authenticated and is an admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const user = req.user as any;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden: Admin access required" });
+      }
+      
+      const vendorId = parseInt(req.params.id);
+      const { approved } = req.body;
+      
+      if (typeof approved !== 'boolean') {
+        return res.status(400).json({ message: "Invalid approval status" });
+      }
+      
+      // Update vendor approval status
+      const updatedVendor = await storage.updateVendor(vendorId, { isApproved: approved });
+      if (!updatedVendor) {
+        return res.status(404).json({ message: "Vendor not found" });
+      }
+      
+      return res.json(updatedVendor);
+    } catch (error) {
+      console.error("Error updating vendor approval:", error);
+      return res.status(500).json({ 
+        message: "Failed to update vendor approval status",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  app.post("/api/admin/partner-status/:id", async (req, res) => {
+    try {
+      // Check if the user is authenticated and is an admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const user = req.user as any;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden: Admin access required" });
+      }
+      
+      const vendorId = parseInt(req.params.id);
+      const { isPartner } = req.body;
+      
+      if (typeof isPartner !== 'boolean') {
+        return res.status(400).json({ message: "Invalid partner status" });
+      }
+      
+      // Update vendor partner status
+      const updatedVendor = await storage.updateVendor(vendorId, { isPartner });
+      if (!updatedVendor) {
+        return res.status(404).json({ message: "Vendor not found" });
+      }
+      
+      return res.json(updatedVendor);
+    } catch (error) {
+      console.error("Error updating vendor partner status:", error);
+      return res.status(500).json({ 
+        message: "Failed to update vendor partner status",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  app.get("/api/admin/events", async (req, res) => {
+    try {
+      // Check if the user is authenticated and is an admin
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const user = req.user as any;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Forbidden: Admin access required" });
+      }
+      
+      // Get all events from all users
+      // This would require a new method in storage to get all events
+      // For now, we'll use a placeholder response
+      const events = await Promise.all(
+        (await storage.getAdminUsers()).map(user => 
+          storage.getEventsByOwner(user.id)
+        )
+      ).then(eventArrays => eventArrays.flat());
+      
+      return res.json(events);
+    } catch (error) {
+      console.error("Error getting all events for admin:", error);
+      return res.status(500).json({ 
+        message: "Failed to get events",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Initialize WebSocket service
