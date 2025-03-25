@@ -18,10 +18,10 @@ export default function BottomNavigation({ currentPath }: BottomNavigationProps)
       <nav className="bg-background border-t fixed bottom-0 left-0 right-0 z-10 h-16">
         <div className="flex justify-around items-center h-full">
           <Link 
-            href="/"
+            href="/dashboard"
             className={cn(
               "flex flex-col items-center justify-center w-1/5 h-full transition-colors",
-              isActive('/') 
+              isActive('/dashboard') 
                 ? "text-primary" 
                 : "text-muted-foreground hover:text-foreground"
             )}

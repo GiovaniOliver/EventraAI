@@ -20,6 +20,7 @@ import PricingPage from "@/pages/pricing";
 import AboutPage from "@/pages/about";
 import BlogPage from "@/pages/blog";
 import PromotionPage from "@/pages/promotion";
+import Dashboard from "@/pages/home";
 
 import OnboardingModal from "@/components/modals/onboarding-modal";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -62,6 +63,7 @@ function Router() {
           <Route path="/blog" component={BlogPage} />
           <Route path="/promotion" component={PromotionPage} />
           <Route path="/pricing" component={PricingPage} />
+          <ProtectedRoute path="/dashboard" component={Dashboard} />
           <ProtectedRoute path="/events" component={Events} />
           <ProtectedRoute path="/events/:id" component={EventDetail} />
           <ProtectedRoute path="/discover" component={Discover} />

@@ -13,6 +13,7 @@ export default function Layout({ children, currentPath }: LayoutProps) {
   
   // List of paths that should show bottom navigation (only for authenticated users)
   const protectedPaths = [
+    "/dashboard",
     "/events", 
     "/discover", 
     "/tasks", 
