@@ -581,11 +581,13 @@ export class MemStorage implements IStorage {
     const id = this.currentVendorId++;
     const now = new Date();
     const vendor: Vendor = {
-      ...insertVendor,
       id,
+      name: insertVendor.name,
+      category: insertVendor.category,
       createdAt: now,
       ownerId: insertVendor.ownerId ?? null, // Ensure ownerId is not undefined
       isPartner: insertVendor.isPartner ?? false,
+      isApproved: insertVendor.isApproved ?? false,
       services: insertVendor.services ?? [],
       logo: insertVendor.logo ?? null,
       rating: insertVendor.rating ?? null,

@@ -104,6 +104,7 @@ export const vendors = pgTable("vendors", {
   contactPhone: text("contact_phone"),
   website: text("website"),
   isPartner: boolean("is_partner").default(false).notNull(), // Partner vendors vs user-added
+  isApproved: boolean("is_approved").default(false).notNull(), // Admin approval status
   logo: text("logo"), // URL for vendor logo
   services: jsonb("services").default("[]"), // List of services offered
   rating: integer("rating"), // 1-5 rating
@@ -119,6 +120,7 @@ export const insertVendorSchema = createInsertSchema(vendors).pick({
   contactPhone: true,
   website: true,
   isPartner: true,
+  isApproved: true,
   logo: true,
   services: true,
   rating: true,

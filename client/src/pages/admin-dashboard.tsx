@@ -108,6 +108,14 @@ export default function AdminDashboard() {
       updates: { isPartner: !isPartner } 
     });
   };
+  
+  // Toggle approval status
+  const toggleApprovalStatus = async (vendorId: number, isApproved: boolean) => {
+    updateVendorMutation.mutate({
+      vendorId,
+      updates: { isApproved: !isApproved }
+    });
+  };
 
   if (!user?.isAdmin) {
     return (
@@ -228,16 +236,30 @@ export default function AdminDashboard() {
                             {vendor.isPartner && (
                               <Badge variant="secondary">Partner</Badge>
                             )}
+                            {vendor.isApproved ? (
+                              <Badge variant="success" className="bg-green-100 text-green-800 hover:bg-green-200">Approved</Badge>
+                            ) : (
+                              <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-200">Pending Approval</Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground mt-2">{vendor.description?.substring(0, 100)}...</p>
                         </div>
                         <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <Switch 
-                              checked={!!vendor.isPartner} 
-                              onCheckedChange={() => togglePartnerStatus(vendor.id, !!vendor.isPartner)}
-                            />
-                            <Label>Partner Status</Label>
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <Switch 
+                                checked={!!vendor.isPartner} 
+                                onCheckedChange={() => togglePartnerStatus(vendor.id, !!vendor.isPartner)}
+                              />
+                              <Label>Partner Status</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Switch 
+                                checked={!!vendor.isApproved} 
+                                onCheckedChange={() => toggleApprovalStatus(vendor.id, !!vendor.isApproved)}
+                              />
+                              <Label>Approved</Label>
+                            </div>
                           </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
