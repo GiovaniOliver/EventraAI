@@ -486,11 +486,256 @@ export default function AdminDashboard() {
         {/* Vendors Tab */}
         <TabsContent value="vendors" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Vendor Management</CardTitle>
-              <CardDescription>Approve vendors and manage partner status</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Vendor Management</CardTitle>
+                <CardDescription>Approve vendors and manage partner status</CardDescription>
+              </div>
+              <Button 
+                onClick={() => setIsAddVendorOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Plus size={16} />
+                Add Partner Vendor
+              </Button>
             </CardHeader>
             <CardContent>
+              {/* Vendor Upload Dialog */}
+              <Dialog open={isAddVendorOpen} onOpenChange={setIsAddVendorOpen}>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Add Partner Vendor with Affiliate Links</DialogTitle>
+                    <DialogDescription>
+                      Create a new partner vendor that will be visible to all users. Affiliate links can be added to earn revenue from vendor referrals.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit((data) => createVendorMutation.mutate(data))} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Vendor Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Acme Events" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="category"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Category</FormLabel>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select category" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="venue">Venue</SelectItem>
+                                  <SelectItem value="catering">Catering</SelectItem>
+                                  <SelectItem value="tech">Technology</SelectItem>
+                                  <SelectItem value="decoration">Decoration</SelectItem>
+                                  <SelectItem value="entertainment">Entertainment</SelectItem>
+                                  <SelectItem value="photography">Photography</SelectItem>
+                                  <SelectItem value="software">Software</SelectItem>
+                                  <SelectItem value="consulting">Consulting</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Describe the vendor and their services" 
+                                className="min-h-[100px]" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="contactEmail"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Contact Email</FormLabel>
+                              <FormControl>
+                                <Input type="email" placeholder="contact@vendor.com" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="contactPhone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Contact Phone (Optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="+1 (555) 123-4567" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={form.control}
+                        name="website"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Website</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://www.vendorwebsite.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="services"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Services (comma-separated)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Virtual event hosting, Live streaming, Recording" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Enter services separated by commas
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="affiliateLinks"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Affiliate Links (comma-separated)</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="https://vendor.com/ref=123, https://vendor.com/product/ref=456" 
+                                className="min-h-[80px]" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Enter affiliate URLs separated by commas. These will generate revenue when users click through.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="isPartner"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                              <div className="space-y-0.5">
+                                <FormLabel>Partner Vendor</FormLabel>
+                                <FormDescription>
+                                  Mark as an official partner vendor
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="featured"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                              <div className="space-y-0.5">
+                                <FormLabel>Featured Vendor</FormLabel>
+                                <FormDescription>
+                                  Promote this vendor in the marketplace
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <DialogFooter>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setIsAddVendorOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          type="submit"
+                          disabled={createVendorMutation.isPending}
+                        >
+                          {createVendorMutation.isPending ? (
+                            <>
+                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Add Vendor
+                            </>
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+              
               {isLoadingVendors ? (
                 <div className="py-4 text-center text-muted-foreground">Loading vendors data...</div>
               ) : vendors && vendors.length > 0 ? (

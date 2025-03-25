@@ -1234,6 +1234,33 @@ Format your response as a JSON array of improvement objects with the following s
       });
     }
   });
+  
+  // Create vendor as admin (pre-approved with affiliate links)
+  app.post("/api/admin/vendors", isAdmin, async (req, res) => {
+    try {
+      const vendorData = req.body;
+      
+      // Additional validation for admin-created vendors
+      if (!vendorData.name || !vendorData.category) {
+        return res.status(400).json({ message: "Vendor name and category are required" });
+      }
+      
+      // Set admin-specific values
+      vendorData.isApproved = true; // Auto-approve admin-created vendors
+      vendorData.ownerId = req.user.id; // Set admin as owner
+      
+      // Create the vendor
+      const vendor = await storage.createVendor(vendorData);
+      
+      res.status(201).json(vendor);
+    } catch (error) {
+      console.error("Error creating vendor:", error);
+      res.status(500).json({ 
+        message: "Failed to create vendor",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   // Update vendor approval status (admin only)
   app.patch("/api/vendors/:id/approval", isAdmin, async (req, res) => {
