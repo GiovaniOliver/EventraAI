@@ -12,6 +12,7 @@ import Discover from "@/pages/discover";
 import Tasks from "@/pages/tasks";
 import Profile from "@/pages/profile";
 import Analytics from "@/pages/analytics";
+import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 
@@ -56,6 +57,7 @@ function Router() {
           <ProtectedRoute path="/tasks" component={Tasks} />
           <ProtectedRoute path="/analytics" component={Analytics} />
           <ProtectedRoute path="/profile" component={Profile} />
+          <ProtectedRoute path="/settings" component={Settings} />
           <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
         </Switch>
