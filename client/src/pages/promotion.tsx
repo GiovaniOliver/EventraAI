@@ -72,7 +72,7 @@ export default function PromotionPage() {
       monthlyPrice: 59.99,
       annualPrice: 47.99, // 20% discount
       features: [
-        "Up to 50 virtual events",
+        "Up to 50 events",
         "Comprehensive analytics",
         "Team collaboration",
         "API access",
@@ -126,7 +126,7 @@ export default function PromotionPage() {
     },
     {
       question: "Do you offer custom solutions for larger organizations?",
-      answer: "Yes, our Enterprise plan offers custom solutions tailored to the specific needs of larger organizations. This includes dedicated account management, custom feature development, unlimited events and team members, and personalized onboarding support."
+      answer: "Yes, our Enterprise plan offers custom solutions tailored to the specific needs of larger organizations. This includes dedicated account management, custom feature development, unlimited events and team members, advanced analytics, and personalized onboarding support."
     },
     {
       question: "Can I try the platform before committing to a subscription?",

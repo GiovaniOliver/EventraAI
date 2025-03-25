@@ -123,7 +123,7 @@ export default function PricingPage() {
       <div className="text-center max-w-3xl mx-auto mb-12">
         <h1 className="text-4xl font-bold mb-3">Choose Your Plan</h1>
         <p className="text-lg text-muted-foreground">
-          Select the perfect plan to elevate your virtual event planning experience
+          Select the perfect plan to elevate your event planning experience
         </p>
       </div>
       
@@ -154,7 +154,7 @@ export default function PricingPage() {
                           Contact us for a personalized quote and to discuss your specific requirements.
                         </DialogDescription>
                       </DialogHeader>
-                      <Button onClick={() => window.location.href = "mailto:sales@eventplanner.com"}>
+                      <Button onClick={() => window.location.href = "mailto:sales@eventra.ai"}>
                         Contact Sales
                       </Button>
                     </DialogContent>
@@ -198,7 +198,7 @@ export default function PricingPage() {
           Our Enterprise plan offers flexibility for organizations with specific requirements.
           Get in touch with our sales team to discuss your needs.
         </p>
-        <Button onClick={() => window.location.href = "mailto:sales@eventplanner.com"}>
+        <Button onClick={() => window.location.href = "mailto:sales@eventra.ai"}>
           Contact Sales
         </Button>
       </div>
