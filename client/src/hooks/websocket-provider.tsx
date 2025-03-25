@@ -1,6 +1,12 @@
-import React, { createContext, ReactNode, useContext } from "react";
+import React, { createContext, ReactNode, useContext, useState, useEffect, useCallback } from "react";
 import { useWebSocket, WebSocketMessage, MessageType } from "./use-websocket";
 import { useAuth } from "./use-auth";
+
+// Active participant type
+export interface ActiveParticipant {
+  userId: number;
+  username: string;
+}
 
 // Define the context type
 type WebSocketContextType = {
@@ -10,6 +16,7 @@ type WebSocketContextType = {
   leaveEvent: (eventId: number) => boolean;
   sendMessage: (message: WebSocketMessage) => boolean;
   reconnect: () => void;
+  activeParticipants: ActiveParticipant[];
 };
 
 // Create the context with default values
@@ -18,6 +25,15 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(undefin
 // Provider component that will wrap parts of the app that need WebSocket access
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const [activeParticipants, setActiveParticipants] = useState<ActiveParticipant[]>([]);
+  const [currentEventId, setCurrentEventId] = useState<number | null>(null);
+  
+  // Function to handle incoming WebSocket messages
+  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
+    if (message.type === MessageType.USER_PRESENCE && message.payload?.activeUsers) {
+      setActiveParticipants(message.payload.activeUsers);
+    }
+  }, []);
   
   // Initialize WebSocket hook with default options
   const {
@@ -30,17 +46,21 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   } = useWebSocket({
     autoReconnect: true,
     maxReconnectAttempts: 5,
-    reconnectInterval: 3000
+    reconnectInterval: 3000,
+    onMessage: handleWebSocketMessage
   });
   
   // Wrapper around joinEvent that includes current user information
   const joinEvent = (eventId: number): boolean => {
     if (!user) return false;
+    setCurrentEventId(eventId);
     return joinEventRaw(eventId, user.id, user.username);
   };
   
   // Wrapper around leaveEvent
   const leaveEvent = (eventId: number): boolean => {
+    setCurrentEventId(null);
+    setActiveParticipants([]);
     return leaveEventRaw(eventId);
   };
   
@@ -51,7 +71,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     joinEvent,
     leaveEvent,
     sendMessage,
-    reconnect
+    reconnect,
+    activeParticipants
   };
   
   return (

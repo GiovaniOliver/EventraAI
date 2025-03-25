@@ -165,11 +165,9 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
         break;
         
       case MessageType.USER_PRESENCE:
-        // Show who's currently working on the event
-        toast({
-          title: "Collaboration",
-          description: `${message.payload.usersCount} people are working on this event`
-        });
+        // This will be handled by the event detail component for showing active users
+        // We already have the active participants in the message payload
+        // No need for toast notification here as the UI will show the participants
         break;
         
       case MessageType.ERROR:

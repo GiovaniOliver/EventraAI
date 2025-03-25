@@ -96,12 +96,14 @@ export default function EventDetail() {
   const [, navigate] = useLocation();
   const [match, params] = useRoute("/events/:id");
   const eventId = match ? parseInt(params.id) : null;
+  const { isConnected, joinEvent, leaveEvent, sendMessage } = useWebSocketContext();
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedEvent, setEditedEvent] = useState<Partial<Event>>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
   const [showAddGuestDialog, setShowAddGuestDialog] = useState(false);
+  const [activeParticipants, setActiveParticipants] = useState<Array<{userId: number, username: string}>>([]);
   const [newTask, setNewTask] = useState<{
     title: string;
     description: string | null;
@@ -189,6 +191,21 @@ export default function EventDetail() {
       });
     }
   }, [event]);
+  
+  // WebSocket connection for real-time collaboration
+  useEffect(() => {
+    if (!eventId || !isConnected) return;
+    
+    // Join the event room
+    joinEvent(eventId);
+    
+    // Handle message listener setup in WebSocketProvider
+    
+    // Cleanup function - leave the event when unmounting
+    return () => {
+      leaveEvent(eventId);
+    };
+  }, [eventId, isConnected, joinEvent, leaveEvent]);
   
   // Update event mutation
   const updateEventMutation = useMutation({
