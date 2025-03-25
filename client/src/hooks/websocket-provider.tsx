@@ -1,5 +1,6 @@
 import React, { createContext, ReactNode, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { useWebSocket, WebSocketMessage, MessageType } from "./use-websocket";
+// Using the silent version of the websocket hook with better error handling
+import { useWebSocket, WebSocketMessage, MessageType } from "./use-websocket-silent";
 import { useAuth } from "./use-auth";
 import { useToast } from "./use-toast";
 

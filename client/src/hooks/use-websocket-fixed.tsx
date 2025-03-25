@@ -119,35 +119,23 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     
     setIsConnecting(true);
     
-    // Simplest approach for WebSocket connection in Replit
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
-    
-    console.log(`Attempting to connect to WebSocket at ${wsUrl}`);
-    
-    // Create WebSocket with error handling in the event handlers
-    socket.current = new WebSocket(wsUrl);
-    
-    // Set up event listeners for the WebSocket
-    socket.current.onopen = () => {
-      console.log("WebSocket connection established");
-      setIsConnected(true);
-      setIsConnecting(false);
-      reconnectAttempts.current = 0;
-      if (options.onOpen) options.onOpen();
-    };
-    
-    socket.current.onclose = (event) => {
-      console.log("WebSocket connection closed", event);
-      setIsConnected(false);
-      setIsConnecting(false);
+    try {
+      // Simplest approach for WebSocket connection in Replit
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
       
+      console.log(`Attempting to connect to WebSocket at ${wsUrl}`);
+      
+      // Create WebSocket with error handling in the event handlers
+      socket.current = new WebSocket(wsUrl);
+    } catch (error) {
+      console.error("Error creating WebSocket connection:", error);
+      setIsConnecting(false);
       if (options.onClose) options.onClose();
       
-      // Attempt to reconnect if enabled and hasn't reached max attempts
-      if (autoReconnect && reconnectAttempts.current < maxReconnectAttempts) {
+      if (reconnectAttempts.current < maxReconnectAttempts && autoReconnect) {
         reconnectAttempts.current += 1;
-        console.log(`Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})...`);
+        console.log(`Error occurred, retrying (${reconnectAttempts.current}/${maxReconnectAttempts})...`);
         
         if (reconnectTimeoutRef.current) {
           window.clearTimeout(reconnectTimeoutRef.current);
@@ -156,34 +144,82 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
         reconnectTimeoutRef.current = window.setTimeout(() => {
           connect();
         }, reconnectInterval);
-      } else if (reconnectAttempts.current >= maxReconnectAttempts) {
-        console.log("Max reconnection attempts reached");
-        toast({
-          title: "Connection Lost",
-          description: "Unable to reconnect to the collaboration service. Please refresh the page.",
-          variant: "destructive"
-        });
       }
-    };
+    }
     
-    socket.current.onerror = (event) => {
-      console.error("WebSocket error:", event);
-      if (options.onError) options.onError(event);
-    };
-    
-    socket.current.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data) as WebSocketMessage;
-        console.log("WebSocket message received:", message);
+    // Set up event listeners for the WebSocket only if it was created successfully
+    if (socket.current) {
+      // Set up event listeners for the WebSocket
+      socket.current.onopen = () => {
+        console.log("WebSocket connection established");
+        setIsConnected(true);
+        setIsConnecting(false);
+        reconnectAttempts.current = 0;
+        if (options.onOpen) options.onOpen();
+      };
+      
+      socket.current.onclose = (event) => {
+        console.log("WebSocket connection closed", event);
+        setIsConnected(false);
+        setIsConnecting(false);
         
-        // Handle different message types
-        handleWebSocketMessage(message);
+        if (options.onClose) options.onClose();
         
-        if (options.onMessage) options.onMessage(message);
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
+        // Attempt to reconnect if enabled and hasn't reached max attempts
+        if (autoReconnect && reconnectAttempts.current < maxReconnectAttempts) {
+          reconnectAttempts.current += 1;
+          console.log(`Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})...`);
+          
+          if (reconnectTimeoutRef.current) {
+            window.clearTimeout(reconnectTimeoutRef.current);
+          }
+          
+          reconnectTimeoutRef.current = window.setTimeout(() => {
+            connect();
+          }, reconnectInterval);
+        } else if (reconnectAttempts.current >= maxReconnectAttempts) {
+          console.log("Max reconnection attempts reached");
+          // Don't show destructive toast anymore to avoid frustrating users
+          // Just silently fail and let the UI handle the fallback mode
+        }
+      };
+      
+      socket.current.onerror = (event) => {
+        console.error("WebSocket error:", event);
+        if (options.onError) options.onError(event);
+      };
+      
+      socket.current.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data) as WebSocketMessage;
+          console.log("WebSocket message received:", message);
+          
+          // Handle different message types
+          handleWebSocketMessage(message);
+          
+          if (options.onMessage) options.onMessage(message);
+        } catch (error) {
+          console.error("Error parsing WebSocket message:", error);
+        }
+      };
+    } else {
+      // WebSocket couldn't be created
+      setIsConnecting(false);
+      if (options.onClose) options.onClose();
+      
+      if (reconnectAttempts.current < maxReconnectAttempts && autoReconnect) {
+        reconnectAttempts.current += 1;
+        console.log(`Socket is null, retrying (${reconnectAttempts.current}/${maxReconnectAttempts})...`);
+        
+        if (reconnectTimeoutRef.current) {
+          window.clearTimeout(reconnectTimeoutRef.current);
+        }
+        
+        reconnectTimeoutRef.current = window.setTimeout(() => {
+          connect();
+        }, reconnectInterval);
       }
-    };
+    }
   }, [options, reconnectInterval, maxReconnectAttempts, autoReconnect, toast, handleWebSocketMessage]);
   
   // Function to send messages through the WebSocket
