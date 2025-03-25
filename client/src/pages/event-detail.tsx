@@ -97,6 +97,7 @@ export default function EventDetail() {
   const [match, params] = useRoute("/events/:id");
   const eventId = match ? parseInt(params.id) : null;
   const { isConnected, joinEvent, leaveEvent, sendMessage, activeParticipants } = useWebSocketContext();
+  const { user } = useAuth();
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedEvent, setEditedEvent] = useState<Partial<Event>>({});
@@ -193,18 +194,32 @@ export default function EventDetail() {
   
   // WebSocket connection for real-time collaboration
   useEffect(() => {
-    if (!eventId || !isConnected) return;
+    if (!eventId || !isConnected || !user) return;
+    
+    console.log(`Attempting to join event room for event ID: ${eventId}`);
     
     // Join the event room
-    joinEvent(eventId);
+    const success = joinEvent(eventId);
     
-    // Handle message listener setup in WebSocketProvider
+    if (success) {
+      console.log(`Successfully joined event ${eventId}`);
+    } else {
+      console.log(`Failed to join event ${eventId} - WebSocket may not be connected`);
+      toast({
+        title: "Connection Issue",
+        description: "Could not connect to collaboration service. Some features may be limited.",
+        variant: "destructive"
+      });
+    }
     
     // Cleanup function - leave the event when unmounting
     return () => {
-      leaveEvent(eventId);
+      if (isConnected) {
+        leaveEvent(eventId);
+        console.log(`Left event room for event ID: ${eventId}`);
+      }
     };
-  }, [eventId, isConnected, joinEvent, leaveEvent]);
+  }, [eventId, isConnected, joinEvent, leaveEvent, user, toast]);
   
   // Update event mutation
   const updateEventMutation = useMutation({
@@ -870,6 +885,7 @@ export default function EventDetail() {
               <TabsTrigger value="guests" className="flex-1">Guests</TabsTrigger>
               <TabsTrigger value="budget" className="flex-1">Budget</TabsTrigger>
               <TabsTrigger value="vendors" className="flex-1">Vendors</TabsTrigger>
+              <TabsTrigger value="collaborators" className="flex-1">Collaborators</TabsTrigger>
             </TabsList>
             
             {/* Tasks tab */}

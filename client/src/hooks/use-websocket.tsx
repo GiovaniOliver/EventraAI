@@ -200,13 +200,15 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
   const joinEvent = useCallback((eventId: number, userId: number, username: string) => {
     return sendMessage({
       type: MessageType.JOIN_EVENT,
-      payload: { eventId },
-      sender: { userId, username }
+      payload: { eventId, userId, username }
     });
   }, [sendMessage]);
   
   // Function to leave an event collaboration room
   const leaveEvent = useCallback((eventId: number) => {
+    if (!socket.current || socket.current.readyState !== WebSocket.OPEN) {
+      return false;
+    }
     return sendMessage({
       type: MessageType.LEAVE_EVENT,
       payload: { eventId }
