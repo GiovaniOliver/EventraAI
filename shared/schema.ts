@@ -274,8 +274,8 @@ export type InsertAttendeeFeedback = z.infer<typeof insertAttendeeFeedbackSchema
 // Subscription Plans schema
 export const subscriptionPlans = pgTable("subscription_plans", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(), // free, basic, premium, enterprise
-  displayName: text("display_name"), // For display to user: "Free Plan", "Premium Plan", etc.
+  name: text("name").notNull().unique(), // starter, pro, business, enterprise
+  displayName: text("display_name"), // For display to user: "Starter Plan", "Professional Plan", etc.
   description: text("description"), // Description of the plan for marketing
   price: integer("price").notNull(), // in cents (e.g., 1995 for $19.95)
   currency: text("currency").default("usd").notNull(),
@@ -286,6 +286,7 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   guestLimit: integer("guest_limit"), // number of guests per event
   vendorLimit: integer("vendor_limit"), // number of custom vendors allowed
   analyticsPeriod: integer("analytics_period"), // how many months of analytics history
+  aiCallLimit: integer("ai_call_limit"), // monthly limit for AI assistant calls
   stripeProductId: text("stripe_product_id"),
   stripePriceId: text("stripe_price_id"),
   isActive: boolean("is_active").default(true).notNull(),
@@ -306,6 +307,7 @@ export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans
   guestLimit: true,
   vendorLimit: true,
   analyticsPeriod: true,
+  aiCallLimit: true,
   stripeProductId: true,
   stripePriceId: true,
   isActive: true,
