@@ -36,9 +36,18 @@ import {
   type Transaction,
   type InsertTransaction
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc, isNull, asc } from "drizzle-orm";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import createMemoryStore from "memorystore";
+import { pool } from "./db";
 
 // Define storage interface
 export interface IStorage {
+  // Session Store
+  sessionStore: session.Store;
+  
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -132,6 +141,7 @@ export interface IStorage {
 
 // Implement in-memory storage
 export class MemStorage implements IStorage {
+  sessionStore: session.Store;
   private users: Map<number, User>;
   private events: Map<number, Event>;
   private tasks: Map<number, Task>;
@@ -156,6 +166,12 @@ export class MemStorage implements IStorage {
   private currentTransactionId: number;
 
   constructor() {
+    // Initialize memory session store
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
+    
     this.users = new Map();
     this.events = new Map();
     this.tasks = new Map();
@@ -907,4 +923,568 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Implement database storage
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+
+  constructor() {
+    // Set up session store with PostgreSQL
+    const PostgresSessionStore = connectPgSimple(session);
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true
+    });
+    
+    // Initialize default data
+    this.initPlanningTips();
+    this.initSubscriptionPlans();
+  }
+  
+  // Initialize default subscription plans if they don't exist
+  private async initSubscriptionPlans() {
+    // Check if plans already exist
+    const existingPlans = await db.select().from(subscriptionPlans);
+    if (existingPlans.length > 0) return; // Already initialized
+    
+    const plans: InsertSubscriptionPlan[] = [
+      {
+        name: "free",
+        displayName: "Free Plan",
+        description: "Basic features for personal use",
+        price: 0,
+        currency: "usd",
+        interval: "month",
+        billingCycle: "monthly",
+        features: JSON.stringify([
+          "Up to 3 virtual events",
+          "Basic analytics",
+          "Standard templates"
+        ]),
+        eventLimit: 3,
+        guestLimit: 50,
+        vendorLimit: 5,
+        analyticsPeriod: 1,
+        isActive: true
+      },
+      {
+        name: "pro",
+        displayName: "Pro Plan",
+        description: "Advanced features for professionals",
+        price: 1999, // $19.99 in cents
+        currency: "usd",
+        interval: "month",
+        billingCycle: "monthly",
+        features: JSON.stringify([
+          "Unlimited virtual events",
+          "Advanced analytics",
+          "Premium templates",
+          "Priority support",
+          "Custom branding"
+        ]),
+        eventLimit: 10,
+        guestLimit: 200,
+        vendorLimit: 15,
+        analyticsPeriod: 3,
+        isActive: true
+      },
+      {
+        name: "business",
+        displayName: "Business Plan",
+        description: "Full-featured solution for businesses",
+        price: 4999, // $49.99 in cents
+        currency: "usd",
+        interval: "month",
+        billingCycle: "monthly",
+        features: JSON.stringify([
+          "Everything in Pro",
+          "Dedicated support",
+          "Team collaboration",
+          "API access",
+          "White labeling",
+          "Custom integrations"
+        ]),
+        eventLimit: 30,
+        guestLimit: 500,
+        vendorLimit: 30,
+        analyticsPeriod: 6,
+        isActive: true
+      },
+      {
+        name: "enterprise",
+        displayName: "Enterprise Plan",
+        description: "Custom solution for large organizations",
+        price: 19999, // $199.99 in cents
+        currency: "usd",
+        interval: "month",
+        billingCycle: "monthly",
+        features: JSON.stringify([
+          "Everything in Business",
+          "Dedicated account manager",
+          "Custom development",
+          "SLA guarantees",
+          "Advanced security features",
+          "Bulk event management"
+        ]),
+        eventLimit: null, // Unlimited
+        guestLimit: null, // Unlimited
+        vendorLimit: null, // Unlimited
+        analyticsPeriod: 12,
+        isActive: true
+      }
+    ];
+    
+    for (const plan of plans) {
+      await this.createSubscriptionPlan(plan);
+    }
+  }
+
+  // Initialize with some default planning tips if they don't exist
+  private async initPlanningTips() {
+    // Check if tips already exist
+    const existingTips = await db.select().from(planningTips);
+    if (existingTips.length > 0) return; // Already initialized
+    
+    const tips: InsertPlanningTip[] = [
+      {
+        title: "5 Ways to Engage Virtual Attendees",
+        description: "Keep your audience engaged and interactive during online events",
+        category: "engagement",
+        icon: "tips_and_updates"
+      },
+      {
+        title: "Perfect Timing for Event Activities",
+        description: "Learn how to schedule your event for maximum participation",
+        category: "timing",
+        icon: "schedule"
+      },
+      {
+        title: "Budget Planning Essentials",
+        description: "Smart strategies to allocate resources effectively",
+        category: "budget",
+        icon: "wysiwyg"
+      }
+    ];
+    
+    for (const tip of tips) {
+      await this.createPlanningTip(tip);
+    }
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values({
+      ...insertUser,
+      isAdmin: insertUser.isAdmin ?? false,
+      subscriptionTier: insertUser.subscriptionTier ?? "free",
+      subscriptionStatus: "active",
+    }).returning();
+    return user;
+  }
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [updatedUser] = await db.update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+  
+  async getAdminUsers(): Promise<User[]> {
+    return db.select().from(users).where(eq(users.isAdmin, true));
+  }
+  
+  async createAdminUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values({
+      ...insertUser,
+      isAdmin: true,
+      subscriptionTier: "enterprise",
+      subscriptionStatus: "active",
+    }).returning();
+    return user;
+  }
+  
+  async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
+    const [updatedUser] = await db.update(users)
+      .set({ stripeCustomerId: customerId })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+  
+  async updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined> {
+    const [updatedUser] = await db.update(users)
+      .set({ 
+        subscriptionTier: tier,
+        subscriptionStatus: status
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return updatedUser;
+  }
+
+  // Event methods
+  async getEvent(id: number): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.id, id));
+    return event;
+  }
+
+  async getEventsByOwner(ownerId: number): Promise<Event[]> {
+    return db.select().from(events).where(eq(events.ownerId, ownerId));
+  }
+
+  async createEvent(insertEvent: InsertEvent): Promise<Event> {
+    const [event] = await db.insert(events).values(insertEvent).returning();
+    return event;
+  }
+
+  async updateEvent(id: number, eventData: Partial<InsertEvent>): Promise<Event | undefined> {
+    // Add updatedAt timestamp
+    const [updatedEvent] = await db.update(events)
+      .set({
+        ...eventData,
+        updatedAt: new Date()
+      })
+      .where(eq(events.id, id))
+      .returning();
+    return updatedEvent;
+  }
+
+  async deleteEvent(id: number): Promise<boolean> {
+    const result = await db.delete(events).where(eq(events.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Task methods
+  async getTask(id: number): Promise<Task | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    return task;
+  }
+
+  async getTasksByEvent(eventId: number): Promise<Task[]> {
+    return db.select().from(tasks).where(eq(tasks.eventId, eventId));
+  }
+
+  async createTask(insertTask: InsertTask): Promise<Task> {
+    const [task] = await db.insert(tasks).values(insertTask).returning();
+    return task;
+  }
+
+  async updateTask(id: number, taskData: Partial<InsertTask>): Promise<Task | undefined> {
+    // Add updatedAt timestamp
+    const [updatedTask] = await db.update(tasks)
+      .set({
+        ...taskData,
+        updatedAt: new Date()
+      })
+      .where(eq(tasks.id, id))
+      .returning();
+    return updatedTask;
+  }
+
+  async deleteTask(id: number): Promise<boolean> {
+    const result = await db.delete(tasks).where(eq(tasks.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Guest methods
+  async getGuest(id: number): Promise<Guest | undefined> {
+    const [guest] = await db.select().from(guests).where(eq(guests.id, id));
+    return guest;
+  }
+
+  async getGuestsByEvent(eventId: number): Promise<Guest[]> {
+    return db.select().from(guests).where(eq(guests.eventId, eventId));
+  }
+
+  async createGuest(insertGuest: InsertGuest): Promise<Guest> {
+    const [guest] = await db.insert(guests).values(insertGuest).returning();
+    return guest;
+  }
+
+  async updateGuest(id: number, guestData: Partial<InsertGuest>): Promise<Guest | undefined> {
+    const [updatedGuest] = await db.update(guests)
+      .set(guestData)
+      .where(eq(guests.id, id))
+      .returning();
+    return updatedGuest;
+  }
+
+  async deleteGuest(id: number): Promise<boolean> {
+    const result = await db.delete(guests).where(eq(guests.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Vendor methods
+  async getVendor(id: number): Promise<Vendor | undefined> {
+    const [vendor] = await db.select().from(vendors).where(eq(vendors.id, id));
+    return vendor;
+  }
+
+  async getAllVendors(): Promise<Vendor[]> {
+    return db.select().from(vendors);
+  }
+
+  async getPartnerVendors(): Promise<Vendor[]> {
+    return db.select().from(vendors).where(eq(vendors.isPartner, true));
+  }
+
+  async getUserVendors(userId: number): Promise<Vendor[]> {
+    return db.select().from(vendors).where(eq(vendors.ownerId, userId));
+  }
+
+  async getVendorsByCategory(category: string): Promise<Vendor[]> {
+    return db.select().from(vendors).where(eq(vendors.category, category));
+  }
+
+  async createVendor(insertVendor: InsertVendor): Promise<Vendor> {
+    const [vendor] = await db.insert(vendors).values(insertVendor).returning();
+    return vendor;
+  }
+
+  async updateVendor(id: number, vendorData: Partial<InsertVendor>): Promise<Vendor | undefined> {
+    const [updatedVendor] = await db.update(vendors)
+      .set(vendorData)
+      .where(eq(vendors.id, id))
+      .returning();
+    return updatedVendor;
+  }
+
+  async deleteVendor(id: number): Promise<boolean> {
+    const result = await db.delete(vendors).where(eq(vendors.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Event-Vendor methods
+  async getEventVendor(id: number): Promise<EventVendor | undefined> {
+    const [eventVendor] = await db.select().from(eventVendors).where(eq(eventVendors.id, id));
+    return eventVendor;
+  }
+
+  async getVendorsByEvent(eventId: number): Promise<EventVendor[]> {
+    return db.select().from(eventVendors).where(eq(eventVendors.eventId, eventId));
+  }
+
+  async createEventVendor(insertEventVendor: InsertEventVendor): Promise<EventVendor> {
+    const [eventVendor] = await db.insert(eventVendors).values(insertEventVendor).returning();
+    return eventVendor;
+  }
+
+  // Planning Tip methods
+  async getPlanningTip(id: number): Promise<PlanningTip | undefined> {
+    const [planningTip] = await db.select().from(planningTips).where(eq(planningTips.id, id));
+    return planningTip;
+  }
+
+  async getAllPlanningTips(): Promise<PlanningTip[]> {
+    return db.select().from(planningTips);
+  }
+
+  async getPlanningTipsByCategory(category: string): Promise<PlanningTip[]> {
+    return db.select().from(planningTips).where(eq(planningTips.category, category));
+  }
+
+  async createPlanningTip(insertTip: InsertPlanningTip): Promise<PlanningTip> {
+    const [planningTip] = await db.insert(planningTips).values(insertTip).returning();
+    return planningTip;
+  }
+
+  // User Preferences methods
+  async getUserPreferences(userId: number): Promise<UserPreference | undefined> {
+    const [userPreference] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
+    return userPreference;
+  }
+
+  async createUserPreferences(insertPreference: InsertUserPreference): Promise<UserPreference> {
+    const [userPreference] = await db.insert(userPreferences).values(insertPreference).returning();
+    return userPreference;
+  }
+
+  async updateUserPreferences(userId: number, preferenceData: Partial<InsertUserPreference>): Promise<UserPreference | undefined> {
+    const [updatedPreference] = await db.update(userPreferences)
+      .set({
+        ...preferenceData,
+        updatedAt: new Date()
+      })
+      .where(eq(userPreferences.userId, userId))
+      .returning();
+    return updatedPreference;
+  }
+
+  // Event Analytics methods
+  async getEventAnalytics(id: number): Promise<EventAnalytics | undefined> {
+    const [eventAnalytic] = await db.select().from(eventAnalytics).where(eq(eventAnalytics.id, id));
+    return eventAnalytic;
+  }
+
+  async getAnalyticsByEvent(eventId: number): Promise<EventAnalytics[]> {
+    return db.select()
+      .from(eventAnalytics)
+      .where(eq(eventAnalytics.eventId, eventId))
+      .orderBy(desc(eventAnalytics.createdAt));
+  }
+
+  async createEventAnalytics(insertAnalytics: InsertEventAnalytics): Promise<EventAnalytics> {
+    const [eventAnalytic] = await db.insert(eventAnalytics).values(insertAnalytics).returning();
+    return eventAnalytic;
+  }
+
+  async updateEventAnalytics(id: number, analyticsData: Partial<InsertEventAnalytics>): Promise<EventAnalytics | undefined> {
+    const [updatedAnalytics] = await db.update(eventAnalytics)
+      .set({
+        ...analyticsData,
+        updatedAt: new Date()
+      })
+      .where(eq(eventAnalytics.id, id))
+      .returning();
+    return updatedAnalytics;
+  }
+
+  // Attendee Feedback methods
+  async getAttendeeFeedback(id: number): Promise<AttendeeFeedback | undefined> {
+    const [feedback] = await db.select().from(attendeeFeedback).where(eq(attendeeFeedback.id, id));
+    return feedback;
+  }
+
+  async getFeedbackByEvent(eventId: number): Promise<AttendeeFeedback[]> {
+    return db.select()
+      .from(attendeeFeedback)
+      .where(eq(attendeeFeedback.eventId, eventId))
+      .orderBy(desc(attendeeFeedback.createdAt));
+  }
+
+  async createAttendeeFeedback(insertFeedback: InsertAttendeeFeedback): Promise<AttendeeFeedback> {
+    const [feedback] = await db.insert(attendeeFeedback).values(insertFeedback).returning();
+    return feedback;
+  }
+
+  async getEventFeedbackSummary(eventId: number): Promise<{
+    averageOverallRating: number;
+    averageContentRating: number;
+    averageTechnicalRating: number;
+    averageEngagementRating: number;
+    recommendationPercentage: number;
+    totalFeedbackCount: number;
+  }> {
+    const feedbacks = await this.getFeedbackByEvent(eventId);
+    
+    if (feedbacks.length === 0) {
+      return {
+        averageOverallRating: 0,
+        averageContentRating: 0,
+        averageTechnicalRating: 0,
+        averageEngagementRating: 0,
+        recommendationPercentage: 0,
+        totalFeedbackCount: 0
+      };
+    }
+    
+    // Calculate averages
+    const totalFeedbackCount = feedbacks.length;
+    
+    const overallRatingSum = feedbacks.reduce((sum, feedback) => sum + feedback.overallRating, 0);
+    const averageOverallRating = overallRatingSum / totalFeedbackCount;
+    
+    // Content rating (some might be null)
+    const contentRatings = feedbacks.filter(feedback => feedback.contentRating !== null);
+    const contentRatingSum = contentRatings.reduce((sum, feedback) => sum + (feedback.contentRating || 0), 0);
+    const averageContentRating = contentRatings.length > 0 ? contentRatingSum / contentRatings.length : 0;
+    
+    // Technical rating
+    const technicalRatings = feedbacks.filter(feedback => feedback.technicalRating !== null);
+    const technicalRatingSum = technicalRatings.reduce((sum, feedback) => sum + (feedback.technicalRating || 0), 0);
+    const averageTechnicalRating = technicalRatings.length > 0 ? technicalRatingSum / technicalRatings.length : 0;
+    
+    // Engagement rating
+    const engagementRatings = feedbacks.filter(feedback => feedback.engagementRating !== null);
+    const engagementRatingSum = engagementRatings.reduce((sum, feedback) => sum + (feedback.engagementRating || 0), 0);
+    const averageEngagementRating = engagementRatings.length > 0 ? engagementRatingSum / engagementRatings.length : 0;
+    
+    // Recommendation percentage
+    const recommendations = feedbacks.filter(feedback => feedback.wouldRecommend !== null);
+    const recommendationCount = recommendations.filter(feedback => feedback.wouldRecommend === true).length;
+    const recommendationPercentage = recommendations.length > 0 ? (recommendationCount / recommendations.length) * 100 : 0;
+    
+    return {
+      averageOverallRating,
+      averageContentRating,
+      averageTechnicalRating,
+      averageEngagementRating,
+      recommendationPercentage,
+      totalFeedbackCount
+    };
+  }
+
+  // Subscription Plan methods
+  async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
+    const [plan] = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, id));
+    return plan;
+  }
+
+  async getSubscriptionPlanByName(name: string): Promise<SubscriptionPlan | undefined> {
+    const [plan] = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.name, name));
+    return plan;
+  }
+
+  async getAllSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return db.select().from(subscriptionPlans);
+  }
+
+  async getActiveSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    return db.select().from(subscriptionPlans).where(eq(subscriptionPlans.isActive, true));
+  }
+
+  async createSubscriptionPlan(insertPlan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
+    const [plan] = await db.insert(subscriptionPlans).values(insertPlan).returning();
+    return plan;
+  }
+
+  async updateSubscriptionPlan(id: number, planData: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan | undefined> {
+    const [updatedPlan] = await db.update(subscriptionPlans)
+      .set({
+        ...planData,
+        updatedAt: new Date()
+      })
+      .where(eq(subscriptionPlans.id, id))
+      .returning();
+    return updatedPlan;
+  }
+
+  // Transaction methods
+  async getTransaction(id: number): Promise<Transaction | undefined> {
+    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id));
+    return transaction;
+  }
+
+  async getUserTransactions(userId: number): Promise<Transaction[]> {
+    return db.select()
+      .from(transactions)
+      .where(eq(transactions.userId, userId))
+      .orderBy(desc(transactions.createdAt));
+  }
+
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await db.insert(transactions).values(insertTransaction).returning();
+    return transaction;
+  }
+
+  async updateTransaction(id: number, transactionData: Partial<Transaction>): Promise<Transaction | undefined> {
+    const [updatedTransaction] = await db.update(transactions)
+      .set(transactionData)
+      .where(eq(transactions.id, id))
+      .returning();
+    return updatedTransaction;
+  }
+}
+
+// Use the database storage implementation
+export const storage = new DatabaseStorage();
