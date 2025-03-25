@@ -28,8 +28,8 @@ export default function HomePage() {
       icon: <Users className="h-12 w-12 text-primary mb-4" />
     },
     {
-      title: "Virtual & Hybrid Events",
-      description: "Perfect for online, in-person, or hybrid event formats",
+      title: "All Event Types",
+      description: "Perfect for conferences, weddings, corporate events, and more",
       icon: <Globe className="h-12 w-12 text-primary mb-4" />
     },
     {
@@ -41,7 +41,7 @@ export default function HomePage() {
 
   const testimonials = [
     {
-      quote: "This platform transformed how we plan our virtual conferences. The AI suggestions saved us countless hours.",
+      quote: "Eventra AI transformed how we plan our conferences. The AI suggestions saved us countless hours of planning time.",
       author: "Sarah Johnson",
       company: "TechConf Organization"
     },
@@ -51,7 +51,7 @@ export default function HomePage() {
       company: "Global Events Inc."
     },
     {
-      quote: "We increased attendee engagement by 45% using the analytics and suggestions from this platform.",
+      quote: "We increased attendee engagement by 45% using the analytics and suggestions from Eventra AI for our corporate events.",
       author: "Jessica Rodriguez",
       company: "Community Builders Association"
     }
@@ -65,10 +65,10 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4">
-                Plan Amazing Virtual Events with AI Assistance
+                Plan Amazing Events with Eventra AI
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground mb-8">
-                Streamline your event planning process with intelligent tools, real-time collaboration, and data-driven insights.
+                Streamline your event planning process with intelligent tools, real-time collaboration, and data-driven insights for any event type.
               </p>
               <div className="space-x-4">
                 <Button size="lg" onClick={navigateToSignUp}>
@@ -83,7 +83,7 @@ export default function HomePage() {
             <div className="rounded-xl overflow-hidden shadow-xl">
               <img 
                 src="https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
-                alt="Virtual event planning illustration" 
+                alt="Event planning with Eventra AI" 
                 className="w-full h-auto"
               />
             </div>
@@ -97,7 +97,7 @@ export default function HomePage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Powerful Features for Seamless Event Planning</h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Our platform combines cutting-edge AI with intuitive tools to make your virtual event planning process efficient and effective.
+              Eventra AI combines cutting-edge AI with intuitive tools to make your event planning process efficient and effective.
             </p>
           </div>
 
@@ -165,7 +165,7 @@ export default function HomePage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Users Say</h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Join thousands of event planners who are transforming their virtual events.
+              Join thousands of event planners who are transforming their events with Eventra AI.
             </p>
           </div>
 
@@ -199,7 +199,7 @@ export default function HomePage() {
         <div className="container mx-auto max-w-6xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Transform Your Event Planning?</h2>
           <p className="text-xl mb-8 max-w-3xl mx-auto opacity-90">
-            Join thousands of event planners already using our platform to create exceptional virtual experiences.
+            Join thousands of event planners already using Eventra AI to create exceptional experiences for all kinds of events.
           </p>
           <Button size="lg" variant="secondary" onClick={navigateToSignUp}>
             Start Planning Today

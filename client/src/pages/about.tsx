@@ -75,7 +75,7 @@ export default function AboutPage() {
                 Our Mission
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground mb-8">
-                We're building the future of event planning with AI-powered tools that make creating exceptional virtual events accessible to everyone.
+                At Eventra AI, we're building the future of event planning with AI-powered tools that make creating exceptional events of all types accessible to everyone.
               </p>
               <div className="space-y-4">
                 <div className="flex gap-3">
