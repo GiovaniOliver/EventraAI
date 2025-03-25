@@ -16,6 +16,7 @@ import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import AdminDashboard from "@/pages/admin-dashboard";
+import PricingPage from "@/pages/pricing";
 
 import OnboardingModal from "@/components/modals/onboarding-modal";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -62,6 +63,7 @@ function Router() {
           <ProtectedRoute path="/profile" component={Profile} />
           <ProtectedRoute path="/settings" component={Settings} />
           <AdminRoute path="/admin" component={AdminDashboard} />
+          <Route path="/pricing" component={PricingPage} />
           <Route path="/auth" component={AuthPage} />
           <Route component={NotFound} />
         </Switch>

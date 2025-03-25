@@ -343,7 +343,7 @@ export class MemStorage implements IStorage {
       id, 
       isAdmin: insertUser.isAdmin ?? false,
       stripeCustomerId: null,
-      subscriptionTier: insertUser.subscriptionTier ?? "free",
+      subscriptionTier: insertUser.subscriptionTier ?? "starter",
       subscriptionStatus: "active",
       createdAt: now
     };
@@ -1121,7 +1121,7 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.insert(users).values({
       ...insertUser,
       isAdmin: insertUser.isAdmin ?? false,
-      subscriptionTier: insertUser.subscriptionTier ?? "free",
+      subscriptionTier: insertUser.subscriptionTier ?? "starter",
       subscriptionStatus: "active",
     }).returning();
     return user;
