@@ -96,14 +96,13 @@ export default function EventDetail() {
   const [, navigate] = useLocation();
   const [match, params] = useRoute("/events/:id");
   const eventId = match ? parseInt(params.id) : null;
-  const { isConnected, joinEvent, leaveEvent, sendMessage } = useWebSocketContext();
+  const { isConnected, joinEvent, leaveEvent, sendMessage, activeParticipants } = useWebSocketContext();
   
   const [isEditing, setIsEditing] = useState(false);
   const [editedEvent, setEditedEvent] = useState<Partial<Event>>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
   const [showAddGuestDialog, setShowAddGuestDialog] = useState(false);
-  const [activeParticipants, setActiveParticipants] = useState<Array<{userId: number, username: string}>>([]);
   const [newTask, setNewTask] = useState<{
     title: string;
     description: string | null;
