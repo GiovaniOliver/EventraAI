@@ -530,15 +530,15 @@ export default function AdminDashboard() {
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
                                 <Check className="h-4 w-4 text-green-500" />
-                                <span>{plan.maxEvents} events</span>
+                                <span>{plan.eventLimit} events</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Check className="h-4 w-4 text-green-500" />
-                                <span>{plan.maxGuests} guests per event</span>
+                                <span>{plan.guestLimit} guests per event</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Check className="h-4 w-4 text-green-500" />
-                                <span>{plan.maxVendors} vendors per event</span>
+                                <span>{plan.vendorLimit} vendors per event</span>
                               </div>
                             </div>
                           </CardContent>

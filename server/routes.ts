@@ -68,6 +68,19 @@ function cleanupInactiveParticipants() {
 // Set up cleanup interval
 setInterval(cleanupInactiveParticipants, 5 * 60 * 1000); // Run every 5 minutes
 
+// Admin middleware
+function isAdmin(req: any, res: any, next: any) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ message: "Forbidden: Admin access required" });
+  }
+  
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
@@ -1180,18 +1193,8 @@ Format your response as a JSON array of improvement objects with the following s
   });
 
   // Admin routes
-  app.get("/api/admin/users", async (req, res) => {
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
     try {
-      // Check if the user is authenticated and is an admin
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
-      const user = req.user as any;
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Forbidden: Admin access required" });
-      }
-      
       // Get all admin users
       const adminUsers = await storage.getAdminUsers();
       return res.json(adminUsers);
@@ -1204,18 +1207,9 @@ Format your response as a JSON array of improvement objects with the following s
     }
   });
 
-  app.get("/api/admin/vendors", async (req, res) => {
+  // Get all vendors (admin only)
+  app.get("/api/admin/vendors", isAdmin, async (req, res) => {
     try {
-      // Check if the user is authenticated and is an admin
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
-      const user = req.user as any;
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Forbidden: Admin access required" });
-      }
-      
       // Get all vendors
       const vendors = await storage.getAllVendors();
       return res.json(vendors);
@@ -1228,27 +1222,18 @@ Format your response as a JSON array of improvement objects with the following s
     }
   });
 
-  app.post("/api/admin/vendor-approval/:id", async (req, res) => {
+  // Update vendor approval status (admin only)
+  app.patch("/api/vendors/:id/approval", isAdmin, async (req, res) => {
     try {
-      // Check if the user is authenticated and is an admin
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
-      const user = req.user as any;
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Forbidden: Admin access required" });
-      }
-      
       const vendorId = parseInt(req.params.id);
-      const { approved } = req.body;
+      const { isApproved } = req.body;
       
-      if (typeof approved !== 'boolean') {
+      if (typeof isApproved !== 'boolean') {
         return res.status(400).json({ message: "Invalid approval status" });
       }
       
       // Update vendor approval status
-      const updatedVendor = await storage.updateVendor(vendorId, { isApproved: approved });
+      const updatedVendor = await storage.updateVendor(vendorId, { isApproved });
       if (!updatedVendor) {
         return res.status(404).json({ message: "Vendor not found" });
       }
@@ -1263,18 +1248,9 @@ Format your response as a JSON array of improvement objects with the following s
     }
   });
 
-  app.post("/api/admin/partner-status/:id", async (req, res) => {
+  // Update vendor partner status (admin only)
+  app.patch("/api/vendors/:id/partner", isAdmin, async (req, res) => {
     try {
-      // Check if the user is authenticated and is an admin
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
-      const user = req.user as any;
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Forbidden: Admin access required" });
-      }
-      
       const vendorId = parseInt(req.params.id);
       const { isPartner } = req.body;
       
@@ -1298,17 +1274,9 @@ Format your response as a JSON array of improvement objects with the following s
     }
   });
 
-  app.get("/api/admin/events", async (req, res) => {
+  // Get all events (admin only)
+  app.get("/api/admin/events", isAdmin, async (req, res) => {
     try {
-      // Check if the user is authenticated and is an admin
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
-      const user = req.user as any;
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Forbidden: Admin access required" });
-      }
       
       // Get all events from all users
       // This would require a new method in storage to get all events
