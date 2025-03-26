@@ -70,18 +70,16 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     connectionAttempts.current += 1;
     
     // If we've tried reconnecting too many times, mark connection as failed
-    if (connectionAttempts.current >= 5) {
+    if (connectionAttempts.current >= 5 && !connectionFailedNotified.current) {
       setConnectionFailed(true);
       
       // Only show the toast once
-      if (!connectionFailedNotified.current) {
-        toastRef.current({
-          title: "Collaboration limited",
-          description: "Unable to establish real-time connection. Some collaboration features may be limited.",
-          variant: "default"
-        });
-        connectionFailedNotified.current = true;
-      }
+      toastRef.current({
+        title: "Collaboration limited",
+        description: "Unable to establish real-time connection. Some collaboration features may be limited.",
+        variant: "default"
+      });
+      connectionFailedNotified.current = true;
     }
   }, []);
 

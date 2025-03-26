@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { queryClient } from "@/lib/queryClient";
 
 // Reusing the same enum values for message types
@@ -45,10 +45,12 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
   const isConnected = false;
   const isConnecting = false;
   
-  // Call onClose callback to indicate we're not connected
-  if (options.onClose) {
-    options.onClose();
-  }
+  // Use useEffect to call onClose only once on mount instead of every render
+  useEffect(() => {
+    if (options.onClose) {
+      options.onClose();
+    }
+  }, []);
   
   // Function to handle different message types and update application state
   const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
@@ -81,7 +83,7 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     if (options.onMessage) {
       options.onMessage(message);
     }
-  }, [options]);
+  }, [options?.onMessage]);
   
   // Send a message - always returns false since we're not connected
   const sendMessage = useCallback((message: WebSocketMessage) => {
