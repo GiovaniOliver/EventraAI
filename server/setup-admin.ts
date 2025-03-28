@@ -1,6 +1,7 @@
-import { storage } from "./storage";
+import { supabase } from "./db";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
+import { createUser, getUserByUsername, updateUser } from "./supabase-service";
 
 const scryptAsync = promisify(scrypt);
 
@@ -18,29 +19,31 @@ export async function setupAdminUser() {
     const adminUsername = "admin";
     const adminDisplayName = "Administrator";
     
+    console.log("Checking for existing admin user...");
+    
     // Check if admin user already exists
-    const existingAdmin = await storage.getUserByUsername(adminUsername);
+    const existingAdmin = await getUserByUsername(adminUsername);
     
     if (existingAdmin) {
       console.log("Admin user already exists, updating credentials...");
-      await storage.updateUser(existingAdmin.id, {
+      await updateUser(existingAdmin.id, {
         email: adminEmail,
         password: await hashPassword(adminPassword),
-        displayName: adminDisplayName,
-        isAdmin: true,
-        // Make sure subscription tier is enterprise, the highest level
-        subscriptionTier: "enterprise"
+        display_name: adminDisplayName,
+        is_admin: true,
+        subscription_tier: "enterprise"
       });
       console.log("Admin user updated successfully");
     } else {
       console.log("Creating new admin user...");
-      await storage.createAdminUser({
+      await createUser({
         username: adminUsername,
         password: await hashPassword(adminPassword),
-        displayName: adminDisplayName,
+        display_name: adminDisplayName,
         email: adminEmail,
-        isAdmin: true,
-        subscriptionTier: "enterprise"
+        is_admin: true,
+        subscription_tier: "enterprise",
+        subscription_status: "active"
       });
       console.log("Admin user created successfully");
     }

@@ -1,3 +1,6 @@
+// Load environment variables from .env file
+import 'dotenv/config';
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -41,34 +44,35 @@ app.use((req, res, next) => {
   // Set up the admin user with specified credentials
   await setupAdminUser();
   
+  // Register API routes first - but don't make it handle all routes
   const server = await registerRoutes(app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  
+  // Set up error handling for API routes
+  app.use('/api', (err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    console.error(err);
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Set up Vite for frontend development
   if (app.get("env") === "development") {
+    // In development, Vite handles the frontend
+    log("Setting up Vite middleware for frontend development");
     await setupVite(app, server);
   } else {
+    // In production, serve static files
+    log("Setting up static file serving for production");
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  // Set up the port for local development
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 4000;
+  
+  server.listen(port, () => {
+    log(`Server running on port ${port}`);
+    log(`API available at: http://localhost:${port}/api/health`);
+    log(`Frontend available at: http://localhost:${port}`);
   });
 })();

@@ -1,12 +1,47 @@
 import OpenAI from "openai";
 
-// Initialize OpenAI client
-export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// The OpenAI model to use for chat completions
+export const MODEL = "gpt-3.5-turbo";
 
-// The newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-export const MODEL = "gpt-4o";
+// Create placeholder API client to prevent errors
+export const openai = {
+  chat: {
+    completions: {
+      create: async () => ({
+        choices: [{ message: { content: "AI features are currently disabled." } }]
+      })
+    }
+  }
+};
+
+// Interface definitions
+export interface BudgetItem {
+  category: string;
+  name: string;
+  amount: number;
+  priority: 'high' | 'medium' | 'low';
+  notes?: string;
+}
+
+// Placeholder implementations of the AI functions
+export async function generateAiSuggestions(prompt: string): Promise<string> {
+  return "AI suggestions are disabled until OPENAI_API_KEY is configured.";
+}
+
+export async function optimizeEventBudget(
+  budget: number, 
+  items: BudgetItem[]
+): Promise<{ 
+  optimizedItems: BudgetItem[], 
+  savings: number, 
+  recommendations: string[] 
+}> {
+  return {
+    optimizedItems: items,
+    savings: 0,
+    recommendations: ["Budget optimization is disabled until OPENAI_API_KEY is configured."]
+  };
+}
 
 type EventSuggestion = {
   id: string;

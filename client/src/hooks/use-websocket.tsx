@@ -119,49 +119,80 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
     
     setIsConnecting(true);
     
-    // Replit-specific approach for WebSocket connections
-    // Try to use a direct WebSocket URL construction compatible with Replit's environment
-    let wsUrl;
-    
-    // Use a simplified WebSocket URL that works with Replit
-    if (window.location.hostname.includes('replit')) {
-      // When in Replit environment, construct URL by replacing https:// with wss:// 
-      // or http:// with ws:// but keep the domain and path
-      const fullUrl = window.location.href;
-      wsUrl = fullUrl.replace(/(https?:\/\/)/, (match) => {
-        return match === 'https://' ? 'wss://' : 'ws://';
-      }).replace(/\/$/, '') + '/ws';
-    } else {
-      // Standard approach for local development or other environments
-      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      wsUrl = `${wsProtocol}//${window.location.host}/ws`;
-    }
+    // Determine WebSocket URL
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${window.location.host}/ws-api`;
     
     console.log(`Attempting to connect to WebSocket at ${wsUrl}`);
     
     // Create WebSocket with error handling in the event handlers
-    socket.current = new WebSocket(wsUrl);
-    
-    // Set up event listeners for the WebSocket
-    socket.current.onopen = () => {
-      console.log("WebSocket connection established");
-      setIsConnected(true);
-      setIsConnecting(false);
-      reconnectAttempts.current = 0;
-      if (options.onOpen) options.onOpen();
-    };
-    
-    socket.current.onclose = (event) => {
-      console.log("WebSocket connection closed", event);
-      setIsConnected(false);
-      setIsConnecting(false);
+    try {
+      socket.current = new WebSocket(wsUrl);
       
-      if (options.onClose) options.onClose();
+      // Set up event listeners for the WebSocket
+      socket.current.onopen = () => {
+        console.log("WebSocket connection established");
+        setIsConnected(true);
+        setIsConnecting(false);
+        reconnectAttempts.current = 0;
+        if (options.onOpen) options.onOpen();
+      };
       
-      // Attempt to reconnect if enabled and hasn't reached max attempts
+      socket.current.onclose = (event) => {
+        console.log("WebSocket connection closed", event);
+        setIsConnected(false);
+        setIsConnecting(false);
+        
+        if (options.onClose) options.onClose();
+        
+        // Attempt to reconnect if enabled and hasn't reached max attempts
+        if (autoReconnect && reconnectAttempts.current < maxReconnectAttempts) {
+          reconnectAttempts.current += 1;
+          console.log(`Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})...`);
+          
+          if (reconnectTimeoutRef.current) {
+            window.clearTimeout(reconnectTimeoutRef.current);
+          }
+          
+          reconnectTimeoutRef.current = window.setTimeout(() => {
+            connect();
+          }, reconnectInterval);
+        } else if (reconnectAttempts.current >= maxReconnectAttempts) {
+          console.log("Max reconnection attempts reached");
+          toast({
+            title: "Connection Lost",
+            description: "Unable to reconnect to the collaboration service. Please refresh the page.",
+            variant: "destructive"
+          });
+        }
+      };
+      
+      socket.current.onerror = (event) => {
+        console.error("WebSocket error:", event);
+        if (options.onError) options.onError(event);
+      };
+      
+      socket.current.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data) as WebSocketMessage;
+          console.log("WebSocket message received:", message);
+          
+          // Handle different message types
+          handleWebSocketMessage(message);
+          
+          if (options.onMessage) options.onMessage(message);
+        } catch (error) {
+          console.error("Error parsing WebSocket message:", error);
+        }
+      };
+    } catch (error) {
+      console.error("Error creating WebSocket connection:", error);
+      setIsConnecting(false);
+      if (options.onError) options.onError(error as Event);
+      
+      // Still attempt to reconnect on connection creation error
       if (autoReconnect && reconnectAttempts.current < maxReconnectAttempts) {
         reconnectAttempts.current += 1;
-        console.log(`Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})...`);
         
         if (reconnectTimeoutRef.current) {
           window.clearTimeout(reconnectTimeoutRef.current);
@@ -170,34 +201,8 @@ export function useWebSocket(options: WebSocketHookOptions = {}) {
         reconnectTimeoutRef.current = window.setTimeout(() => {
           connect();
         }, reconnectInterval);
-      } else if (reconnectAttempts.current >= maxReconnectAttempts) {
-        console.log("Max reconnection attempts reached");
-        toast({
-          title: "Connection Lost",
-          description: "Unable to reconnect to the collaboration service. Please refresh the page.",
-          variant: "destructive"
-        });
       }
-    };
-    
-    socket.current.onerror = (event) => {
-      console.error("WebSocket error:", event);
-      if (options.onError) options.onError(event);
-    };
-    
-    socket.current.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data) as WebSocketMessage;
-        console.log("WebSocket message received:", message);
-        
-        // Handle different message types
-        handleWebSocketMessage(message);
-        
-        if (options.onMessage) options.onMessage(message);
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-      }
-    };
+    }
   }, [options, reconnectInterval, maxReconnectAttempts, autoReconnect, toast, handleWebSocketMessage]);
   
   // Function to send messages through the WebSocket
