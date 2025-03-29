@@ -66,6 +66,11 @@
 - Migrate page components
 - Implement routing
 - Implement real-time collaboration solution
+- Detailed feature implementation plan available in [Features Documentation](/docs/features.md)
+- Feature implementation details:
+  - [Feature Implementation Plan](/docs/phases/PHASE-2/feature-implementation-plan.md)
+  - [Subscription System](/docs/phases/PHASE-2/subscription-system.md)
+  - [User Management](/docs/phases/PHASE-2/user-management.md)
 
 ### Phase 3: Enhancement and Deployment
 - Polish UI/UX
