@@ -45,16 +45,16 @@ CREATE TABLE IF NOT EXISTS public.tasks (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
--- Add admin user to public.users table from auth.users
+-- Add admin user to public.users table directly without relying on user_metadata
 INSERT INTO public.users (id, username, display_name, email, is_admin, subscription_tier, subscription_status)
 SELECT 
     id,
-    user_metadata->>'username',
-    user_metadata->>'display_name',
+    email, -- Use email as username if user_metadata not available
+    COALESCE(raw_user_meta_data->>'display_name', email), -- Extract from raw_user_meta_data or use email
     email,
-    (user_metadata->>'is_admin')::boolean,
-    user_metadata->>'subscription_tier',
-    user_metadata->>'subscription_status'
+    true, -- Explicitly set is_admin to true for admin@example.com
+    'enterprise', -- Set subscription tier
+    'active' -- Set subscription status
 FROM auth.users
 WHERE email = 'admin@example.com'
 ON CONFLICT (id) DO NOTHING; 

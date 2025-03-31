@@ -40,7 +40,7 @@ export default function SettingsPage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/auth/login');
+      router.push('/login');
     }
   }, [user, authLoading, router]);
 
@@ -73,7 +73,7 @@ export default function SettingsPage() {
   const handleLogout = async () => {
     try {
       await logout();
-      router.push('/auth/login');
+      router.push('/login');
     } catch (error) {
       console.error('Error logging out:', error);
     }

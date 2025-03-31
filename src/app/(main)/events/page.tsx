@@ -22,7 +22,7 @@ export default function EventsPage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/auth/login')
+      router.push('/login')
     }
   }, [user, isLoading, router])
 
@@ -53,75 +53,74 @@ export default function EventsPage() {
         </p>
       </div>
 
-      {/* Action Bar */}
-      <div className="flex justify-between items-center mb-6">
-        <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+      {/* Action Bar and Event List Containers */}
+      <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+        <div className="flex justify-between items-center mb-6">
           <TabsList className="bg-muted/50 w-auto">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
             <TabsTrigger value="past">Past</TabsTrigger>
             <TabsTrigger value="draft">Draft</TabsTrigger>
           </TabsList>
-        </Tabs>
-        
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setShowFilters(!showFilters)}
-            className="h-9 w-9"
-          >
-            <Filter className="h-4 w-4" />
-          </Button>
-          <Button 
-            onClick={() => router.push('/events/new')}
-            size="sm"
-            className="flex items-center gap-1.5"
-          >
-            <PlusCircle className="h-4 w-4" />
-            New Event
-          </Button>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setShowFilters(!showFilters)}
+              className="h-9 w-9"
+            >
+              <Filter className="h-4 w-4" />
+            </Button>
+            <Button 
+              onClick={() => router.push('/events/new')}
+              size="sm"
+              className="flex items-center gap-1.5"
+            >
+              <PlusCircle className="h-4 w-4" />
+              New Event
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Event List Containers */}
-      <div className="subtle-gradient-card p-6">
-        <TabsContent value="all">
-          <EventList 
-            showFilters={showFilters}
-            showPagination={true}
-            filter="all"
-            emptyMessage="You don't have any events yet. Create your first event to get started."
-          />
-        </TabsContent>
-        
-        <TabsContent value="upcoming">
-          <EventList 
-            showFilters={showFilters}
-            showPagination={true}
-            filter="upcoming"
-            emptyMessage="You don't have any upcoming events scheduled."
-          />
-        </TabsContent>
-        
-        <TabsContent value="past">
-          <EventList 
-            showFilters={showFilters}
-            showPagination={true}
-            filter="past"
-            emptyMessage="You don't have any past events."
-          />
-        </TabsContent>
-        
-        <TabsContent value="draft">
-          <EventList 
-            showFilters={showFilters}
-            showPagination={true}
-            filter="draft"
-            emptyMessage="You don't have any events in draft status."
-          />
-        </TabsContent>
-      </div>
+        <div className="subtle-gradient-card p-6">
+          <TabsContent value="all">
+            <EventList 
+              showFilters={showFilters}
+              showPagination={true}
+              filter="all"
+              emptyMessage="You don't have any events yet. Create your first event to get started."
+            />
+          </TabsContent>
+          
+          <TabsContent value="upcoming">
+            <EventList 
+              showFilters={showFilters}
+              showPagination={true}
+              filter="upcoming"
+              emptyMessage="You don't have any upcoming events scheduled."
+            />
+          </TabsContent>
+          
+          <TabsContent value="past">
+            <EventList 
+              showFilters={showFilters}
+              showPagination={true}
+              filter="past"
+              emptyMessage="You don't have any past events."
+            />
+          </TabsContent>
+          
+          <TabsContent value="draft">
+            <EventList 
+              showFilters={showFilters}
+              showPagination={true}
+              filter="draft"
+              emptyMessage="You don't have any events in draft status."
+            />
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   )
 } 

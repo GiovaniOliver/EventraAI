@@ -1,6 +1,7 @@
 import Image from 'next/link'
 import MainLayout from '@/components/layout/MainLayout'
 import { Check, Heart, Zap, Shield, Users, Award, LifeBuoy } from 'lucide-react'
+import Link from 'next/link'
 
 export default function AboutPage() {
   return (
@@ -247,12 +248,12 @@ export default function AboutPage() {
             Experience the difference Eventra AI can make for planning your next event.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <a
-              href="/auth/signup"
+            <Link
+              href="/signup"
               className="rounded-md bg-white px-6 py-3 text-sm font-medium text-indigo-600 shadow-sm hover:bg-indigo-50"
             >
               Get Started
-            </a>
+            </Link>
             <a
               href="/contact"
               className="rounded-md border border-white bg-transparent px-6 py-3 text-sm font-medium text-white hover:bg-white/10"

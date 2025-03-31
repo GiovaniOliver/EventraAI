@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks"
 import { useToast } from "@/hooks/use-toast"
+import { useQuery } from "@tanstack/react-query"
 import { 
   CalendarCheck, 
   CheckSquare, 
@@ -97,8 +98,6 @@ export default function Dashboard() {
   const { toast } = useToast()
   const [greeting, setGreeting] = useState("Welcome")
   const [firstName, setFirstName] = useState("")
-  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([])
-  const [loadingEvents, setLoadingEvents] = useState(true)
   
   // Set greeting based on time of day
   useEffect(() => {
@@ -124,16 +123,20 @@ export default function Dashboard() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/auth/login')
+      router.push('/login')
     }
   }, [user, authLoading, router])
 
   // Fetch upcoming events
-  useEffect(() => {
-    if (user) {
-      // Simulate API call for events
-      setTimeout(() => {
-        const mockEvents: UpcomingEvent[] = [
+  const { data: upcomingEvents = [], isLoading: loadingEvents } = useQuery<UpcomingEvent[]>({
+    queryKey: ['upcomingEvents'],
+    queryFn: async () => {
+      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
+      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        return [
           {
             id: '1',
             title: 'Annual Tech Conference',
@@ -158,12 +161,47 @@ export default function Dashboard() {
             type: 'Team Event',
             progress: 25
           }
-        ]
-        setUpcomingEvents(mockEvents)
-        setLoadingEvents(false)
-      }, 1500)
-    }
-  }, [user])
+        ];
+      }
+      
+      try {
+        const response = await fetch('/api/events?status=upcoming&limit=3', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching upcoming events: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // Transform API response to match the UpcomingEvent format
+        return data.events.map((event: any) => ({
+          id: event.id,
+          title: event.title || event.name,
+          date: new Date(event.start_date || event.date).toLocaleDateString('en-US', { 
+            month: 'long', 
+            day: 'numeric', 
+            year: 'numeric' 
+          }),
+          time: new Date(event.start_date || event.date).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          }),
+          type: event.type || 'Event',
+          progress: event.progress || Math.floor(Math.random() * 75) + 10 // Random progress if not provided
+        }));
+      } catch (error) {
+        console.error('Failed to fetch upcoming events:', error);
+        throw error;
+      }
+    },
+    enabled: !!user // Only run the query if user is authenticated
+  });
 
   if (authLoading) {
     return (

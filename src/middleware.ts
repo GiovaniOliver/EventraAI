@@ -10,14 +10,19 @@ const protectedRoutes = [
   '/analytics',
   '/profile',
   '/settings',
-  '/subscribe',
-  '/checkout',
+  '/vendor',
+  '/vendor/dashboard',
+  '/vendor/events',
+  '/vendor/tasks',
+  '/vendor/analytics',
+  '/vendor/profile',
+  '/vendor/settings',
 ]
 
 // Public routes that don't require authentication
-const publicRoutes = ['/', '/auth', '/about', '/blog', '/pricing', '/promotion']
+const publicRoutes = ['/', '/about', '/blog', '/pricing', '/promotion', '/login', '/signup', '/forgot-password', '/confirm', '/special-offer', '/special-offer/1', '/special-offer/2', '/special-offer/3', '/special-offer/4', '/special-offer/5', '/special-offer/6', '/special-offer/7', '/special-offer/8', '/special-offer/9', '/special-offer/10']
 
-// Auth paths that may be accessed from both /auth/path and /path formats
+// Auth paths that may be accessed without authentication
 const authPaths = ['login', 'signup', 'forgot-password', 'confirm'];
 
 export async function middleware(request: NextRequest) {
@@ -45,20 +50,21 @@ export async function middleware(request: NextRequest) {
   // List of paths that don't require authentication
   const publicPaths = [
     '/login', '/signup', '/forgot-password', '/confirm',
-    '/auth/login', '/auth/signup', '/auth/forgot-password', '/auth/confirm',
-    '/', '/api', '/about', '/blog', '/promotion', '/images'
+    '/', '/api', '/about', '/blog', '/promotion', '/images',
+    '/pricing', '/special-offer', '/privacy', '/terms', '/contact',
+    '/features', '/integrations', '/changelog', 
+    '/guides', '/webinars', '/support',
+    '/careers', '/partners',
+    '/cookies', '/security',
+    '/events/share' // Allow access to shared event pages
   ];
 
   // Check if the path is public
   const path = request.nextUrl.pathname;
   
-  // Handle auth path redirects
-  if (path === '/auth') {
-    // Redirect /auth to /login
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-  
-  if (publicPaths.some(p => path === p || path.startsWith(p + '/'))) {
+  // Check if path is public or an auth path
+  if (publicPaths.some(p => path === p || path.startsWith(p + '/')) || 
+      authPaths.some(p => path === `/${p}` || path.startsWith(`/${p}/`))) {
     console.log('Public path detected, skipping auth check:', path);
     return NextResponse.next();
   }
@@ -96,17 +102,17 @@ export async function middleware(request: NextRequest) {
     // If the user is not authenticated and trying to access a protected route, redirect to login
     if (!session) {
       console.log('Redirecting unauthenticated user to login');
-      // Always use absolute URL for redirects
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002';
-      const redirectUrl = new URL('/auth/login', baseUrl);
+      // Always use absolute URL for redirects with correct port
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      const redirectUrl = new URL('/login', baseUrl);
       redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname);
       return NextResponse.redirect(redirectUrl);
     }
   } catch (error) {
     console.error('Error checking authentication:', error);
     // On error, redirect to login with error parameter
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002';
-    const redirectUrl = new URL('/auth/login', baseUrl);
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const redirectUrl = new URL('/login', baseUrl);
     redirectUrl.searchParams.set('error', 'auth_check_failed');
     return NextResponse.redirect(redirectUrl);
   }

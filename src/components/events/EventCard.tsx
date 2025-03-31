@@ -25,6 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import EventShareButton from '@/components/sharing/EventShareButton'
 
 // Type definitions
 export interface EventCardProps {
@@ -93,6 +94,17 @@ export function EventCard({
   
   const typeStyle = typeStyles[type.toLowerCase() as keyof typeof typeStyles] || 'bg-gray-100 text-gray-800'
   
+  // Create an event object for the share button
+  const eventObj = {
+    id,
+    title,
+    date,
+    location,
+    type,
+    estimatedGuests,
+    status
+  }
+  
   return (
     <Card className={cn('overflow-hidden transition-shadow hover:shadow-md', className)}>
       <CardContent className="p-0">
@@ -120,9 +132,12 @@ export function EventCard({
                     <Copy className="mr-2 h-4 w-4" />
                     Duplicate
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Share
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <EventShareButton 
+                      event={eventObj as any}
+                      variant="ghost"
+                      className="w-full justify-start p-0 h-auto font-normal text-sm"
+                    />
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
@@ -188,14 +203,22 @@ export function EventCard({
         >
           Edit Details
         </Button>
-        <Button
-          variant="default"
-          size="sm"
-          className="text-xs"
-          asChild
-        >
-          <Link href={`/events/${id}`}>View Details</Link>
-        </Button>
+        <div className="flex gap-2">
+          <EventShareButton 
+            event={eventObj as any}
+            size="sm"
+            variant="outline"
+            iconOnly={true}
+          />
+          <Button
+            variant="default"
+            size="sm"
+            className="text-xs"
+            asChild
+          >
+            <Link href={`/events/${id}`}>View Details</Link>
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   )

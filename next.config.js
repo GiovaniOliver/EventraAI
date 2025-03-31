@@ -10,6 +10,7 @@ const nextConfig = {
       },
     ],
   },
+  /* config options from next.config.ts can be added here */
 }
 
-module.exports = nextConfig 
+module.exports = nextConfig

@@ -99,7 +99,7 @@ const Navbar = () => {
               <Search size={20} />
             </button>
             <Link
-              href="/auth/login"
+              href="/login"
               className="rounded-md bg-[hsl(var(--eventra-blue))] px-4 py-1.5 text-sm font-medium text-white hover:bg-[hsl(var(--eventra-purple))] transition-colors"
             >
               Sign In
@@ -156,7 +156,7 @@ const Navbar = () => {
               </div>
               
               <Link
-                href="/auth/login"
+                href="/login"
                 className="mt-2 block w-full rounded-md bg-[hsl(var(--eventra-blue))] px-4 py-2 text-center text-sm font-medium text-white hover:bg-[hsl(var(--eventra-purple))] transition-colors"
               >
                 Sign In

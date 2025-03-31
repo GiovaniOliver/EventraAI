@@ -125,7 +125,7 @@ export default function Checkout() {
   // Redirect to login page if not authenticated
   useEffect(() => {
     if (user === null && !isLoading) {
-      router.push('/auth/login');
+      router.push('/login');
     }
   }, [user, isLoading, router]);
 

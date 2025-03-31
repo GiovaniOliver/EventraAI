@@ -205,35 +205,85 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
     if (!eventData.type) return;
     
     setLoadingSuggestions(true);
+    
     try {
-      const suggestions = await getAiSuggestions(
-        eventData.type,
-        undefined,
-        eventData.budget || undefined,
-        {
-          format: eventData.format as any,
-          guestCount: eventData.estimatedGuests || undefined
-        }
-      );
-      
-      if (suggestions.tasks && suggestions.tasks.length > 0) {
-        setSuggestedTasks(suggestions.tasks);
-        // Automatically select all tasks
-        setSelectedTasks(suggestions.tasks.map(task => task.title));
-      } else {
-        toast({
-          title: "No Task Suggestions",
-          description: "Couldn't generate task suggestions for this event type",
-          variant: "destructive"
-        });
+      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
+      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const mockSuggestions = [
+          {
+            title: "Contact and book venue",
+            description: "Secure your event location by contacting and finalizing venue booking",
+            priority: "high",
+            dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            title: "Create and send invitations",
+            description: "Design and distribute invitations to all guests",
+            priority: "high",
+            dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            title: "Arrange catering services",
+            description: "Select and book a catering company for the event",
+            priority: "medium",
+            dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            title: "Hire event photographer",
+            description: "Book a professional photographer to capture the event",
+            priority: "medium",
+            dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            title: "Prepare event timeline",
+            description: "Create a detailed schedule for the day of the event",
+            priority: "medium",
+            dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            title: "Confirm attendance with guests",
+            description: "Follow up with all invitees who haven't responded",
+            priority: "high",
+            dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+          },
+        ];
+        
+        setSuggestedTasks(mockSuggestions);
+        setLoadingSuggestions(false);
+        return;
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to generate task suggestions",
-        variant: "destructive"
+      
+      // Call the AI API to generate task suggestions
+      const response = await fetch('/api/ai/generate-checklist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventType: eventData.type,
+          eventDate: eventData.date,
+          guestCount: eventData.estimatedGuests,
+          format: eventData.format,
+          budget: eventData.budget
+        }),
       });
-      console.error("Error generating task suggestions:", error);
+      
+      if (!response.ok) {
+        throw new Error(`Error generating task suggestions: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setSuggestedTasks(data.tasks);
+    } catch (error) {
+      console.error('Failed to get AI task suggestions:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate task suggestions. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setLoadingSuggestions(false);
     }
@@ -449,25 +499,35 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[80vh] flex flex-col overflow-hidden">
-        <DialogHeader className="pb-2">
+      <DialogContent className="max-w-4xl h-[80vh] flex flex-col overflow-hidden border border-border shadow-lg">
+        <DialogHeader className="pb-2 bg-gradient-to-r from-primary/5 to-background border-b border-border/40">
           <div className="flex items-center">
-            <div className="bg-primary/10 p-2 rounded-md mr-3">
-              <CalendarIcon className="h-5 w-5 text-primary" />
+            <div className="bg-gradient-to-r from-primary/80 to-primary p-2.5 rounded-lg shadow-sm mr-4">
+              <CalendarIcon className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <DialogTitle className="text-xl">Event Planning Wizard</DialogTitle>
-              <DialogDescription>
-                Step-by-step guidance to plan your perfect event
+              <DialogTitle className="text-xl font-semibold text-foreground">Event Planning Wizard</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                Create and organize your perfect event with our step-by-step guidance
               </DialogDescription>
             </div>
           </div>
           <div className="mt-4">
-            <Progress value={progress} className="h-2" />
-            <div className="flex justify-between mt-1 text-xs text-muted-foreground">
-              <span>Getting started</span>
-              <span>Event details</span>
-              <span>Finalize</span>
+            <Progress 
+              value={progress} 
+              className="h-2.5 rounded-full bg-muted/50" 
+              aria-label={`Progress: ${progress}% complete`}
+            />
+            <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className={progress >= 20 ? "text-primary font-medium" : ""}>Getting started</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className={progress >= 40 && progress < 80 ? "text-primary font-medium" : ""}>Event details</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className={progress >= 80 ? "text-primary font-medium" : ""}>Finalize</span>
+              </span>
             </div>
           </div>
         </DialogHeader>
@@ -476,50 +536,65 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
           {/* Step 1: Event Basics */}
           {currentStep === "basics" && (
             <div className="space-y-6 p-1">
-              <h3 className="text-lg font-medium flex items-center">
-                <span className="bg-primary/10 p-1 rounded-full mr-2 text-primary text-sm">1</span>
-                Event Basics
+              <h3 className="text-lg font-medium flex items-center gap-2">
+                <span className="flex items-center justify-center bg-gradient-to-r from-primary/80 to-primary text-primary-foreground h-7 w-7 rounded-full text-sm font-bold">1</span>
+                <span className="text-xl">Event Basics</span>
               </h3>
               
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="event-name" className="text-base">
+              <div className="space-y-6 mt-2">
+                <div className="bg-muted/30 p-4 rounded-lg border border-border/60 shadow-sm">
+                  <Label htmlFor="event-name" className="text-base font-medium">
                     What's the name of your event?
                   </Label>
                   <Input
                     id="event-name"
                     placeholder="Enter event name"
-                    className="mt-1.5"
+                    className="mt-2 bg-background shadow-sm transition-colors focus-visible:ring-primary"
                     value={eventData.title || ""}
                     onChange={(e) => setEventData({ ...eventData, title: e.target.value })}
+                    aria-required="true"
                   />
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground mt-2 flex items-center">
+                    <Lightbulb className="h-4 w-4 mr-1.5 text-amber-500" />
                     Choose a clear, descriptive name that reflects the purpose of your event
                   </p>
                 </div>
                 
                 <div className="space-y-3 pt-2">
-                  <Label className="text-base">What type of event are you planning?</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1.5">
+                  <Label className="text-base font-medium flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary/80" />
+                    What type of event are you planning?
+                  </Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                     {EVENT_TYPES.map((type) => (
                       <div
                         key={type.id}
-                        className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                        className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
                           eventData.type === type.id
-                            ? "border-primary bg-primary/5"
-                            : "hover:border-primary/50"
+                            ? "border-primary bg-gradient-to-r from-primary/5 to-primary/10 shadow-sm"
+                            : "hover:border-primary/50 hover:bg-muted/30"
                         }`}
                         onClick={() => setEventData({ ...eventData, type: type.id })}
+                        role="radio"
+                        aria-checked={eventData.type === type.id}
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            setEventData({ ...eventData, type: type.id });
+                          }
+                        }}
                       >
                         <div className="flex items-start">
-                          <div className={`p-2 rounded-full bg-primary/10 mr-3 ${
-                            eventData.type === type.id ? "text-primary" : "text-muted-foreground"
-                          }`}>
+                          <div className={`p-2.5 rounded-full ${
+                            eventData.type === type.id 
+                              ? "bg-gradient-to-r from-primary/80 to-primary text-primary-foreground shadow-inner" 
+                              : "bg-muted text-muted-foreground"
+                          } transition-all`}>
                             {type.icon}
                           </div>
-                          <div>
+                          <div className="ml-3">
                             <h4 className="font-medium">{type.name}</h4>
-                            <p className="text-sm text-muted-foreground">{type.description}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
                           </div>
                           {eventData.type === type.id && (
                             <CheckCircle className="ml-auto text-primary h-5 w-5" />
@@ -531,20 +606,23 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                 </div>
                 
                 <div className="space-y-3 pt-2">
-                  <Label className="text-base">How will your event be delivered?</Label>
+                  <Label className="text-base font-medium flex items-center gap-2">
+                    <Settings className="h-5 w-5 text-primary/80" />
+                    How will your event be delivered?
+                  </Label>
                   <RadioGroup 
                     value={eventData.format || "virtual"}
                     onValueChange={(value) => setEventData({ ...eventData, format: value })}
-                    className="grid grid-cols-3 gap-3 pt-1.5"
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
                   >
                     {EVENT_FORMATS.map((format) => (
                       <div key={format.id} className="space-y-2">
                         <Label
                           htmlFor={format.id}
-                          className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${
+                          className={`flex flex-col items-center justify-between rounded-md border-2 bg-popover p-4 transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer ${
                             eventData.format === format.id
-                              ? "border-primary"
-                              : ""
+                              ? "border-primary bg-primary/5 shadow-sm"
+                              : "border-muted hover:border-primary/30"
                           }`}
                         >
                           <RadioGroupItem
@@ -1050,12 +1128,13 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
           )}
         </div>
 
-        <DialogFooter className="pt-2 border-t flex-shrink-0">
+        <DialogFooter className="pt-2 border-t bg-muted/20 flex-shrink-0">
           {currentStep !== "basics" && (
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={handlePreviousStep}
-              className="gap-1"
+              className="gap-1 bg-background hover:bg-muted hover:text-foreground hover:border-primary/50 border-border/60 transition-all"
+              aria-label="Go back to previous step"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Back
@@ -1065,7 +1144,12 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
           <div className="flex-1"></div>
           
           {currentStep !== "review" ? (
-            <Button onClick={handleNextStep} disabled={isLoading}>
+            <Button 
+              onClick={handleNextStep} 
+              disabled={isLoading}
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-sm gap-1 transition-all"
+              aria-label="Continue to next step"
+            >
               Continue
               <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
@@ -1073,17 +1157,18 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
             <Button 
               onClick={handleCreateEvent} 
               disabled={isLoading}
-              className="gap-1"
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-sm gap-1 transition-all"
+              aria-label="Create event"
             >
               {isLoading ? (
                 <>
-                  <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-1"></div>
+                  <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5"></div>
                   Creating...
                 </>
               ) : (
                 <>
                   Create Event
-                  <ArrowRightCircle className="h-4 w-4 ml-1" />
+                  <ArrowRightCircle className="h-4 w-4 ml-1.5" />
                 </>
               )}
             </Button>

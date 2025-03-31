@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks';
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from '@tanstack/react-query';
 import {
   Card,
   CardContent,
@@ -22,6 +23,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BarChart, Loader2, PieChart, LineChart, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+interface AnalyticsData {
+  events: {
+    total: number;
+    upcoming: number;
+    averageAttendance: number;
+    averageEngagement: number;
+  };
+  engagement?: {
+    [key: string]: any;
+  };
+  feedback?: {
+    [key: string]: any;
+  };
+}
 
 export default function AnalyticsPage() {
   const router = useRouter();
@@ -43,9 +59,67 @@ export default function AnalyticsPage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/auth/login');
+      router.push('/login');
     }
   }, [user, authLoading, router]);
+
+  // Fetch analytics data
+  const { data: analyticsData, isLoading: loadingAnalytics } = useQuery<AnalyticsData>({
+    queryKey: ['analytics', selectedEventId],
+    queryFn: async () => {
+      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
+      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        return {
+          events: {
+            total: 5,
+            upcoming: 3,
+            averageAttendance: 85,
+            averageEngagement: 72
+          }
+        };
+      }
+      
+      try {
+        // If an event ID is selected, fetch event-specific analytics
+        if (selectedEventId) {
+          const response = await fetch(`/api/events/${selectedEventId}/analytics`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Error fetching event analytics: ${response.statusText}`);
+          }
+          
+          return await response.json();
+        } 
+        // Otherwise fetch overall analytics
+        else {
+          const response = await fetch('/api/admin/analytics', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Error fetching analytics: ${response.statusText}`);
+          }
+          
+          return await response.json();
+        }
+      } catch (error) {
+        console.error('Failed to fetch analytics:', error);
+        throw error;
+      }
+    },
+    enabled: !!user, // Only run the query if user is authenticated
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -55,7 +129,7 @@ export default function AnalyticsPage() {
     }));
   };
 
-  if (authLoading) {
+  if (authLoading || loadingAnalytics) {
     return (
       <div className="flex min-h-[80vh] items-center justify-center">
         <div className="text-center">
@@ -69,6 +143,14 @@ export default function AnalyticsPage() {
   if (!user) {
     return null; // Will redirect in useEffect
   }
+  
+  // Use data from API or fallback to zeros
+  const eventMetrics = analyticsData?.events || {
+    total: 0,
+    upcoming: 0,
+    averageAttendance: 0,
+    averageEngagement: 0
+  };
   
   return (
     <div className="pb-20 md:pb-10 max-w-5xl mx-auto">
@@ -112,19 +194,19 @@ export default function AnalyticsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">Total Events</p>
-                    <p className="text-lg font-bold">0</p>
+                    <p className="text-lg font-bold">{eventMetrics.total}</p>
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">Upcoming Events</p>
-                    <p className="text-lg font-bold">0</p>
+                    <p className="text-lg font-bold">{eventMetrics.upcoming}</p>
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">Average Attendance</p>
-                    <p className="text-lg font-bold">0</p>
+                    <p className="text-lg font-bold">{eventMetrics.averageAttendance}</p>
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">Average Engagement</p>
-                    <p className="text-lg font-bold">0%</p>
+                    <p className="text-lg font-bold">{eventMetrics.averageEngagement}%</p>
                   </div>
                 </div>
               </CardContent>

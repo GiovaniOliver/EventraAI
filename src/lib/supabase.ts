@@ -34,13 +34,13 @@ export const createServerClient = () => {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
   if (!supabaseUrl || !supabaseKey) {
-    console.warn('Missing Supabase credentials. Using dummy client.')
-    return createDummyClient()
+    console.error('Missing Supabase credentials. Authentication will not work.')
+    throw new Error('Missing Supabase credentials')
   }
   
   // Use a real Supabase client with the provided credentials
   try {
-    console.log('Creating real Supabase server client with URL:', supabaseUrl)
+    console.log('Creating Supabase server client with URL:', supabaseUrl)
     return createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
@@ -50,7 +50,7 @@ export const createServerClient = () => {
     })
   } catch (error) {
     console.error('Error creating Supabase client:', error)
-    return createDummyClient()
+    throw error
   }
 }
 
@@ -82,38 +82,42 @@ const fetchWithRetry = async (url: RequestInfo | URL, options: RequestInit = {})
 
 // This client is used on the client-side
 export const createBrowserSupabaseClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  console.log('[DEBUG] Creating browser Supabase client with URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
   
-  console.log('Attempting to create Supabase client with URL:', supabaseUrl)
-  
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn('Missing Supabase credentials. Using dummy client.')
-    return createDummyClient() as ReturnType<typeof createBrowserClient>
+  // Check for proper environment variables
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error('[DEBUG] Missing Supabase env variables:', {
+      url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      key: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    });
   }
   
-  // Use a real Supabase client with the provided credentials
   try {
-    console.log('Creating real Supabase browser client with URL:', supabaseUrl)
-    return createBrowserClient(supabaseUrl, supabaseKey, {
-      auth: {
-        flowType: 'pkce',
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        persistSession: true,
-        storageKey: 'supabase-auth',
-      },
-      global: {
-        headers: {
-          'X-Client-Info': 'eventraai-web',
+    // Create the client with debug info
+    return createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          flowType: 'pkce',
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          persistSession: true,
+          storageKey: 'eventra-auth',
+          debug: true, // Enable auth debugging
         },
-      },
-    })
+        global: {
+          headers: {
+            'X-Client-Info': 'EventraAI Next.js'
+          },
+        },
+      }
+    );
   } catch (error) {
-    console.error('Error creating Supabase client:', error)
-    return createDummyClient() as ReturnType<typeof createBrowserClient>
+    console.error('[DEBUG] Error creating Supabase client:', error);
+    throw error;
   }
-}
+};
 
 // Types based on the original application's schema
 export type User = {

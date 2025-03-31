@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 
+/**
+ * GET /api/vendors - List all vendors
+ */
 export async function GET(request: NextRequest) {
   const supabase = createServerClient();
   const searchParams = request.nextUrl.searchParams;
@@ -20,12 +23,27 @@ export async function GET(request: NextRequest) {
     }
     
     if (isPartner !== null) {
-      query = query.eq('is_partner', isPartner === 'true');
+      const isPartnerBool = isPartner === 'true';
+      query = query.eq('is_partner', isPartnerBool);
     }
     
+    // If userId is provided, only fetch vendors created by that user
     if (userId) {
-      query = query.eq('user_id', userId);
+      query = query.eq('owner_id', userId);
+    } else {
+      // Otherwise, fetch all approved vendors plus any user-created vendors
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user?.id) {
+        query = query.or(`is_approved.eq.true,owner_id.eq.${session.user.id}`);
+      } else {
+        // If not authenticated, only show approved vendors
+        query = query.eq('is_approved', true);
+      }
     }
+    
+    // Order by partner status first, then name
+    query = query.order('is_partner', { ascending: false }).order('name');
     
     // Execute the query
     const { data, error } = await query;
@@ -47,10 +65,26 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * POST /api/vendors - Create a new vendor
+ */
 export async function POST(request: NextRequest) {
   const supabase = createServerClient();
   
   try {
+    // Verify user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    const userId = session.user.id;
+    
+    // Get vendor data from body
     const vendorData = await request.json();
     
     // Validate required fields
@@ -61,13 +95,25 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Set default values for new vendors
+    // Set additional fields
+    const now = new Date().toISOString();
     const newVendor = {
       ...vendorData,
-      is_approved: vendorData.is_approved ?? false,
-      is_partner: vendorData.is_partner ?? false,
-      created_at: new Date().toISOString()
+      owner_id: userId,
+      is_approved: false, // New vendors need approval by default
+      created_at: now
     };
+    
+    // Check if admin user - auto-approve if admin
+    const { data: userInfo, error: userError } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', userId)
+      .single();
+    
+    if (!userError && userInfo && userInfo.is_admin) {
+      newVendor.is_approved = true;
+    }
     
     // Insert the new vendor
     const { data, error } = await supabase
@@ -83,7 +129,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    return NextResponse.json(data);
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
     console.error('Error creating vendor:', error);
     return NextResponse.json(

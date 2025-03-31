@@ -24,7 +24,7 @@ export default function FundraiserPromotionPage() {
           </Link>
           
           <Link
-            href="/auth/signup"
+            href="/signup"
             className="rounded-md bg-[hsl(var(--eventra-blue))] px-4 py-1.5 text-sm font-medium text-white hover:bg-[hsl(var(--eventra-purple))] transition-colors"
           >
             Start Planning
@@ -62,7 +62,7 @@ export default function FundraiserPromotionPage() {
               
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link 
-                  href="/auth/signup" 
+                  href="/signup" 
                   className="rounded-md bg-[hsl(var(--eventra-purple))] px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-[hsl(var(--eventra-blue))] transition-colors focus:outline-none shadow-md"
                 >
                   Start Your Fundraiser
@@ -368,7 +368,7 @@ export default function FundraiserPromotionPage() {
           </p>
           <div className="mt-8">
             <Link
-              href="/auth/signup"
+              href="/signup"
               className="inline-flex items-center rounded-md bg-white px-6 py-3 text-sm font-medium text-[hsl(var(--eventra-blue))] hover:bg-gray-100"
             >
               Start Free Nonprofit Trial <ArrowRight className="ml-2 h-4 w-4" />

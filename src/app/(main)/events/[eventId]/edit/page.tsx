@@ -20,7 +20,7 @@ export default function EditEventPage({ params }: EditEventPageProps) {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push('/auth/login')
+      router.push('/login')
     }
   }, [user, isLoading, router])
 

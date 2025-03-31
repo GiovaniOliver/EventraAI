@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -39,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Mock task data
+// Task type definition
 interface Task {
   id: string;
   title: string;
@@ -55,103 +56,154 @@ export default function TasksPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [sortBy, setSortBy] = useState<'dueDate' | 'priority'>('dueDate');
   const [searchQuery, setSearchQuery] = useState("");
+  const queryClient = useQueryClient();
   
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/auth/login');
+      router.push('/login');
     }
   }, [user, authLoading, router]);
 
-  // Fetch tasks (mock)
-  useEffect(() => {
-    const fetchTasks = async () => {
-      // In a real app, fetch from API
-      // For now, use mock data
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+  // Fetch tasks from API
+  const { data: tasks = [], isLoading } = useQuery<Task[]>({
+    queryKey: ['tasks'],
+    queryFn: async () => {
+      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
+      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        return [
+          {
+            id: "1",
+            title: "Finalize venue for Annual Conference",
+            description: "Contact venues and confirm final booking with deposit",
+            dueDate: "2025-05-15",
+            completed: false,
+            priority: 'high',
+            eventId: "101",
+            eventName: "Annual Tech Conference"
+          },
+          {
+            id: "2",
+            title: "Send speaker invitations",
+            description: "Email potential speakers with event details and speaking opportunities",
+            dueDate: "2025-04-20",
+            completed: true,
+            priority: 'medium',
+            eventId: "101",
+            eventName: "Annual Tech Conference"
+          },
+          {
+            id: "3",
+            title: "Order promotional materials",
+            description: "Design and order banners, brochures, and swag items",
+            dueDate: "2025-05-01",
+            completed: false,
+            priority: 'medium',
+            eventId: "101",
+            eventName: "Annual Tech Conference"
+          },
+          {
+            id: "4",
+            title: "Prepare workshop materials",
+            description: "Create slides, exercises, and handouts for the training workshop",
+            dueDate: "2025-04-10",
+            completed: false,
+            priority: 'high',
+            eventId: "102",
+            eventName: "Product Training Workshop"
+          },
+          {
+            id: "5",
+            title: "Setup virtual meeting links",
+            description: "Create and test Zoom links for all sessions",
+            dueDate: "2025-04-15",
+            completed: false,
+            priority: 'low',
+            eventId: "102",
+            eventName: "Product Training Workshop"
+          }
+        ];
+      }
       
-      const mockTasks: Task[] = [
-        {
-          id: "1",
-          title: "Finalize venue for Annual Conference",
-          description: "Contact venues and confirm final booking with deposit",
-          dueDate: "2025-05-15",
-          completed: false,
-          priority: 'high',
-          eventId: "101",
-          eventName: "Annual Tech Conference"
-        },
-        {
-          id: "2",
-          title: "Send speaker invitations",
-          description: "Email potential speakers with event details and speaking opportunities",
-          dueDate: "2025-04-20",
-          completed: true,
-          priority: 'medium',
-          eventId: "101",
-          eventName: "Annual Tech Conference"
-        },
-        {
-          id: "3",
-          title: "Order promotional materials",
-          description: "Design and order banners, brochures, and swag items",
-          dueDate: "2025-05-01",
-          completed: false,
-          priority: 'medium',
-          eventId: "101",
-          eventName: "Annual Tech Conference"
-        },
-        {
-          id: "4",
-          title: "Prepare workshop materials",
-          description: "Create slides, exercises, and handouts for the training workshop",
-          dueDate: "2025-04-10",
-          completed: false,
-          priority: 'high',
-          eventId: "102",
-          eventName: "Product Training Workshop"
-        },
-        {
-          id: "5",
-          title: "Setup virtual meeting links",
-          description: "Create and test Zoom links for all sessions",
-          dueDate: "2025-04-15",
-          completed: false,
-          priority: 'low',
-          eventId: "102",
-          eventName: "Product Training Workshop"
+      try {
+        const response = await fetch('/api/tasks', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching tasks: ${response.statusText}`);
         }
-      ];
-      
-      setTasks(mockTasks);
-      setLoading(false);
-    };
-    
-    if (user) {
-      fetchTasks();
-    }
-  }, [user]);
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Failed to fetch tasks:', error);
+        throw error;
+      }
+    },
+    enabled: !!user, // Only run the query if user is authenticated
+  });
 
   // Toggle task completion
+  const toggleTaskMutation = useMutation({
+    mutationFn: async ({ taskId, completed }: { taskId: string; completed: boolean }) => {
+      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
+      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return { success: true };
+      }
+      
+      try {
+        const response = await fetch(`/api/tasks/${taskId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ completed }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error updating task: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error(`Failed to update task with ID ${taskId}:`, error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast({
+        title: "Task updated",
+        description: "Task status has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update task. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Function to toggle task completion
   const toggleTaskCompletion = (taskId: string) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
-        task.id === taskId 
-          ? { ...task, completed: !task.completed }
-          : task
-      )
-    );
-    
     const task = tasks.find(t => t.id === taskId);
     if (task) {
-      toast({
-        title: task.completed ? "Task marked as pending" : "Task completed",
-        description: task.title,
+      toggleTaskMutation.mutate({ 
+        taskId, 
+        completed: !task.completed 
       });
     }
   };
@@ -159,7 +211,7 @@ export default function TasksPage() {
   // Delete task
   const deleteTask = (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    // Implement delete logic here
     
     if (task) {
       toast({
@@ -184,32 +236,28 @@ export default function TasksPage() {
     return null; // Will redirect in useEffect
   }
 
-  // Apply filters
+  // Filter and sort tasks
   const filteredTasks = tasks.filter(task => {
-    // Apply completion filter
-    if (filter === 'pending' && task.completed) return false;
-    if (filter === 'completed' && !task.completed) return false;
-    
     // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        task.title.toLowerCase().includes(query) ||
-        task.description.toLowerCase().includes(query) ||
-        (task.eventName && task.eventName.toLowerCase().includes(query))
-      );
-    }
+    const matchesSearch = searchQuery === "" || 
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (task.eventName && task.eventName.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    return true;
+    // Apply status filter
+    const matchesStatus = filter === 'all' || 
+      (filter === 'pending' && !task.completed) || 
+      (filter === 'completed' && task.completed);
+    
+    return matchesSearch && matchesStatus;
   });
-
-  // Sort tasks
+  
   const sortedAndFilteredTasks = [...filteredTasks].sort((a, b) => {
     if (sortBy === 'dueDate') {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     } else {
-      const priorityValues = { high: 3, medium: 2, low: 1 };
-      return priorityValues[b.priority] - priorityValues[a.priority];
+      const priorityValue = { high: 0, medium: 1, low: 2 };
+      return priorityValue[a.priority] - priorityValue[b.priority];
     }
   });
 
@@ -303,7 +351,7 @@ export default function TasksPage() {
       </div>
       
       {/* Tasks List */}
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--eventra-blue))]" />
         </div>

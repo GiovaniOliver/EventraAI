@@ -14,7 +14,6 @@ import {
   AlertCircle,
   Pencil,
   ChevronLeft,
-  Share2,
   Trash2
 } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -22,8 +21,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import EventShareButton from '@/components/sharing/EventShareButton'
 
 // Type for event details
 interface EventDetail {
@@ -154,14 +154,10 @@ export function EventDetailView({ event, onEdit, onDelete }: EventDetailViewProp
             <Pencil className="mr-1 h-4 w-4" />
             Edit
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleShare}
-          >
-            <Share2 className="mr-1 h-4 w-4" />
-            Share
-          </Button>
+          <EventShareButton 
+            event={event as any} 
+            size="sm" 
+          />
           <Button
             variant={confirmDelete ? "destructive" : "outline"}
             size="sm"

@@ -182,7 +182,7 @@ export default function Header() {
           ) : (
             <div className="flex items-center gap-2">
               <Button variant="ghost" className={isProtectedPage ? "text-white hover:bg-white/10" : ""} asChild>
-                <Link href="/auth/login">Log in</Link>
+                <Link href="/login">Log in</Link>
               </Button>
               <Button className={isProtectedPage ? "bg-white text-[hsl(var(--eventra-blue))] hover:bg-white/90" : ""} asChild>
                 <Link href="/auth/register">Sign up</Link>

@@ -211,7 +211,7 @@ export default function PromotionIndexPage() {
           </Link>
           
           <Link
-            href="/auth/signup"
+            href="/signup"
             className="rounded-md bg-[hsl(var(--eventra-blue))] px-4 py-1.5 text-sm font-medium text-white hover:bg-[hsl(var(--eventra-purple))] transition-colors"
           >
             Start Planning
@@ -271,7 +271,7 @@ export default function PromotionIndexPage() {
             
             <div className="mt-12 flex flex-wrap justify-center gap-4">
               <Link 
-                href="/auth/signup" 
+                href="/signup" 
                 className="rounded-md shadow-lg shadow-[hsl(var(--eventra-blue))]/10 bg-[hsl(var(--eventra-blue))] px-6 py-3 text-center text-base font-medium text-white hover:bg-[hsl(var(--eventra-purple))] transition-all hover:-translate-y-0.5"
               >
                 Start Planning Now
@@ -357,7 +357,7 @@ export default function PromotionIndexPage() {
           </p>
           <div className="mt-8">
             <Link
-              href="/auth/signup"
+              href="/signup"
               className="inline-flex items-center rounded-md bg-white px-6 py-3 text-sm font-medium text-[hsl(var(--eventra-purple))] hover:bg-gray-100"
             >
               Create Free Account <ArrowRight className="ml-2 h-4 w-4" />

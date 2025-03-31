@@ -65,8 +65,8 @@ export function useEvents(initialFilter?: string) {
         queryParams.append('status', filter.status)
       }
       
-      // In development or testing mode, return mock data
-      if (process.env.NODE_ENV === 'development' || !user?.id) {
+      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
+      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
         return {
           events: [
             {
@@ -106,7 +106,24 @@ export function useEvents(initialFilter?: string) {
         }
       }
       
-      return api.get<EventsResponse>(`/events?${queryParams.toString()}`)
+      // Use the real API endpoint
+      try {
+        const response = await fetch(`/api/events?${queryParams.toString()}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching events: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Failed to fetch events:', error);
+        throw error;
+      }
     },
   })
 
@@ -117,8 +134,8 @@ export function useEvents(initialFilter?: string) {
       queryFn: async () => {
         if (!id) throw new Error('Event ID is required')
         
-        // In development or testing mode, return mock data
-        if (process.env.NODE_ENV === 'development' || !user?.id) {
+        // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
+        if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
           return {
             id,
             title: 'Annual Conference',
@@ -139,7 +156,24 @@ export function useEvents(initialFilter?: string) {
           }
         }
         
-        return api.get<Event>(`/events/${id}`)
+        // Use the real API endpoint
+        try {
+          const response = await fetch(`/api/events/${id}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Error fetching event: ${response.statusText}`);
+          }
+          
+          return await response.json();
+        } catch (error) {
+          console.error(`Failed to fetch event with ID ${id}:`, error);
+          throw error;
+        }
       },
       enabled: !!id, // Only run the query if id is provided
     })
@@ -147,7 +181,7 @@ export function useEvents(initialFilter?: string) {
 
   // Create a new event
   const createEvent = useMutation({
-    mutationFn: (newEvent: Partial<Event>) => {
+    mutationFn: async (newEvent: Partial<Event>) => {
       // Ensure both title and name fields are set
       const eventData = {
         ...newEvent,
@@ -157,8 +191,8 @@ export function useEvents(initialFilter?: string) {
         userId: user?.id,
       }
       
-      // In development or testing mode, simulate API call
-      if (process.env.NODE_ENV === 'development' || !user?.id) {
+      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
+      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
         return Promise.resolve({
           ...eventData,
           id: Math.random().toString().substr(2, 9),
@@ -167,7 +201,25 @@ export function useEvents(initialFilter?: string) {
         } as Event)
       }
       
-      return api.post<Event>('/events', eventData)
+      // Use the real API endpoint
+      try {
+        const response = await fetch('/api/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(eventData),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error creating event: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Failed to create event:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       // Invalidate and refetch events list
@@ -177,9 +229,9 @@ export function useEvents(initialFilter?: string) {
 
   // Update an event
   const updateEvent = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Event> }) => {
-      // In development or testing mode, simulate API call
-      if (process.env.NODE_ENV === 'development' || !user?.id) {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Event> }) => {
+      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
+      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
         return Promise.resolve({
           ...data,
           id,
@@ -187,7 +239,25 @@ export function useEvents(initialFilter?: string) {
         } as Event)
       }
       
-      return api.patch<Event>(`/events/${id}`, data)
+      // Use the real API endpoint
+      try {
+        const response = await fetch(`/api/events/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error updating event: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error(`Failed to update event with ID ${id}:`, error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       // Update both the list and the individual event in the cache
@@ -198,13 +268,30 @@ export function useEvents(initialFilter?: string) {
 
   // Delete an event
   const deleteEvent = useMutation({
-    mutationFn: (id: string) => {
-      // In development or testing mode, simulate API call
-      if (process.env.NODE_ENV === 'development' || !user?.id) {
+    mutationFn: async (id: string) => {
+      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
+      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
         return Promise.resolve({})
       }
       
-      return api.delete(`/events/${id}`)
+      // Use the real API endpoint
+      try {
+        const response = await fetch(`/api/events/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error deleting event: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error(`Failed to delete event with ID ${id}:`, error);
+        throw error;
+      }
     },
     onSuccess: () => {
       // Invalidate and refetch events list

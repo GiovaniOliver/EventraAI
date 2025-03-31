@@ -23,8 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/images/eventraailogo1.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/images/eventraailogo1.png" />
+        {/* favicon is defined in metadata */}
       </head>
       <body className={inter.className}>
         <Providers>

@@ -48,7 +48,7 @@ export default function DiscoverPage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/auth/login');
+      router.push('/login');
     }
   }, [user, authLoading, router]);
 

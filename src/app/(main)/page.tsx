@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useAuth } from '@/hooks'
 
 export default function Home() {
-  const { user, loading } = useAuth()
+  const { user, } = useAuth()
   
   return (
     <>
@@ -31,13 +31,13 @@ export default function Home() {
                 ) : (
                   <>
                     <Link
-                      href="/auth/signup"
+                      href="/signup"
                       className="rounded-md bg-white px-6 py-3 text-base font-medium text-indigo-600 shadow-md hover:bg-indigo-50"
                     >
                       Get Started
                     </Link>
                     <Link
-                      href="/auth/login"
+                      href="/login"
                       className="rounded-md border border-white bg-transparent px-6 py-3 text-base font-medium text-white hover:bg-white/10"
                     >
                       Log In
@@ -107,7 +107,7 @@ export default function Home() {
               <div className="mt-8 lg:mt-0 lg:flex-shrink-0">
                 <div className="inline-flex rounded-md shadow">
                   <Link
-                    href={user ? "/dashboard" : "/auth/signup"}
+                    href={user ? "/dashboard" : "/signup"}
                     className="inline-flex items-center justify-center rounded-md border border-transparent bg-white px-5 py-3 text-base font-medium text-indigo-600 hover:bg-indigo-50"
                   >
                     {user ? "Go to Dashboard" : "Get Started"}
