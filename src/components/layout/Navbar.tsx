@@ -6,6 +6,8 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Bell, Search, Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import NotificationPopover from '@/components/notifications/NotificationPopover'
 
 const Navbar = () => {
   const pathname = usePathname()
@@ -47,16 +49,16 @@ const Navbar = () => {
   }, [mobileMenuOpen])
   
   return (
-    <header className="relative w-full border-b border-gray-100 bg-white">
+    <header className="relative w-full border-b border-gray-100 bg-white navbar">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center">
           <Link href="/" className="flex items-center">
             <Image 
-              src="/images/eventraailogo1.png" 
-              alt="EventraAI Logo" 
-              width={36} 
-              height={36} 
-              className="h-auto w-auto object-contain mr-2 mt-3"
+            src="/images/eventraailogo1.png" 
+            alt="EventraAI Logo" 
+            width={36} 
+            height={36} 
+            className="h-auto w-auto object-contain mr-2 mt-3 logo"
             />
             <span className="eventra-gradient-text font-semibold">EventraAI</span>
           </Link>
@@ -89,18 +91,19 @@ const Navbar = () => {
           </nav>
         </div>
         
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
+          <NotificationPopover />
           {/* Desktop navigation buttons */}
           <div className="hidden md:flex md:items-center">
-            <button className="mr-4 text-gray-600 hover:text-[hsl(var(--eventra-blue))]">
-              <Bell size={20} />
+            <button className="mr-4 text-gray-600 hover:text-[hsl(var(--eventra-blue))] notification-icon">
+              <Bell size={20} className="notification-icon" />
             </button>
             <button className="mr-6 text-gray-600 hover:text-[hsl(var(--eventra-blue))]">
               <Search size={20} />
             </button>
             <Link
-              href="/login"
-              className="rounded-md bg-[hsl(var(--eventra-blue))] px-4 py-1.5 text-sm font-medium text-white hover:bg-[hsl(var(--eventra-purple))] transition-colors"
+            href="/login"
+            className="rounded-md bg-[hsl(var(--eventra-blue))] px-4 py-1.5 text-sm font-medium text-white hover:bg-[hsl(var(--eventra-purple))] transition-colors btn-primary"
             >
               Sign In
             </Link>

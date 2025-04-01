@@ -20,9 +20,21 @@ export type User = {
   subscription_tier: string;
   subscription_status: string;
   created_at: string;
+  displayName?: string; // Getter property
 };
 
-export function useAuth() {
+// Define the return type of useAuth hook
+export interface UseAuthReturn {
+  user: User | null;
+  refreshAuth: () => Promise<void>;
+  login: (email: string, password: string) => Promise<any>;
+  logout: () => Promise<void>;
+  register: (email: string, password: string, username: string, displayName: string) => Promise<any>;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export function useAuth(): UseAuthReturn {
   const context = useContext(AuthContext);
   const router = useRouter();
 

@@ -29,6 +29,7 @@ export default function LoginPage() {
     setIsLoading(true)
     
     try {
+      console.log('[DEBUG] Login attempt with:', email);
       await login(email, password)
       // Redirect handled in the login function
     } catch (err) {

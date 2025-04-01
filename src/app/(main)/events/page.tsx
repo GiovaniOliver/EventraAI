@@ -3,35 +3,103 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks'
-import EventList from '@/components/EventList'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { Loader2, PlusCircle, CalendarCheck, Filter } from 'lucide-react'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
+import { Plus, Calendar, Loader2 } from 'lucide-react'
+import EventList from '@/components/EventList'
+import Link from 'next/link'
+
+// Define Event interface based on the EventList component expectations
+interface Event {
+  id: string
+  title: string
+  description: string
+  location: string
+  status: 'draft' | 'upcoming' | 'in-progress' | 'completed' | 'cancelled'
+  start_date?: string
+  end_date?: string
+  coverImage?: string
+}
 
 export default function EventsPage() {
-  const { user, isLoading } = useAuth()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState('all')
-  const [showFilters, setShowFilters] = useState(false)
+  
+  // Fix the user and isLoading type issue by using type assertion
+  const auth = useAuth() as any
+  const user = auth.user
+  const authLoading = auth.isLoading
+  
+  const [events, setEvents] = useState<Event[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!authLoading && !user) {
       router.push('/login')
     }
-  }, [user, isLoading, router])
+  }, [authLoading, user, router])
 
-  if (isLoading) {
+  // Fetch events
+  useEffect(() => {
+    async function fetchEvents() {
+      if (!user) return
+
+      setIsLoading(true)
+      try {
+        // In a real application, fetch events from API
+        // For now, we'll use mock data
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API delay
+
+        const mockEvents: Event[] = [
+          {
+            id: "1",
+            title: "Tech Conference 2023",
+            description: "Annual technology conference",
+            location: "San Francisco, CA",
+            start_date: "2023-12-15T09:00:00Z",
+            end_date: "2023-12-17T18:00:00Z",
+            status: "upcoming",
+            coverImage: "/images/events/event-1.jpg",
+          },
+          {
+            id: "2",
+            title: "Marketing Workshop",
+            description: "Digital marketing strategies workshop",
+            location: "Online",
+            start_date: "2023-11-05T10:00:00Z",
+            end_date: "2023-11-05T16:00:00Z",
+            status: "completed",
+            coverImage: "/images/events/event-2.jpg",
+          },
+          {
+            id: "3",
+            title: "Product Launch",
+            description: "New product line announcement",
+            location: "New York, NY",
+            start_date: "2024-01-20T18:00:00Z",
+            end_date: "2024-01-20T21:00:00Z",
+            status: "draft",
+            coverImage: "/images/events/event-3.jpg",
+          },
+        ]
+
+        setEvents(mockEvents)
+      } catch (error) {
+        console.error("Failed to fetch events:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchEvents()
+  }, [user])
+
+  if (authLoading) {
     return (
       <div className="flex min-h-[80vh] items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-10 w-10 animate-spin text-[hsl(var(--eventra-blue))] mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading your events...</p>
+          <p className="text-muted-foreground">Loading events...</p>
         </div>
       </div>
     )
@@ -42,84 +110,61 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 text-foreground">
-          Your Events
-        </h1>
-        <p className="text-muted-foreground">
-          Manage and track all your upcoming events
-        </p>
+    <div className="container max-w-7xl mx-auto py-8">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold mb-2 text-foreground">Events</h1>
+          <p className="text-muted-foreground">
+            Create and manage your events
+          </p>
+        </div>
+        <Link href="/events/new">
+          <Button className="bg-gradient-to-r from-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] hover:opacity-90">
+            <Plus className="mr-2 h-4 w-4" />
+            New Event
+          </Button>
+        </Link>
       </div>
 
-      {/* Action Bar and Event List Containers */}
-      <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
-        <div className="flex justify-between items-center mb-6">
-          <TabsList className="bg-muted/50 w-auto">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-            <TabsTrigger value="past">Past</TabsTrigger>
-            <TabsTrigger value="draft">Draft</TabsTrigger>
-          </TabsList>
-          
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => setShowFilters(!showFilters)}
-              className="h-9 w-9"
-            >
-              <Filter className="h-4 w-4" />
-            </Button>
-            <Button 
-              onClick={() => router.push('/events/new')}
-              size="sm"
-              className="flex items-center gap-1.5"
-            >
-              <PlusCircle className="h-4 w-4" />
-              New Event
-            </Button>
-          </div>
-        </div>
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="mb-8">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+          <TabsTrigger value="past">Past</TabsTrigger>
+          <TabsTrigger value="draft">Draft</TabsTrigger>
+        </TabsList>
 
-        <div className="subtle-gradient-card p-6">
-          <TabsContent value="all">
-            <EventList 
-              showFilters={showFilters}
-              showPagination={true}
-              filter="all"
-              emptyMessage="You don't have any events yet. Create your first event to get started."
-            />
-          </TabsContent>
-          
-          <TabsContent value="upcoming">
-            <EventList 
-              showFilters={showFilters}
-              showPagination={true}
-              filter="upcoming"
-              emptyMessage="You don't have any upcoming events scheduled."
-            />
-          </TabsContent>
-          
-          <TabsContent value="past">
-            <EventList 
-              showFilters={showFilters}
-              showPagination={true}
-              filter="past"
-              emptyMessage="You don't have any past events."
-            />
-          </TabsContent>
-          
-          <TabsContent value="draft">
-            <EventList 
-              showFilters={showFilters}
-              showPagination={true}
-              filter="draft"
-              emptyMessage="You don't have any events in draft status."
-            />
-          </TabsContent>
-        </div>
+        <TabsContent value="all">
+          <EventList 
+            showFilters={false}
+            emptyMessage="You haven't created any events yet. Click 'New Event' to get started."
+            filter="all"
+          />
+        </TabsContent>
+        
+        <TabsContent value="upcoming">
+          <EventList 
+            showFilters={false}
+            emptyMessage="You don't have any upcoming events. Click 'New Event' to create one."
+            filter="upcoming"
+          />
+        </TabsContent>
+        
+        <TabsContent value="past">
+          <EventList 
+            showFilters={false}
+            emptyMessage="You don't have any past events yet."
+            filter="completed"
+          />
+        </TabsContent>
+        
+        <TabsContent value="draft">
+          <EventList 
+            showFilters={false}
+            emptyMessage="You don't have any draft events. Click 'New Event' to start creating one."
+            filter="draft"
+          />
+        </TabsContent>
       </Tabs>
     </div>
   )

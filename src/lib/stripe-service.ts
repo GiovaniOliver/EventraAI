@@ -1,4 +1,8 @@
+import { createServerClient } from './supabase'
+
 export async function getUserSubscription(userId: string) {
+    const supabase = createServerClient();
+    
     // Get active subscription for user
     const { data, error } = await supabase
         .from('transactions')

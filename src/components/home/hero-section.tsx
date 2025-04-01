@@ -64,7 +64,7 @@ export function HeroSection({ className }: HeroSectionProps) {
                 </Button>
               ) : (
                 <Button size="lg" asChild>
-                  <Link href="/auth">
+                  <Link href="/login">
                     Get Started
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Link>

@@ -65,66 +65,54 @@ export function useEvents(initialFilter?: string) {
         queryParams.append('status', filter.status)
       }
       
-      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
-      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-        return {
-          events: [
-            {
-              id: '1',
-              title: 'Annual Conference',
-              name: 'Annual Conference',
-              description: 'Our annual tech conference',
-              type: 'conference',
-              format: 'hybrid',
-              date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              start_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              status: 'upcoming',
-              user_id: user?.id || '1',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            {
-              id: '2',
-              title: 'Team Building Workshop',
-              name: 'Team Building Workshop',
-              description: 'Company team building event',
-              type: 'workshop',
-              format: 'in-person',
-              date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-              start_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-              status: 'planning',
-              user_id: user?.id || '1',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          ],
-          pagination: {
-            limit: pagination.limit,
-            offset: pagination.offset,
-            total: 2,
-          },
-        }
+      // Add user ID filter if user is authenticated
+      if (user?.id) {
+        queryParams.append('userId', user.id)
       }
       
-      // Use the real API endpoint
       try {
+        // Add request timeout for better user experience
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+        
         const response = await fetch(`/api/events?${queryParams.toString()}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache' // Ensure we get fresh data
           },
+          signal: controller.signal
         });
         
+        clearTimeout(timeoutId) // Clear the timeout if the request completes
+        
         if (!response.ok) {
-          throw new Error(`Error fetching events: ${response.statusText}`);
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(
+            `Error fetching events: ${response.statusText}. ` + 
+            `Details: ${errorData?.error || 'Unknown error'}`
+          )
         }
         
-        return await response.json();
+        const result = await response.json()
+        
+        // Validate the response structure
+        if (!Array.isArray(result.events)) {
+          console.error('Invalid response format, expected events array:', result)
+          throw new Error('Invalid server response format')
+        }
+        
+        return result
       } catch (error) {
-        console.error('Failed to fetch events:', error);
-        throw error;
+        console.error('Failed to fetch events:', error)
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('Request timed out. Please try again.')
+        }
+        throw error
       }
     },
+    retry: 2, // Retry failed requests twice
+    staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes
   })
 
   // Get a single event
@@ -134,168 +122,329 @@ export function useEvents(initialFilter?: string) {
       queryFn: async () => {
         if (!id) throw new Error('Event ID is required')
         
-        // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
-        if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-          return {
-            id,
-            title: 'Annual Conference',
-            name: 'Annual Conference',
-            description: 'Our annual tech conference with industry experts',
-            location: 'Convention Center',
-            type: 'conference',
-            format: 'hybrid',
-            estimatedGuests: 500,
-            budget: 50000,
-            date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            start_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            status: 'planning',
-            user_id: user?.id || '1',
-            userId: user?.id || '1',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }
-        }
-        
-        // Use the real API endpoint
         try {
+          // Add request timeout for better user experience
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+          
           const response = await fetch(`/api/events/${id}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache' // Ensure we get fresh data
             },
+            signal: controller.signal
           });
           
+          clearTimeout(timeoutId) // Clear the timeout if the request completes
+          
           if (!response.ok) {
-            throw new Error(`Error fetching event: ${response.statusText}`);
+            // Try to get detailed error information
+            const errorData = await response.json().catch(() => ({}))
+            
+            if (response.status === 404) {
+              throw new Error(`Event not found. It may have been deleted or you may not have permission to access it.`)
+            }
+            
+            throw new Error(
+              `Error fetching event: ${response.statusText}. ` +
+              `Details: ${errorData?.error || 'Unknown error'}`
+            )
           }
           
-          return await response.json();
+          const eventData = await response.json()
+          
+          // Validate the response structure
+          if (!eventData || typeof eventData !== 'object' || !eventData.id) {
+            console.error('Invalid event data received:', eventData)
+            throw new Error('Invalid event data received from server')
+          }
+          
+          return eventData
         } catch (error) {
-          console.error(`Failed to fetch event with ID ${id}:`, error);
-          throw error;
+          console.error(`Failed to fetch event with ID ${id}:`, error)
+          
+          if (error instanceof Error) {
+            if (error.name === 'AbortError') {
+              throw new Error('Request timed out. Please try again.')
+            }
+            // Rethrow the original error with context
+            throw new Error(`Failed to load event: ${error.message}`)
+          }
+          
+          // For unknown errors
+          throw new Error('An unexpected error occurred while loading the event')
         }
       },
       enabled: !!id, // Only run the query if id is provided
+      retry: 2, // Retry failed requests twice
+      staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes
     })
   }
 
   // Create a new event
   const createEvent = useMutation({
     mutationFn: async (newEvent: Partial<Event>) => {
-      // Ensure both title and name fields are set
+      // Validate required fields
+      if (!newEvent.title && !newEvent.name) {
+        throw new Error('Event title is required')
+      }
+      
+      // Ensure both title and name fields are set for backward compatibility
       const eventData = {
         ...newEvent,
         name: newEvent.title || newEvent.name,
         title: newEvent.title || newEvent.name,
         user_id: user?.id,
         userId: user?.id,
+        // Set default values if not provided
+        status: newEvent.status || 'draft',
+        type: newEvent.type || 'other',
+        format: newEvent.format || 'in-person',
       }
       
-      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
-      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-        return Promise.resolve({
-          ...eventData,
-          id: Math.random().toString().substr(2, 9),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as Event)
-      }
-      
-      // Use the real API endpoint
       try {
+        // Add request timeout for better user experience
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+        
         const response = await fetch('/api/events', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(eventData),
+          signal: controller.signal
         });
         
+        clearTimeout(timeoutId) // Clear the timeout if the request completes
+        
+        // Handle different error scenarios
         if (!response.ok) {
-          throw new Error(`Error creating event: ${response.statusText}`);
+          const errorData = await response.json().catch(() => ({}))
+          
+          if (response.status === 401) {
+            throw new Error('You must be logged in to create an event')
+          }
+          
+          if (response.status === 403) {
+            throw new Error('You do not have permission to create events')
+          }
+          
+          if (response.status === 422) {
+            throw new Error(`Validation error: ${errorData?.error || 'Invalid event data'}`)
+          }
+          
+          throw new Error(
+            `Error creating event: ${response.statusText}. ` + 
+            `Details: ${errorData?.error || 'Unknown error'}`
+          )
         }
         
-        return await response.json();
+        // Parse and validate response
+        const createdEvent = await response.json()
+        
+        // Validate returned data has required fields
+        if (!createdEvent || !createdEvent.id) {
+          throw new Error('Invalid response from server')
+        }
+        
+        return createdEvent
       } catch (error) {
-        console.error('Failed to create event:', error);
-        throw error;
+        console.error('Failed to create event:', error)
+        
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            throw new Error('Request timed out. Please try again.')
+          }
+          // Rethrow with context
+          throw new Error(`Failed to create event: ${error.message}`)
+        }
+        
+        // For unknown errors
+        throw new Error('An unexpected error occurred while creating the event')
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate and refetch events list
       queryClient.invalidateQueries({ queryKey: ['events'] })
+      // Show success message via toast or other notification method
+      console.log(`Event "${data.title}" created successfully with ID: ${data.id}`)
     },
+    onError: (error) => {
+      // Log the error for debugging
+      console.error('Event creation error:', error)
+    }
   })
 
   // Update an event
   const updateEvent = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Event> }) => {
-      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
-      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-        return Promise.resolve({
-          ...data,
-          id,
-          updated_at: new Date().toISOString(),
-        } as Event)
+      // Validate input
+      if (!id) {
+        throw new Error('Event ID is required')
       }
       
-      // Use the real API endpoint
+      // If trying to update title/name, ensure consistency
+      const updateData = { ...data }
+      if (updateData.title) {
+        updateData.name = updateData.title
+      } else if (updateData.name) {
+        updateData.title = updateData.name
+      }
+      
       try {
+        // Add request timeout for better user experience
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+        
         const response = await fetch(`/api/events/${id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(updateData),
+          signal: controller.signal
         });
         
+        clearTimeout(timeoutId) // Clear the timeout if the request completes
+        
+        // Handle different error scenarios
         if (!response.ok) {
-          throw new Error(`Error updating event: ${response.statusText}`);
+          const errorData = await response.json().catch(() => ({}))
+          
+          if (response.status === 401) {
+            throw new Error('You must be logged in to update this event')
+          }
+          
+          if (response.status === 403) {
+            throw new Error('You do not have permission to update this event')
+          }
+          
+          if (response.status === 404) {
+            throw new Error('Event not found. It may have been deleted.')
+          }
+          
+          if (response.status === 422) {
+            throw new Error(`Validation error: ${errorData?.error || 'Invalid event data'}`)
+          }
+          
+          throw new Error(
+            `Error updating event: ${response.statusText}. ` + 
+            `Details: ${errorData?.error || 'Unknown error'}`
+          )
         }
         
-        return await response.json();
+        // Parse and validate response
+        const updatedEvent = await response.json()
+        
+        // Validate returned data has required fields
+        if (!updatedEvent || !updatedEvent.id) {
+          throw new Error('Invalid response from server')
+        }
+        
+        return updatedEvent
       } catch (error) {
-        console.error(`Failed to update event with ID ${id}:`, error);
-        throw error;
+        console.error(`Failed to update event with ID ${id}:`, error)
+        
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            throw new Error('Request timed out. Please try again.')
+          }
+          // Rethrow with context
+          throw new Error(`Failed to update event: ${error.message}`)
+        }
+        
+        // For unknown errors
+        throw new Error('An unexpected error occurred while updating the event')
       }
     },
     onSuccess: (data) => {
       // Update both the list and the individual event in the cache
       queryClient.invalidateQueries({ queryKey: ['events'] })
       queryClient.invalidateQueries({ queryKey: ['event', data.id] })
+      // Show success message
+      console.log(`Event "${data.title}" updated successfully`)
     },
+    onError: (error) => {
+      // Log the error for debugging
+      console.error('Event update error:', error)
+    }
   })
 
   // Delete an event
   const deleteEvent = useMutation({
     mutationFn: async (id: string) => {
-      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
-      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-        return Promise.resolve({})
+      // Validate input
+      if (!id) {
+        throw new Error('Event ID is required')
       }
       
-      // Use the real API endpoint
       try {
+        // Add request timeout for better user experience
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+        
         const response = await fetch(`/api/events/${id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
           },
+          signal: controller.signal
         });
         
+        clearTimeout(timeoutId) // Clear the timeout if the request completes
+        
+        // Handle different error scenarios
         if (!response.ok) {
-          throw new Error(`Error deleting event: ${response.statusText}`);
+          const errorData = await response.json().catch(() => ({}))
+          
+          if (response.status === 401) {
+            throw new Error('You must be logged in to delete this event')
+          }
+          
+          if (response.status === 403) {
+            throw new Error('You do not have permission to delete this event')
+          }
+          
+          if (response.status === 404) {
+            throw new Error('Event not found. It may have already been deleted.')
+          }
+          
+          throw new Error(
+            `Error deleting event: ${response.statusText}. ` + 
+            `Details: ${errorData?.error || 'Unknown error'}`
+          )
         }
         
-        return await response.json();
+        // Return the deletion result or an empty object if none provided
+        return await response.json().catch(() => ({ success: true }))
       } catch (error) {
-        console.error(`Failed to delete event with ID ${id}:`, error);
-        throw error;
+        console.error(`Failed to delete event with ID ${id}:`, error)
+        
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            throw new Error('Request timed out. Please try again.')
+          }
+          // Rethrow with context
+          throw new Error(`Failed to delete event: ${error.message}`)
+        }
+        
+        // For unknown errors
+        throw new Error('An unexpected error occurred while deleting the event')
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
       // Invalidate and refetch events list
       queryClient.invalidateQueries({ queryKey: ['events'] })
+      // Remove the specific event from cache
+      queryClient.removeQueries({ queryKey: ['event', deletedId] })
+      // Show success message
+      console.log(`Event deleted successfully`)
+    },
+    onError: (error) => {
+      // Log the error for debugging
+      console.error('Event deletion error:', error)
     },
   })
 

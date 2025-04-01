@@ -21,7 +21,8 @@ import {
   CheckCircle2, 
   Clock, 
   Filter,
-  CalendarRange
+  CalendarRange,
+  ClipboardList
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { EmptyState } from "@/components/ui/empty-state";
 
 // Task type definition
 interface Task {
@@ -53,13 +55,18 @@ interface Task {
 }
 
 export default function TasksPage() {
-  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Fix the user and isLoading type issue by using type assertion
+  const auth = useAuth() as any;
+  const user = auth.user;
+  const authLoading = auth.isLoading;
+  
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [sortBy, setSortBy] = useState<'dueDate' | 'priority'>('dueDate');
   const [searchQuery, setSearchQuery] = useState("");
-  const queryClient = useQueryClient();
   
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -285,6 +292,89 @@ export default function TasksPage() {
     });
   };
 
+  // If there are no tasks at all, show a specific empty state
+  if (!isLoading && tasks.length === 0) {
+    return (
+      <div className="container max-w-4xl mx-auto py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 text-foreground">Tasks</h1>
+          <p className="text-muted-foreground">
+            Manage and track your event tasks
+          </p>
+        </div>
+        
+        <EmptyState
+          icon={ClipboardList}
+          title="No Tasks Yet"
+          description="Your task list is empty. Tasks will appear here once you create events or add tasks manually."
+          actionLabel="Create Event"
+          actionHref="/events/new"
+          secondaryActionLabel="View Events"
+          secondaryActionHref="/events"
+          iconClassName="text-[hsl(var(--eventra-blue))]"
+        />
+      </div>
+    );
+  }
+
+  // If there are tasks but none match the filter, show a different empty state
+  if (!isLoading && filteredTasks.length === 0) {
+    return (
+      <div className="container max-w-4xl mx-auto py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 text-foreground">Tasks</h1>
+          <p className="text-muted-foreground">
+            Manage and track your event tasks
+          </p>
+        </div>
+        
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-2">
+            <Select value={filter} onValueChange={setFilter as any}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tasks</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as "dueDate" | "priority")}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dueDate">Due Date</SelectItem>
+                <SelectItem value="priority">Priority</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <Input
+            placeholder="Search tasks..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
+        
+        <EmptyState
+          icon={Filter}
+          title="No Matching Tasks"
+          description="No tasks match your current filter criteria. Try adjusting your filters or search query."
+          actionLabel="Clear Filters"
+          actionOnClick={() => {
+            setFilter('all');
+            setSearchQuery('');
+          }}
+          iconClassName="text-[hsl(var(--eventra-blue))]"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto max-w-6xl py-8">
       {/* Header */}
@@ -334,8 +424,8 @@ export default function TasksPage() {
             />
           </div>
           
-          <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'dueDate' | 'priority')}>
-            <SelectTrigger className="w-40">
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as "dueDate" | "priority")}>
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>

@@ -66,7 +66,11 @@ import {
   Play,
   MessageSquare,
   ThumbsUp,
-  Target
+  Target,
+  Rocket,
+  Network,
+  GraduationCap,
+  Trophy,
 } from "lucide-react";
 
 interface PlanningWizardProps {
@@ -77,16 +81,10 @@ interface PlanningWizardProps {
 // Event types with descriptions
 const EVENT_TYPES = [
   {
-    id: "conference",
-    name: "Conference",
-    description: "A formal event for discussions, presentations, and networking",
+    id: "virtual_conference",
+    name: "Virtual Conference",
+    description: "Online conference with remote participants",
     icon: <Globe className="h-5 w-5" />
-  },
-  {
-    id: "webinar",
-    name: "Webinar",
-    description: "An online seminar focusing on educational content",
-    icon: <Video className="h-5 w-5" />
   },
   {
     id: "workshop",
@@ -95,16 +93,46 @@ const EVENT_TYPES = [
     icon: <PencilRuler className="h-5 w-5" />
   },
   {
-    id: "meetup",
-    name: "Meetup",
-    description: "Casual gathering for networking and discussions",
-    icon: <UserCheck className="h-5 w-5" />
+    id: "webinar",
+    name: "Webinar",
+    description: "Online educational presentation or seminar",
+    icon: <Video className="h-5 w-5" />
+  },
+  {
+    id: "team_building",
+    name: "Team Building",
+    description: "Activities to improve team collaboration and morale",
+    icon: <Users className="h-5 w-5" />
   },
   {
     id: "product_launch",
     name: "Product Launch",
     description: "Event to showcase and introduce a new product or service",
-    icon: <Play className="h-5 w-5" />
+    icon: <Rocket className="h-5 w-5" />
+  },
+  {
+    id: "networking_event",
+    name: "Networking Event",
+    description: "Social gathering for professional networking",
+    icon: <Network className="h-5 w-5" />
+  },
+  {
+    id: "training_session",
+    name: "Training Session",
+    description: "Educational session focused on specific skills or topics",
+    icon: <GraduationCap className="h-5 w-5" />
+  },
+  {
+    id: "panel_discussion",
+    name: "Panel Discussion",
+    description: "Moderated discussion with multiple speakers",
+    icon: <MessageSquare className="h-5 w-5" />
+  },
+  {
+    id: "award_ceremony",
+    name: "Award Ceremony",
+    description: "Formal event to recognize achievements",
+    icon: <Trophy className="h-5 w-5" />
   }
 ];
 
@@ -499,11 +527,13 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[80vh] flex flex-col overflow-hidden border border-border shadow-lg">
-        <DialogHeader className="pb-2 bg-gradient-to-r from-primary/5 to-background border-b border-border/40">
+      <DialogContent className="max-w-4xl h-[80vh] flex flex-col overflow-hidden border border-border/40 shadow-lg">
+        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))]"></div>
+        
+        <DialogHeader className="pb-2 bg-gradient-to-r from-[hsl(var(--eventra-blue))]/5 to-background border-b border-border/40">
           <div className="flex items-center">
-            <div className="bg-gradient-to-r from-primary/80 to-primary p-2.5 rounded-lg shadow-sm mr-4">
-              <CalendarIcon className="h-5 w-5 text-primary-foreground" />
+            <div className="bg-gradient-to-r from-[hsl(var(--eventra-teal))] to-[hsl(var(--eventra-blue))] p-2.5 rounded-lg shadow-sm mr-4 text-white">
+              <CalendarIcon className="h-5 w-5" />
             </div>
             <div>
               <DialogTitle className="text-xl font-semibold text-foreground">Event Planning Wizard</DialogTitle>
@@ -515,18 +545,18 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
           <div className="mt-4">
             <Progress 
               value={progress} 
-              className="h-2.5 rounded-full bg-muted/50" 
+              className="h-2.5 rounded-full bg-muted/50 [&>div]:bg-gradient-to-r [&>div]:from-[hsl(var(--eventra-teal))] [&>div]:via-[hsl(var(--eventra-blue))] [&>div]:to-[hsl(var(--eventra-purple))]" 
               aria-label={`Progress: ${progress}% complete`}
             />
             <div className="flex justify-between mt-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                <span className={progress >= 20 ? "text-primary font-medium" : ""}>Getting started</span>
+                <span className={progress >= 20 ? "text-[hsl(var(--eventra-teal))] font-medium" : ""}>Getting started</span>
               </span>
               <span className="flex items-center gap-1">
-                <span className={progress >= 40 && progress < 80 ? "text-primary font-medium" : ""}>Event details</span>
+                <span className={progress >= 40 && progress < 80 ? "text-[hsl(var(--eventra-blue))] font-medium" : ""}>Event details</span>
               </span>
               <span className="flex items-center gap-1">
-                <span className={progress >= 80 ? "text-primary font-medium" : ""}>Finalize</span>
+                <span className={progress >= 80 ? "text-[hsl(var(--eventra-purple))] font-medium" : ""}>Finalize</span>
               </span>
             </div>
           </div>
@@ -537,7 +567,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
           {currentStep === "basics" && (
             <div className="space-y-6 p-1">
               <h3 className="text-lg font-medium flex items-center gap-2">
-                <span className="flex items-center justify-center bg-gradient-to-r from-primary/80 to-primary text-primary-foreground h-7 w-7 rounded-full text-sm font-bold">1</span>
+                <span className="flex items-center justify-center bg-gradient-to-r from-[hsl(var(--eventra-teal))] to-[hsl(var(--eventra-blue))] text-white h-7 w-7 rounded-full text-sm font-bold">1</span>
                 <span className="text-xl">Event Basics</span>
               </h3>
               
@@ -549,7 +579,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                   <Input
                     id="event-name"
                     placeholder="Enter event name"
-                    className="mt-2 bg-background shadow-sm transition-colors focus-visible:ring-primary"
+                    className="mt-2 bg-background shadow-sm transition-colors focus-visible:ring-[hsl(var(--eventra-blue))] border-border/60"
                     value={eventData.title || ""}
                     onChange={(e) => setEventData({ ...eventData, title: e.target.value })}
                     aria-required="true"
@@ -562,7 +592,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                 
                 <div className="space-y-3 pt-2">
                   <Label className="text-base font-medium flex items-center gap-2">
-                    <Target className="h-5 w-5 text-primary/80" />
+                    <Target className="h-5 w-5 text-[hsl(var(--eventra-blue))]" />
                     What type of event are you planning?
                   </Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
@@ -571,8 +601,8 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                         key={type.id}
                         className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
                           eventData.type === type.id
-                            ? "border-primary bg-gradient-to-r from-primary/5 to-primary/10 shadow-sm"
-                            : "hover:border-primary/50 hover:bg-muted/30"
+                            ? "border-[hsl(var(--eventra-blue))] bg-gradient-to-r from-[hsl(var(--eventra-blue))]/5 to-[hsl(var(--eventra-blue))]/10 shadow-sm"
+                            : "hover:border-[hsl(var(--eventra-blue))]/50 hover:bg-muted/30"
                         }`}
                         onClick={() => setEventData({ ...eventData, type: type.id })}
                         role="radio"
@@ -587,7 +617,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                         <div className="flex items-start">
                           <div className={`p-2.5 rounded-full ${
                             eventData.type === type.id 
-                              ? "bg-gradient-to-r from-primary/80 to-primary text-primary-foreground shadow-inner" 
+                              ? "bg-gradient-to-r from-[hsl(var(--eventra-teal))] to-[hsl(var(--eventra-blue))] text-white shadow-inner" 
                               : "bg-muted text-muted-foreground"
                           } transition-all`}>
                             {type.icon}
@@ -597,7 +627,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                             <p className="text-sm text-muted-foreground mt-1">{type.description}</p>
                           </div>
                           {eventData.type === type.id && (
-                            <CheckCircle className="ml-auto text-primary h-5 w-5" />
+                            <CheckCircle className="ml-auto text-[hsl(var(--eventra-blue))] h-5 w-5" />
                           )}
                         </div>
                       </div>
@@ -607,7 +637,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                 
                 <div className="space-y-3 pt-2">
                   <Label className="text-base font-medium flex items-center gap-2">
-                    <Settings className="h-5 w-5 text-primary/80" />
+                    <Settings className="h-5 w-5 text-[hsl(var(--eventra-blue))]" />
                     How will your event be delivered?
                   </Label>
                   <RadioGroup 
@@ -621,8 +651,8 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                           htmlFor={format.id}
                           className={`flex flex-col items-center justify-between rounded-md border-2 bg-popover p-4 transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer ${
                             eventData.format === format.id
-                              ? "border-primary bg-primary/5 shadow-sm"
-                              : "border-muted hover:border-primary/30"
+                              ? "border-[hsl(var(--eventra-blue))] bg-[hsl(var(--eventra-blue))]/5 shadow-sm"
+                              : "border-muted hover:border-[hsl(var(--eventra-blue))]/30"
                           }`}
                         >
                           <RadioGroupItem
@@ -1133,7 +1163,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
             <Button
               variant="outline"
               onClick={handlePreviousStep}
-              className="gap-1 bg-background hover:bg-muted hover:text-foreground hover:border-primary/50 border-border/60 transition-all"
+              className="gap-1 bg-background hover:bg-muted hover:text-[hsl(var(--eventra-blue))] hover:border-[hsl(var(--eventra-blue))]/50 border-border/60 transition-all"
               aria-label="Go back to previous step"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
@@ -1147,7 +1177,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
             <Button 
               onClick={handleNextStep} 
               disabled={isLoading}
-              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-sm gap-1 transition-all"
+              className="bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] text-white shadow-sm gap-1 transition-all hover:shadow-md"
               aria-label="Continue to next step"
             >
               Continue
@@ -1157,7 +1187,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
             <Button 
               onClick={handleCreateEvent} 
               disabled={isLoading}
-              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-sm gap-1 transition-all"
+              className="bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] text-white shadow-sm gap-1 transition-all hover:shadow-md"
               aria-label="Create event"
             >
               {isLoading ? (

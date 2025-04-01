@@ -44,16 +44,26 @@ export function Providers({ children }: { children: ReactNode }) {
     console.log('[DEBUG] Session user metadata:', sessionUser.user_metadata);
     console.log('[DEBUG] Session user data fields:', Object.keys(sessionUser));
     
+    // Create a unique username based on email or a random string if email is not available
+    const email = sessionUser.email || '';
+    const username = email ? email.split('@')[0] + '_' + Math.floor(Math.random() * 1000) : 'user_' + Math.floor(Math.random() * 10000);
+    
+    // Get display name from metadata or create from email
+    const displayName = sessionUser.user_metadata?.name || 
+                       sessionUser.user_metadata?.full_name || 
+                       email.split('@')[0] || 
+                       'User';
+    
     return {
       id: sessionUser.id,
-      username: sessionUser.email?.split('@')[0] || 'user',
-      display_name: sessionUser.user_metadata?.name || sessionUser.email?.split('@')[0] || 'User',
-      email: sessionUser.email || '',
-      is_admin: sessionUser.email?.includes('admin') || false, // Temporary admin check
-      password: '',
+      username: username,
+      display_name: displayName,
+      email: email,
+      is_admin: email.includes('admin') || false,
+      password: '',  // Include empty password to satisfy the type
       subscription_tier: 'free',
       subscription_status: 'active',
-      created_at: sessionUser.created_at || new Date().toISOString()
+      created_at: new Date().toISOString()
     };
   };
 
@@ -91,10 +101,13 @@ export function Providers({ children }: { children: ReactNode }) {
           
           if (profileError) {
             console.error('[DEBUG] Profile fetch error details:', {
-              code: profileError.code,
-              message: profileError.message,
-              details: profileError.details,
-              hint: profileError.hint
+              error: profileError,
+              stringified: JSON.stringify(profileError),
+              code: profileError?.code,
+              message: profileError?.message,
+              details: profileError?.details,
+              hint: profileError?.hint,
+              stack: profileError?.stack
             });
             
             // Try to get database schema to debug
@@ -106,7 +119,12 @@ export function Providers({ children }: { children: ReactNode }) {
                 .limit(1);
                 
               if (schemaError) {
-                console.error('[DEBUG] Table schema check error:', schemaError);
+                console.error('[DEBUG] Table schema check error:', {
+                  code: schemaError.code,
+                  message: schemaError.message,
+                  details: schemaError.details,
+                  hint: schemaError.hint
+                });
               } else {
                 console.log('[DEBUG] Users table exists with structure:', 
                   schemaData && schemaData.length > 0 ? Object.keys(schemaData[0]) : 'No rows found');
@@ -132,7 +150,15 @@ export function Providers({ children }: { children: ReactNode }) {
                 .insert([userProfile]);
                 
               if (insertError) {
-                console.error('[DEBUG] Error inserting user profile:', insertError);
+                console.error('[DEBUG] Error inserting user profile:', {
+                error: insertError,
+                stringified: JSON.stringify(insertError),
+                code: insertError?.code,
+                message: insertError?.message,
+                details: insertError?.details,
+                hint: insertError?.hint,
+                stack: insertError?.stack
+              });
               } else {
                 console.log('[DEBUG] User profile inserted successfully');
               }
@@ -198,11 +224,15 @@ export function Providers({ children }: { children: ReactNode }) {
               userProfile = profile;
               console.log('[DEBUG] Using database profile');
             } else {
-              console.error('[DEBUG] Error fetching user profile in auth change:', 
-                profileError ? {
-                  code: profileError.code,
-                  message: profileError.message
-                } : 'Unknown error');
+              console.error('[DEBUG] Error fetching user profile in auth change:', {
+                  error: profileError,
+                  stringified: JSON.stringify(profileError),
+                  code: profileError?.code,
+                  message: profileError?.message,
+                  details: profileError?.details,
+                  hint: profileError?.hint,
+                  stack: profileError?.stack
+                });
                 
               // Create a fallback profile from session data
               userProfile = createUserProfileFromSession(session.user);

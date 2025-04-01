@@ -60,14 +60,21 @@ export default function Header() {
   const headerClass = cn(
     "fixed top-0 z-50 w-full transition-all duration-200",
     isProtectedPage && user 
-      ? "bg-transparent border-b border-white/10" 
+      ? "border-b border-white/10" 
       : isScrolled 
         ? "bg-background/95 backdrop-blur-sm shadow-md" 
         : "bg-background/95 backdrop-blur-sm"
   )
 
+  const headerStyle = isProtectedPage && user 
+    ? { 
+        background: "linear-gradient(to right, rgba(var(--eventra-teal-rgb), 0.1), rgba(var(--eventra-blue-rgb), 0.13), rgba(var(--eventra-purple-rgb), 0.1))",
+        backdropFilter: "blur(10px)"
+      } 
+    : {}
+
   return (
-    <header className={headerClass}>
+    <header className={headerClass} style={headerStyle}>
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
@@ -114,7 +121,10 @@ export default function Header() {
         {/* User menu or login button */}
         <div className="flex items-center gap-2">
           {user && isProtectedPage && (
-            <button className="relative bg-white/10 p-2 rounded-full mr-1">
+            <button className="relative p-2 rounded-full mr-1" style={{
+              background: "linear-gradient(135deg, rgba(var(--eventra-teal-rgb), 0.2), rgba(var(--eventra-blue-rgb), 0.2))",
+              boxShadow: "0 2px 6px rgba(var(--eventra-blue-rgb), 0.15)"
+            }}>
               <Bell className="h-5 w-5 text-white" />
               <span className="absolute -top-1 -right-1 bg-[hsl(var(--manako-accent))] text-black text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
                 2
@@ -129,12 +139,16 @@ export default function Header() {
                   <Avatar className={cn(
                     "h-9 w-9",
                     isProtectedPage 
-                      ? "border-2 border-white/30" 
-                      : "border border-[hsl(var(--eventra-blue))]/10"
-                  )}>
+                      ? "ring-2 ring-white/30" 
+                      : "ring-1 ring-[hsl(var(--eventra-blue))]/20"
+                  )} style={{
+                    background: isProtectedPage 
+                      ? "linear-gradient(135deg, hsl(var(--eventra-teal)), hsl(var(--eventra-blue)))" 
+                      : "white"
+                  }}>
                     <AvatarFallback className={cn(
                       isProtectedPage 
-                        ? "bg-[hsl(var(--eventra-purple))] text-white" 
+                        ? "bg-gradient-to-r from-[hsl(var(--eventra-teal))] to-[hsl(var(--eventra-blue))] text-white" 
                         : "bg-[hsl(var(--eventra-blue))]/5 text-[hsl(var(--eventra-blue))]"
                     )}>
                       {getInitials()}
@@ -181,10 +195,19 @@ export default function Header() {
             </DropdownMenu>
           ) : (
             <div className="flex items-center gap-2">
-              <Button variant="ghost" className={isProtectedPage ? "text-white hover:bg-white/10" : ""} asChild>
+              <Button variant="ghost" 
+                className={isProtectedPage ? "text-white hover:bg-white/10" : ""} 
+                asChild
+              >
                 <Link href="/login">Log in</Link>
               </Button>
-              <Button className={isProtectedPage ? "bg-white text-[hsl(var(--eventra-blue))] hover:bg-white/90" : ""} asChild>
+              <Button 
+                className={isProtectedPage 
+                  ? "bg-white text-[hsl(var(--eventra-blue))] hover:bg-white/90" 
+                  : "bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] text-white"
+                } 
+                asChild
+              >
                 <Link href="/auth/register">Sign up</Link>
               </Button>
             </div>

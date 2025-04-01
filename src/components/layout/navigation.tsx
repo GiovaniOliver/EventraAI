@@ -45,7 +45,7 @@ export function Navigation({ className }: NavigationProps) {
       
       {!user && (
         <Button asChild size="sm">
-          <Link href="/auth">
+          <Link href="/login">
             Sign In
           </Link>
         </Button>

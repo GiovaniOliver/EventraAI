@@ -1,140 +1,156 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/hooks';
-import { useToast } from "@/hooks/use-toast";
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks";
+import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { BarChart, Loader2, PieChart, LineChart, BarChart3 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { 
+  BarChart, 
+  Calendar, 
+  Users, 
+  MessageSquare, 
+  Clock, 
+  DollarSign,
+  Loader2,
+  BarChart2,
+  AlertTriangle
+} from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+
+interface EventBasic {
+  id: string;
+  title: string;
+}
 
 interface AnalyticsData {
-  events: {
-    total: number;
-    upcoming: number;
-    averageAttendance: number;
-    averageEngagement: number;
-  };
-  engagement?: {
-    [key: string]: any;
-  };
-  feedback?: {
-    [key: string]: any;
-  };
+  totalRegistrations: number;
+  registrationsChange: number;
+  attendance: number;
+  attendanceRate: number;
+  attendanceChange: number;
+  feedback: number;
+  feedbackChange: number;
+  revenue: number;
+  revenueChange: number;
 }
 
 export default function AnalyticsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user, isLoading: authLoading } = useAuth();
-  const { toast } = useToast();
   
-  // Extract event ID from URL if present
-  const eventId = searchParams.get('eventId');
+  // Fix the user and isLoading type issue by using type assertion
+  const auth = useAuth() as any;
+  const user = auth.user;
+  const authLoading = auth.isLoading;
   
-  const [selectedEventId, setSelectedEventId] = useState(eventId);
-  const [attendeeData, setAttendeeData] = useState({
-    totalAttendees: 0,
-    averageTimeSpent: 0,
-    interactions: 0,
-    maxConcurrentUsers: 0
+  const [selectedEvent, setSelectedEvent] = useState<string>("");
+  const [selectedTimeframe, setSelectedTimeframe] = useState<string>("7d");
+  const [timeframeOptions] = useState([
+    { value: "7d", label: "Last 7 days" },
+    { value: "30d", label: "Last 30 days" },
+    { value: "90d", label: "Last 90 days" },
+    { value: "all", label: "All time" },
+  ]);
+
+  // Fetch user's events
+  const { 
+    data: events = [], 
+    isLoading: eventsLoading,
+    error: eventsError
+  } = useQuery<EventBasic[]>({
+    queryKey: ["events", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const response = await fetch('/api/events', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching events: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data.events || [];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch analytics data for selected event
+  const { 
+    data: analyticsData, 
+    isLoading: analyticsLoading,
+    error: analyticsError
+  } = useQuery<AnalyticsData>({
+    queryKey: ["analytics", selectedEvent, selectedTimeframe],
+    queryFn: async () => {
+      if (!selectedEvent) return null;
+      
+      const response = await fetch(`/api/events/${selectedEvent}/analytics?timeframe=${selectedTimeframe}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching analytics: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      // The API returns an array, so we need to get the first item or use default values
+      return data[0] || {
+        totalRegistrations: 0,
+        registrationsChange: 0,
+        attendance: 0,
+        attendanceRate: 0,
+        attendanceChange: 0,
+        feedback: 0,
+        feedbackChange: 0,
+        revenue: 0,
+        revenueChange: 0
+      };
+    },
+    enabled: !!selectedEvent,
   });
 
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/login');
+      router.push("/login");
     }
-  }, [user, authLoading, router]);
+  }, [authLoading, user, router]);
 
-  // Fetch analytics data
-  const { data: analyticsData, isLoading: loadingAnalytics } = useQuery<AnalyticsData>({
-    queryKey: ['analytics', selectedEventId],
-    queryFn: async () => {
-      // Only use mock data if explicitly in development mode with the NEXT_PUBLIC_USE_MOCK_DATA flag
-      if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        return {
-          events: {
-            total: 5,
-            upcoming: 3,
-            averageAttendance: 85,
-            averageEngagement: 72
-          }
-        };
-      }
-      
-      try {
-        // If an event ID is selected, fetch event-specific analytics
-        if (selectedEventId) {
-          const response = await fetch(`/api/events/${selectedEventId}/analytics`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Error fetching event analytics: ${response.statusText}`);
-          }
-          
-          return await response.json();
-        } 
-        // Otherwise fetch overall analytics
-        else {
-          const response = await fetch('/api/admin/analytics', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          });
-          
-          if (!response.ok) {
-            throw new Error(`Error fetching analytics: ${response.statusText}`);
-          }
-          
-          return await response.json();
-        }
-      } catch (error) {
-        console.error('Failed to fetch analytics:', error);
-        throw error;
-      }
-    },
-    enabled: !!user, // Only run the query if user is authenticated
-  });
+  // Set first event as default when events load
+  useEffect(() => {
+    if (events.length > 0 && !selectedEvent) {
+      setSelectedEvent(events[0].id);
+    }
+  }, [events, selectedEvent]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setAttendeeData(prev => ({
-      ...prev,
-      [name]: parseInt(value) || 0
-    }));
-  };
-
-  if (authLoading || loadingAnalytics) {
+  if (authLoading) {
     return (
       <div className="flex min-h-[80vh] items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-10 w-10 animate-spin text-[hsl(var(--manako-purple))] mx-auto mb-4" />
-          <p className="text-white/70">Loading analytics...</p>
+          <Loader2 className="h-10 w-10 animate-spin text-[hsl(var(--eventra-blue))] mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading analytics...</p>
         </div>
       </div>
     );
@@ -143,187 +159,332 @@ export default function AnalyticsPage() {
   if (!user) {
     return null; // Will redirect in useEffect
   }
-  
-  // Use data from API or fallback to zeros
-  const eventMetrics = analyticsData?.events || {
-    total: 0,
-    upcoming: 0,
-    averageAttendance: 0,
-    averageEngagement: 0
-  };
-  
-  return (
-    <div className="pb-20 md:pb-10 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="py-6 md:py-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="bg-white/20 p-2 rounded-full">
-            <BarChart3 className="h-5 w-5 text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-white">Analytics</h2>
+
+  const hasEvents = events.length > 0;
+  const hasSelectedEvent = !!selectedEvent;
+  const isLoading = analyticsLoading;
+  const hasError = !!analyticsError;
+
+  // When there's an error loading events
+  if (eventsError) {
+    return (
+      <div className="container max-w-7xl mx-auto py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 text-foreground">Analytics</h1>
+          <p className="text-muted-foreground">
+            View insights and performance metrics for your events
+          </p>
         </div>
-        <p className="text-white/70 text-sm">
-          Track and analyze your event performance
+        
+        <EmptyState
+          icon={AlertTriangle}
+          title="Error Loading Events"
+          description="We couldn't load your events. Please try again later."
+          actionLabel="Reload Page"
+          actionOnClick={() => window.location.reload()}
+          iconClassName="text-red-500"
+        />
+      </div>
+    );
+  }
+
+  // When no events found, show empty state
+  if (!eventsLoading && !hasEvents) {
+    return (
+      <div className="container max-w-7xl mx-auto py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 text-foreground">Analytics</h1>
+          <p className="text-muted-foreground">
+            View insights and performance metrics for your events
+          </p>
+        </div>
+        
+        <EmptyState
+          icon={BarChart2}
+          title="No Events Found"
+          description="You don't have any events yet. Create an event to view its analytics."
+          actionLabel="Create Event"
+          actionHref="/events/new"
+          secondaryActionLabel="View Events"
+          secondaryActionHref="/events"
+          iconClassName="text-[hsl(var(--eventra-blue))]"
+        />
+      </div>
+    );
+  }
+
+  // When events exist but none selected, show empty state asking to select
+  if (!eventsLoading && hasEvents && !hasSelectedEvent) {
+    return (
+      <div className="container max-w-7xl mx-auto py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 text-foreground">Analytics</h1>
+          <p className="text-muted-foreground">
+            View insights and performance metrics for your events
+          </p>
+        </div>
+        
+        <div className="flex items-center mb-6 space-x-4">
+          <Select
+            value={selectedEvent}
+            onValueChange={setSelectedEvent}
+          >
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Select an event" />
+            </SelectTrigger>
+            <SelectContent>
+              {events.map((event) => (
+                <SelectItem key={event.id} value={event.id}>
+                  {event.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <EmptyState
+          icon={BarChart2}
+          title="No Event Selected"
+          description="Please select an event from the dropdown above to view its analytics."
+          iconClassName="text-[hsl(var(--eventra-blue))]"
+        />
+      </div>
+    );
+  }
+
+  // When there's an error loading analytics data
+  if (hasError) {
+    return (
+      <div className="container max-w-7xl mx-auto py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 text-foreground">Analytics</h1>
+          <p className="text-muted-foreground">
+            View insights and performance metrics for your events
+          </p>
+        </div>
+        
+        <div className="flex items-center mb-6 space-x-4">
+          <Select
+            value={selectedEvent}
+            onValueChange={setSelectedEvent}
+          >
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Select an event" />
+            </SelectTrigger>
+            <SelectContent>
+              {events.map((event) => (
+                <SelectItem key={event.id} value={event.id}>
+                  {event.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select
+            value={selectedTimeframe}
+            onValueChange={setSelectedTimeframe}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Timeframe" />
+            </SelectTrigger>
+            <SelectContent>
+              {timeframeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <EmptyState
+          icon={AlertTriangle}
+          title="Error Loading Analytics"
+          description="We couldn't load analytics data for this event. Please try again later."
+          actionLabel="Try Again"
+          actionOnClick={() => window.location.reload()}
+          iconClassName="text-red-500"
+        />
+      </div>
+    );
+  }
+
+  // Show loading state while fetching analytics
+  if (isLoading) {
+    return (
+      <div className="container max-w-7xl mx-auto py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2 text-foreground">Analytics</h1>
+          <p className="text-muted-foreground">
+            View insights and performance metrics for your events
+          </p>
+        </div>
+        
+        <div className="flex items-center mb-6 space-x-4">
+          <Select
+            value={selectedEvent}
+            onValueChange={setSelectedEvent}
+          >
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Select an event" />
+            </SelectTrigger>
+            <SelectContent>
+              {events.map((event) => (
+                <SelectItem key={event.id} value={event.id}>
+                  {event.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select
+            value={selectedTimeframe}
+            onValueChange={setSelectedTimeframe}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Timeframe" />
+            </SelectTrigger>
+            <SelectContent>
+              {timeframeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-10 w-10 animate-spin text-[hsl(var(--eventra-blue))] mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading analytics data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Analytics dashboard content for when data is loaded
+  return (
+    <div className="container max-w-7xl mx-auto py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2 text-foreground">Analytics</h1>
+        <p className="text-muted-foreground">
+          View insights and performance metrics for your events
         </p>
       </div>
-
-      {/* Main Content */}
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="mb-6 grid w-full grid-cols-3 bg-white/10 text-white">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-[hsl(var(--manako-purple))]">
-            Overview
-          </TabsTrigger>
-          <TabsTrigger value="engagement" className="data-[state=active]:bg-white data-[state=active]:text-[hsl(var(--manako-purple))]">
-            Engagement
-          </TabsTrigger>
-          <TabsTrigger value="feedback" className="data-[state=active]:bg-white data-[state=active]:text-[hsl(var(--manako-purple))]">
-            Feedback
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="manako-card">
-              <CardHeader>
-                <CardTitle>Event Analytics</CardTitle>
-                <CardDescription>
-                  Key metrics for your events
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Total Events</p>
-                    <p className="text-lg font-bold">{eventMetrics.total}</p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Upcoming Events</p>
-                    <p className="text-lg font-bold">{eventMetrics.upcoming}</p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Average Attendance</p>
-                    <p className="text-lg font-bold">{eventMetrics.averageAttendance}</p>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Average Engagement</p>
-                    <p className="text-lg font-bold">{eventMetrics.averageEngagement}%</p>
-                  </div>
-                </div>
-              </CardContent>
+      
+      <div className="flex items-center mb-6 space-x-4">
+        <Select
+          value={selectedEvent}
+          onValueChange={setSelectedEvent}
+        >
+          <SelectTrigger className="w-[240px]">
+            <SelectValue placeholder="Select an event" />
+          </SelectTrigger>
+          <SelectContent>
+            {events.map((event) => (
+              <SelectItem key={event.id} value={event.id}>
+                {event.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <Select
+          value={selectedTimeframe}
+          onValueChange={setSelectedTimeframe}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Timeframe" />
+          </SelectTrigger>
+          <SelectContent>
+            {timeframeOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {/* Analytics dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Registrations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <Users className="h-5 w-5 text-muted-foreground mr-2" />
+              <div className="text-2xl font-bold">{analyticsData?.totalRegistrations || 0}</div>
+              <span className="ml-2 text-xs text-green-500">
+                {analyticsData?.registrationsChange && analyticsData.registrationsChange > 0 ? '+' : ''}
+                {analyticsData?.registrationsChange || 0}%
+              </span>
             </div>
-
-            <div className="manako-card">
-              <CardHeader>
-                <CardTitle>Generate Analytics</CardTitle>
-                <CardDescription>
-                  Create analytics for a specific event
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Select an event to view its analytics</p>
-                    <Button 
-                      onClick={() => router.push('/events')}
-                      className="manako-button w-full"
-                    >
-                      Go to Events
-                    </Button>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Or generate sample analytics</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label htmlFor="totalAttendees" className="text-sm font-medium">
-                          Total Attendees
-                        </label>
-                        <Input
-                          id="totalAttendees"
-                          name="totalAttendees"
-                          type="number"
-                          value={attendeeData.totalAttendees || ''}
-                          onChange={handleInputChange}
-                          className="bg-white/10 border-white/10 text-foreground placeholder:text-muted-foreground focus-visible:ring-[hsl(var(--manako-purple))]"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label htmlFor="averageTimeSpent" className="text-sm font-medium">
-                          Avg. Time Spent (minutes)
-                        </label>
-                        <Input
-                          id="averageTimeSpent"
-                          name="averageTimeSpent"
-                          type="number"
-                          value={attendeeData.averageTimeSpent || ''}
-                          onChange={handleInputChange}
-                          className="bg-white/10 border-white/10 text-foreground placeholder:text-muted-foreground focus-visible:ring-[hsl(var(--manako-purple))]"
-                        />
-                      </div>
-                    </div>
-                    <Button 
-                      className="manako-button w-full"
-                      disabled={!selectedEventId}
-                    >
-                      Generate Analytics
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Attendance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <Calendar className="h-5 w-5 text-muted-foreground mr-2" />
+              <div className="text-2xl font-bold">{analyticsData?.attendance || 0}</div>
+              <span className="ml-2 text-xs">{analyticsData?.attendanceRate || 0}%</span>
             </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Feedback Score</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <MessageSquare className="h-5 w-5 text-muted-foreground mr-2" />
+              <div className="text-2xl font-bold">{analyticsData?.feedback || 0}<span className="text-sm">/5</span></div>
+              <span className="ml-2 text-xs text-green-500">
+                {analyticsData?.feedbackChange && analyticsData.feedbackChange > 0 ? '+' : ''}
+                {analyticsData?.feedbackChange || 0}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <DollarSign className="h-5 w-5 text-muted-foreground mr-2" />
+              <div className="text-2xl font-bold">${analyticsData?.revenue || 0}</div>
+              <span className="ml-2 text-xs text-green-500">
+                {analyticsData?.revenueChange && analyticsData.revenueChange > 0 ? '+' : ''}
+                {analyticsData?.revenueChange || 0}%
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Analytics Dashboard</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            Detailed charts and analytics for this event will be implemented in a future update.
+          </p>
+          <div className="mt-4 h-[300px] flex items-center justify-center bg-muted/30 rounded-md">
+            <BarChart2 className="h-16 w-16 text-muted-foreground opacity-50" />
           </div>
-        </TabsContent>
-
-        <TabsContent value="engagement">
-          <div className="manako-card">
-            <CardHeader>
-              <CardTitle>Engagement Metrics</CardTitle>
-              <CardDescription>
-                Visualize engagement data for your events
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <BarChart className="h-16 w-16 text-[hsl(var(--manako-purple))] mx-auto mb-4 opacity-50" />
-                <p className="text-muted-foreground mb-4">
-                  Select an event from the Events page to view engagement metrics
-                </p>
-                <Button 
-                  onClick={() => router.push('/events')}
-                  className="manako-button"
-                >
-                  View Your Events
-                </Button>
-              </div>
-            </CardContent>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="feedback">
-          <div className="manako-card">
-            <CardHeader>
-              <CardTitle>Feedback Analysis</CardTitle>
-              <CardDescription>
-                Analyze feedback received for your events
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <PieChart className="h-16 w-16 text-[hsl(var(--manako-purple))] mx-auto mb-4 opacity-50" />
-                <p className="text-muted-foreground mb-4">
-                  No feedback data available yet. Select an event to view attendee feedback.
-                </p>
-                <Button 
-                  onClick={() => router.push('/events')}
-                  className="manako-button"
-                >
-                  View Your Events
-                </Button>
-              </div>
-            </CardContent>
-          </div>
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

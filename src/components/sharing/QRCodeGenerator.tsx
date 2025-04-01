@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from 'react'
 import Image from 'next/image'
-import QRCode from 'qrcode.react'
+import QRCodeReact from 'qrcode.react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
@@ -171,7 +171,7 @@ export default function QRCodeGenerator({
               backgroundColor: bgColor
             }}
           >
-            <QRCode
+            <QRCodeReact
               value={url}
               size={size}
               level={qrCodeLevel}

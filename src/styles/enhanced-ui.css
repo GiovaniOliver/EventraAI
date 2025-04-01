@@ -1,0 +1,182 @@
+/* Enhanced UI Styles for EventraAI */
+
+/* Navbar improvements */
+.navbar, header, nav {
+  background: linear-gradient(to right, #f8f9fa, #e9ecef);
+  border-bottom: 1px solid #dee2e6;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 0.75rem 1rem;
+  z-index: 1000;
+}
+
+/* Logo enhancements */
+.logo {
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+}
+
+/* Notification icon improvements */
+.notification-icon, [data-testid="notification-icon"] {
+  background: white;
+  color: #4361ee;
+  border: 2px solid #4361ee;
+  border-radius: 50%;
+  padding: 0.5rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.notification-icon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+.notification-count {
+  background: #ff0066;
+  color: white;
+  font-weight: bold;
+  border: 1px solid white;
+}
+
+/* User profile icon enhancements */
+.user-avatar, [data-testid="user-avatar"] {
+  border: 2px solid #4361ee;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Action cards with gradient outlines */
+.action-card {
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.action-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(to right, #4361ee, #3a0ca3);
+}
+
+/* Card icons enhancements */
+.card-icon {
+  color: #4361ee;
+  background: rgba(67, 97, 238, 0.1);
+  border-radius: 50%;
+  padding: 0.75rem;
+}
+
+/* Improved overall contrast */
+body {
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+h1, h2, h3 {
+  color: #212529;
+  font-weight: 600;
+}
+
+/* Enhanced buttons */
+.btn-primary {
+  background: linear-gradient(to right, #4361ee, #3a0ca3);
+  border: none;
+  box-shadow: 0 2px 5px rgba(67, 97, 238, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(67, 97, 238, 0.4);
+}
+
+/* Bottom navigation enhancements */
+.bottom-nav {
+  backdrop-filter: blur(10px);
+  padding: 0.5rem 0;
+  transition: all 0.3s ease;
+  border-radius: 9999px;
+}
+
+.bottom-nav-item {
+  color: #6c757d;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.bottom-nav-item::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(var(--eventra-blue-rgb), 0.1) 0%, rgba(var(--eventra-blue-rgb), 0) 70%);
+  border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  transition: all 0.3s ease;
+}
+
+.bottom-nav-item:hover::before {
+  width: 45px;
+  height: 45px;
+  opacity: 1;
+}
+
+.bottom-nav-item.active {
+  color: hsl(var(--eventra-blue));
+  position: relative;
+}
+
+.bottom-nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -0.5rem;
+  left: 25%;
+  width: 50%;
+  height: 3px;
+  background: linear-gradient(to right, hsl(var(--eventra-teal)), hsl(var(--eventra-blue)), hsl(var(--eventra-purple)));
+  border-radius: 3px 3px 0 0;
+}
+
+/* Empty state cards */
+.empty-state {
+  border: 1px dashed #dee2e6;
+  border-radius: 8px;
+  background-color: rgba(67, 97, 238, 0.03);
+}
+
+/* View all links */
+.view-all {
+  color: #4361ee;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.view-all:hover {
+  text-decoration: underline;
+}
+
+/* Additional classes that might be used in the app */
+.card, .section-card {
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+}
+
+.card:hover, .section-card:hover {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}

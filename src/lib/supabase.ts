@@ -104,6 +104,34 @@ export const createBrowserSupabaseClient = () => {
           detectSessionInUrl: true,
           persistSession: true,
           storageKey: 'eventra-auth',
+          storage: {
+            getItem: (key) => {
+              try {
+                const item = localStorage.getItem(key);
+                console.log(`[DEBUG] Auth storage getItem: ${key} = ${item ? 'exists' : 'null'}`);
+                return item;
+              } catch (error) {
+                console.error(`[DEBUG] Error getting item from storage: ${key}`, error);
+                return null;
+              }
+            },
+            setItem: (key, value) => {
+              try {
+                console.log(`[DEBUG] Auth storage setItem: ${key}`);
+                localStorage.setItem(key, value);
+              } catch (error) {
+                console.error(`[DEBUG] Error setting item in storage: ${key}`, error);
+              }
+            },
+            removeItem: (key) => {
+              try {
+                console.log(`[DEBUG] Auth storage removeItem: ${key}`);
+                localStorage.removeItem(key);
+              } catch (error) {
+                console.error(`[DEBUG] Error removing item from storage: ${key}`, error);
+              }
+            }
+          },
           debug: true, // Enable auth debugging
         },
         global: {
@@ -111,6 +139,14 @@ export const createBrowserSupabaseClient = () => {
             'X-Client-Info': 'EventraAI Next.js'
           },
         },
+        cookieOptions: {
+          name: 'eventra-auth',
+          maxAge: 60 * 60 * 8, // 8 hours in seconds
+          domain: typeof window !== 'undefined' ? window.location.hostname : undefined,
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+        }
       }
     );
   } catch (error) {
@@ -119,19 +155,11 @@ export const createBrowserSupabaseClient = () => {
   }
 };
 
-// Types based on the original application's schema
-export type User = {
-  id: string
-  username: string
-  password: string
-  display_name: string
-  email: string
-  is_admin: boolean
-  stripe_customer_id?: string
-  subscription_tier: string
-  subscription_status: string
-  created_at: string
-}
+// Import and use the types from the database-types.ts file
+import { Database } from '@/shared/database-types'
+
+// Re-export User type from the Database type
+export type User = Database['public']['Tables']['users']['Row']
 
 export type Event = {
   id: string

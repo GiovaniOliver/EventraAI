@@ -1,4 +1,5 @@
 import './globals.css'
+import '../styles/enhanced-ui.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Providers } from './providers'
@@ -9,8 +10,8 @@ export const metadata: Metadata = {
   title: 'EventraAI - Event Planning Made Simple',
   description: 'AI-powered event planning platform for seamless event management and collaboration',
   icons: {
-    icon: '/images/eventraailogo1.png',
-    shortcut: '/images/eventraailogo1.png',
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
     apple: '/images/eventraailogo1.png',
   },
 }
