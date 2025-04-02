@@ -29,7 +29,10 @@ import {
   Network,
   GraduationCap,
   MessageSquare,
-  Trophy
+  Trophy,
+  CheckCircle2,
+  CalendarClock,
+  ImagePlus
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,6 +45,7 @@ import { useAuth } from "@/hooks";
 import { format } from "date-fns";
 import { Spinner } from "@/components/ui/spinner";
 import { eventSchema, eventTypeEnum, eventFormatEnum, EventType, EventTypeEnum, EventFormatEnum } from "@/lib/validations/event";
+import { cn } from "@/lib/utils";
 
 interface NewEventModalProps {
   isOpen: boolean;
@@ -91,64 +95,56 @@ const eventThemes = [
 const eventTypes = [
   {
     id: "virtual_conference",
-    icon: <Globe />,
+    icon: <Globe className="h-5 w-5" />,
     label: "Virtual Conference"
   },
   {
     id: "workshop",
-    icon: <PencilRuler />,
+    icon: <PencilRuler className="h-5 w-5" />,
     label: "Workshop"
   },
   {
     id: "webinar",
-    icon: <Video />,
+    icon: <Video className="h-5 w-5" />,
     label: "Webinar"
   },
   {
     id: "team_building",
-    icon: <Users />,
+    icon: <Users className="h-5 w-5" />,
     label: "Team Building"
   },
   {
     id: "product_launch",
-    icon: <Rocket />,
+    icon: <Rocket className="h-5 w-5" />,
     label: "Product Launch"
   },
   {
     id: "networking_event",
-    icon: <Network />,
+    icon: <Network className="h-5 w-5" />,
     label: "Networking Event"
   },
   {
     id: "training_session",
-    icon: <GraduationCap />,
+    icon: <GraduationCap className="h-5 w-5" />,
     label: "Training Session"
   },
   {
     id: "panel_discussion",
-    icon: <MessageSquare />,
+    icon: <MessageSquare className="h-5 w-5" />,
     label: "Panel Discussion"
   },
   {
     id: "award_ceremony",
-    icon: <Trophy />,
+    icon: <Trophy className="h-5 w-5" />,
     label: "Award Ceremony"
   }
 ];
 
+type Auth = {
+  user: any;
+};
+
 type EventFormData = z.infer<typeof eventSchema>;
-
-// Define an interface for User with id property
-interface User {
-  id: number;
-  [key: string]: any;
-}
-
-// Define an interface for Auth with user property
-interface Auth {
-  user: User;
-  [key: string]: any;
-}
 
 export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
   const { toast } = useToast();
@@ -195,12 +191,12 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
     }
   }, [user, setValue]);
   
-  const handleTypeSelect = (type: eventTypeEnum) => {
+  const handleTypeSelect = (type: EventTypeEnum) => {
     setSelectedType(type);
     setValue("type", type);
   };
   
-  const handleFormatSelect = (format: eventFormatEnum) => {
+  const handleFormatSelect = (format: EventFormatEnum) => {
     setSelectedFormat(format);
     setValue("format", format);
   };
@@ -209,7 +205,7 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
     setSelectedTheme(themeId);
     const theme = eventThemes.find(t => t.id === themeId);
     if (theme) {
-      setValue("theme", JSON.stringify(theme));
+      setValue("theme" as any, JSON.stringify(theme));
     }
   };
   
@@ -220,7 +216,7 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
       reader.onloadend = () => {
         const base64String = reader.result as string;
         setPreviewImage(base64String);
-        setValue("coverImage", base64String);
+        setValue("coverImage" as any, base64String);
       };
       reader.readAsDataURL(file);
     }
@@ -281,226 +277,349 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl overflow-hidden border border-border/40 shadow-lg">
-        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))]"></div>
+      <DialogContent className="max-w-xl p-0 overflow-hidden border-0 shadow-xl rounded-xl">
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))]"></div>
         
-        <DialogHeader className="pb-4">
+        {/* Progress indicator */}
+        <div className="w-full px-6 pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1">
+              <div className="relative w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-[hsl(var(--eventra-teal))] to-[hsl(var(--eventra-blue))]" 
+                  style={{ width: `${(step / 3) * 100}%` }}
+                ></div>
+              </div>
+              <div className="flex justify-between mt-2">
+                <div className="flex flex-col items-center">
+                  <div className={cn(
+                    "flex items-center justify-center w-6 h-6 rounded-full text-xs mb-1", 
+                    step >= 1 
+                      ? "bg-[hsl(var(--eventra-teal))] text-white" 
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    {step > 1 ? <CheckCircle2 className="h-4 w-4" /> : 1}
+                  </div>
+                  <span className="text-[10px]">Basics</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className={cn(
+                    "flex items-center justify-center w-6 h-6 rounded-full text-xs mb-1", 
+                    step >= 2 
+                      ? "bg-[hsl(var(--eventra-blue))] text-white" 
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    {step > 2 ? <CheckCircle2 className="h-4 w-4" /> : 2}
+                  </div>
+                  <span className="text-[10px]">Details</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className={cn(
+                    "flex items-center justify-center w-6 h-6 rounded-full text-xs mb-1", 
+                    step >= 3 
+                      ? "bg-[hsl(var(--eventra-purple))] text-white" 
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    3
+                  </div>
+                  <span className="text-[10px]">Appearance</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <DialogHeader className="px-6 pb-2">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-r from-[hsl(var(--eventra-teal))] to-[hsl(var(--eventra-blue))] p-2 rounded-md text-white">
-              <Calendar className="h-5 w-5" />
+              {step === 1 ? (
+                <Calendar className="h-5 w-5" />
+              ) : step === 2 ? (
+                <CalendarClock className="h-5 w-5" />
+              ) : (
+                <Palette className="h-5 w-5" />
+              )}
             </div>
             <div>
-              <DialogTitle className="text-xl font-semibold">Create New Event</DialogTitle>
-              <DialogDescription>Fill out the details to set up your event</DialogDescription>
+              <DialogTitle className="text-xl font-semibold">
+                {step === 1 
+                  ? "Create New Event" 
+                  : step === 2 
+                    ? "Event Details" 
+                    : "Event Appearance"}
+              </DialogTitle>
+              <DialogDescription className="text-sm opacity-80">
+                {step === 1 
+                  ? "Let's start with the basics" 
+                  : step === 2 
+                    ? "Add more information about your event" 
+                    : "Customize how your event looks"}
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="border rounded-md shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-2 bg-muted/50 border-b">
-              <div className="flex items-center space-x-2">
-                <div className={`w-3 h-3 rounded-full ${step >= 1 ? "bg-[hsl(var(--eventra-teal))]" : "bg-muted-foreground/30"}`}></div>
-                <div className={`w-3 h-3 rounded-full ${step >= 2 ? "bg-[hsl(var(--eventra-blue))]" : "bg-muted-foreground/30"}`}></div>
-                <div className={`w-3 h-3 rounded-full ${step >= 3 ? "bg-[hsl(var(--eventra-purple))]" : "bg-muted-foreground/30"}`}></div>
-              </div>
-              <span className="text-sm text-muted-foreground">Step {step} of 3</span>
-            </div>
           
-            {/* Step 1: Basic Info */}
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="px-6">
             {step === 1 && (
-              <div className="p-6 space-y-5">
+              <div className="space-y-6 py-4">
                 <div>
-                  <Label htmlFor="title" className="block text-sm font-medium mb-1">Event Name</Label>
+                  <Label htmlFor="title" className="text-sm font-medium text-foreground/90 mb-1.5 block">Event Name</Label>
                   <Input 
                     id="title"
-                    placeholder="Enter event name" 
-                    className="w-full border-border/60 focus:border-[hsl(var(--eventra-blue))] focus:ring-[hsl(var(--eventra-blue))/20]"
+                    placeholder="Enter a memorable name for your event" 
+                    className="w-full rounded-md border-border/60 focus-visible:ring-[hsl(var(--eventra-blue))/30] focus-visible:border-[hsl(var(--eventra-blue))]"
                     {...register("title")}
                   />
-                  {errors.title && <p className="text-destructive text-sm mt-1">{errors.title.message}</p>}
+                  {errors.title && <p className="text-destructive text-xs mt-1.5">{errors.title.message}</p>}
                 </div>
 
                 <div>
-                  <Label className="block text-sm font-medium mb-2">Event Type</Label>
-                  <div className="grid grid-cols-3 gap-3 mb-2">
+                  <Label className="text-sm font-medium text-foreground/90 mb-1.5 block">Event Type</Label>
+                  <div className="grid grid-cols-3 gap-2.5 mb-2">
                     {eventTypes.map((type) => (
                       <button
                         key={type.id}
                         type="button"
-                        className={`rounded-md border py-3 transition-colors ${
+                        className={cn(
+                          "flex flex-col items-center justify-center rounded-md border transition-all duration-200 py-3 px-1",
                           selectedType === type.id 
-                            ? "border-[hsl(var(--eventra-blue))] bg-[hsl(var(--eventra-blue))/10]" 
-                            : "border-gray-200 hover:border-[hsl(var(--eventra-blue))] hover:bg-[hsl(var(--eventra-blue))/5]"
-                        }`}
-                        onClick={() => handleTypeSelect(type.id as eventTypeEnum)}
+                            ? "border-[hsl(var(--eventra-blue))] bg-[hsl(var(--eventra-blue))/8] shadow-sm" 
+                            : "border-border/50 bg-background hover:border-[hsl(var(--eventra-blue))/50] hover:bg-[hsl(var(--eventra-blue))/5]"
+                        )}
+                        onClick={() => handleTypeSelect(type.id as EventTypeEnum)}
                       >
-                        <div className="flex items-center space-x-2">
-                          {type.icon}
-                          <span className={`text-xs ${selectedType === type.id ? "text-[hsl(var(--eventra-blue))]" : "text-gray-600"}`}>{type.label}</span>
+                        <div className={cn(
+                          "flex items-center justify-center rounded-full p-1.5 mb-1.5",
+                          selectedType === type.id 
+                            ? "bg-[hsl(var(--eventra-blue))/15]" 
+                            : "bg-muted"
+                        )}>
+                          <div className={selectedType === type.id ? "text-[hsl(var(--eventra-blue))]" : "text-muted-foreground"}>
+                            {type.icon}
+                          </div>
                         </div>
+                        <span className={cn(
+                          "text-xs text-center line-clamp-1",
+                          selectedType === type.id 
+                            ? "text-[hsl(var(--eventra-blue))] font-medium" 
+                            : "text-muted-foreground"
+                        )}>
+                          {type.label}
+                        </span>
                       </button>
                     ))}
                   </div>
                   <input type="hidden" {...register("type")} />
+                  {errors.type && <p className="text-destructive text-xs mt-1.5">{errors.type.message}</p>}
                 </div>
-                
+
                 <div>
-                  <Label className="block text-sm font-medium mb-2">Event Format</Label>
-                  <RadioGroup 
-                    className="flex gap-3" 
-                    value={selectedFormat}
-                    onValueChange={handleFormatSelect}
-                  >
-                    <div className={`flex-1 border rounded-lg p-3 
-                      ${selectedFormat === "virtual" 
-                        ? "border-[hsl(var(--eventra-blue))] bg-[hsl(var(--eventra-blue))]/5" 
-                        : "border-gray-200 hover:border-[hsl(var(--eventra-blue))] hover:bg-[hsl(var(--eventra-blue))]/5"}`}>
-                      <RadioGroupItem value="virtual" id="virtual" className="sr-only" />
-                      <Label htmlFor="virtual" className="flex flex-col items-center cursor-pointer">
-                        <Laptop className={`h-5 w-5 mb-1 ${selectedFormat === "virtual" ? "text-[hsl(var(--eventra-blue))]" : "text-gray-500"}`} />
-                        <span className={`text-xs ${selectedFormat === "virtual" ? "text-[hsl(var(--eventra-blue))]" : "text-gray-600"}`}>Virtual</span>
-                      </Label>
-                    </div>
+                  <Label className="text-sm font-medium text-foreground/90 mb-1.5 block">Event Format</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex items-center justify-center gap-2.5 rounded-md border py-3 px-4 transition-all duration-200",
+                        selectedFormat === "in-person" 
+                          ? "border-[hsl(var(--eventra-blue))] bg-[hsl(var(--eventra-blue))/8] shadow-sm" 
+                          : "border-border/50 hover:border-[hsl(var(--eventra-blue))/50] hover:bg-[hsl(var(--eventra-blue))/5]"
+                      )}
+                      onClick={() => handleFormatSelect("in-person")}
+                    >
+                      <div className={cn(
+                        "rounded-full p-1.5",
+                        selectedFormat === "in-person" 
+                          ? "bg-[hsl(var(--eventra-blue))/15] text-[hsl(var(--eventra-blue))]" 
+                          : "bg-muted text-muted-foreground"
+                      )}>
+                        <Users className="h-5 w-5" />
+                      </div>
+                      <span className={cn(
+                        "font-medium", 
+                        selectedFormat === "in-person" 
+                          ? "text-[hsl(var(--eventra-blue))]" 
+                          : "text-muted-foreground"
+                      )}>
+                        In Person
+                      </span>
+                    </button>
                     
-                    <div className={`flex-1 border rounded-lg p-3 
-                      ${selectedFormat === "in-person" 
-                        ? "border-[hsl(var(--eventra-blue))] bg-[hsl(var(--eventra-blue))]/5" 
-                        : "border-gray-200 hover:border-[hsl(var(--eventra-blue))] hover:bg-[hsl(var(--eventra-blue))]/5"}`}>
-                      <RadioGroupItem value="in-person" id="in-person" className="sr-only" />
-                      <Label htmlFor="in-person" className="flex flex-col items-center cursor-pointer">
-                        <MapPin className={`h-5 w-5 mb-1 ${selectedFormat === "in-person" ? "text-[hsl(var(--eventra-blue))]" : "text-gray-500"}`} />
-                        <span className={`text-xs ${selectedFormat === "in-person" ? "text-[hsl(var(--eventra-blue))]" : "text-gray-600"}`}>In-Person</span>
-                      </Label>
-                    </div>
-                    
-                    <div className={`flex-1 border rounded-lg p-3 
-                      ${selectedFormat === "hybrid" 
-                        ? "border-[hsl(var(--eventra-blue))] bg-[hsl(var(--eventra-blue))]/5" 
-                        : "border-gray-200 hover:border-[hsl(var(--eventra-blue))] hover:bg-[hsl(var(--eventra-blue))]/5"}`}>
-                      <RadioGroupItem value="hybrid" id="hybrid" className="sr-only" />
-                      <Label htmlFor="hybrid" className="flex flex-col items-center cursor-pointer">
-                        <div className="relative h-5 w-5 mb-1">
-                          <Laptop className={`h-4 w-4 absolute -left-1 ${selectedFormat === "hybrid" ? "text-[hsl(var(--eventra-blue))]" : "text-gray-500"}`} />
-                          <MapPin className={`h-4 w-4 absolute -right-1 ${selectedFormat === "hybrid" ? "text-[hsl(var(--eventra-blue))]" : "text-gray-500"}`} />
-                        </div>
-                        <span className={`text-xs ${selectedFormat === "hybrid" ? "text-[hsl(var(--eventra-blue))]" : "text-gray-600"}`}>Hybrid</span>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                  <input type="hidden" {...register("format")} />
-                </div>
-                
-                <div>
-                  <Label className="block text-sm font-medium mb-1">Date & Time</Label>
-                  <div className="flex space-x-3">
-                    <div className="flex-1">
-                      <Input 
-                        type="date" 
-                        className="w-full border-border/60 focus:border-[hsl(var(--eventra-blue))] focus:ring-[hsl(var(--eventra-blue))/20]"
-                        {...register("start_date")}
-                      />
-                      {errors.start_date && <p className="text-destructive text-sm mt-1">{errors.start_date.message}</p>}
-                    </div>
-                    <div className="flex-1">
-                      <Input 
-                        type="time" 
-                        className="w-full border-border/60 focus:border-[hsl(var(--eventra-blue))] focus:ring-[hsl(var(--eventra-blue))/20]"
-                        {...register("end_date")}
-                      />
-                      {errors.end_date && <p className="text-destructive text-sm mt-1">{errors.end_date.message}</p>}
-                    </div>
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex items-center justify-center gap-2.5 rounded-md border py-3 px-4 transition-all duration-200",
+                        selectedFormat === "virtual" 
+                          ? "border-[hsl(var(--eventra-blue))] bg-[hsl(var(--eventra-blue))/8] shadow-sm" 
+                          : "border-border/50 hover:border-[hsl(var(--eventra-blue))/50] hover:bg-[hsl(var(--eventra-blue))/5]"
+                      )}
+                      onClick={() => handleFormatSelect("virtual")}
+                    >
+                      <div className={cn(
+                        "rounded-full p-1.5",
+                        selectedFormat === "virtual" 
+                          ? "bg-[hsl(var(--eventra-blue))/15] text-[hsl(var(--eventra-blue))]" 
+                          : "bg-muted text-muted-foreground"
+                      )}>
+                        <Video className="h-5 w-5" />
+                      </div>
+                      <span className={cn(
+                        "font-medium", 
+                        selectedFormat === "virtual" 
+                          ? "text-[hsl(var(--eventra-blue))]" 
+                          : "text-muted-foreground"
+                      )}>
+                        Virtual
+                      </span>
+                    </button>
                   </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="estimated_guests" className="block text-sm font-medium mb-1">Estimated Guests</Label>
-                  <Input 
-                    id="estimated_guests"
-                    type="number" 
-                    placeholder="Enter number of guests" 
-                    className="w-full border-border/60 focus:border-[hsl(var(--eventra-blue))] focus:ring-[hsl(var(--eventra-blue))/20]"
-                    {...register("estimated_guests", { valueAsNumber: true })}
-                  />
-                  {errors.estimated_guests && <p className="text-destructive text-sm mt-1">{errors.estimated_guests.message}</p>}
+                  <input type="hidden" {...register("format")} />
+                  {errors.format && <p className="text-destructive text-xs mt-1.5">{errors.format.message}</p>}
                 </div>
               </div>
             )}
           
-            {/* Step 2: Details */}
             {step === 2 && (
-              <div className="p-6 space-y-5">
+              <div className="space-y-6 py-4">
                 <div>
-                  <Label htmlFor="description" className="block text-sm font-medium mb-1">Description</Label>
+                  <Label htmlFor="description" className="text-sm font-medium text-foreground/90 mb-1.5 block">Description</Label>
                   <Textarea 
                     id="description"
-                    placeholder="Enter event description"
-                    className="w-full border-border/60 focus:border-[hsl(var(--eventra-blue))] focus:ring-[hsl(var(--eventra-blue))/20]"
+                    placeholder="Provide details about your event"
+                    className="w-full min-h-[100px] rounded-md border-border/60 focus-visible:ring-[hsl(var(--eventra-blue))/30] focus-visible:border-[hsl(var(--eventra-blue))]"
                     {...register("description")}
                   />
-                  {errors.description && <p className="text-destructive text-sm mt-1">{errors.description.message}</p>}
+                  {errors.description && <p className="text-destructive text-xs mt-1.5">{errors.description.message}</p>}
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="start_date" className="text-sm font-medium text-foreground/90 mb-1.5 block">Start Date & Time</Label>
+                    <Input 
+                      id="start_date"
+                      type="datetime-local" 
+                      className="w-full rounded-md border-border/60 focus-visible:ring-[hsl(var(--eventra-blue))/30] focus-visible:border-[hsl(var(--eventra-blue))]"
+                      {...register("start_date")}
+                    />
+                    {errors.start_date && <p className="text-destructive text-xs mt-1.5">{errors.start_date.message}</p>}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="end_date" className="text-sm font-medium text-foreground/90 mb-1.5 block">End Date & Time (Optional)</Label>
+                    <Input 
+                      id="end_date"
+                      type="datetime-local" 
+                      className="w-full rounded-md border-border/60 focus-visible:ring-[hsl(var(--eventra-blue))/30] focus-visible:border-[hsl(var(--eventra-blue))]"
+                      {...register("end_date")}
+                    />
+                    {errors.end_date && <p className="text-destructive text-xs mt-1.5">{errors.end_date.message}</p>}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="location" className="text-sm font-medium text-foreground/90 mb-1.5 block">Location {selectedFormat === "virtual" && "(Optional)"}</Label>
+                    <Input 
+                      id="location"
+                      placeholder={selectedFormat === "virtual" ? "Virtual link or platform" : "Enter event location"} 
+                      className="w-full rounded-md border-border/60 focus-visible:ring-[hsl(var(--eventra-blue))/30] focus-visible:border-[hsl(var(--eventra-blue))]"
+                      {...register("location")}
+                    />
+                    {errors.location && <p className="text-destructive text-xs mt-1.5">{errors.location.message}</p>}
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="estimated_guests" className="text-sm font-medium text-foreground/90 mb-1.5 block">Estimated Guests</Label>
+                    <Input 
+                      id="estimated_guests"
+                      type="number" 
+                      placeholder="Number of attendees" 
+                      className="w-full rounded-md border-border/60 focus-visible:ring-[hsl(var(--eventra-blue))/30] focus-visible:border-[hsl(var(--eventra-blue))]"
+                      {...register("estimated_guests", { valueAsNumber: true })}
+                    />
+                    {errors.estimated_guests && <p className="text-destructive text-xs mt-1.5">{errors.estimated_guests.message}</p>}
+                  </div>
                 </div>
                 
                 <div>
-                  <Label htmlFor="budget" className="block text-sm font-medium mb-1">Budget</Label>
-                  <Input 
-                    id="budget"
-                    type="number" 
-                    placeholder="Enter budget" 
-                    className="w-full border-border/60 focus:border-[hsl(var(--eventra-blue))] focus:ring-[hsl(var(--eventra-blue))/20]"
-                    {...register("budget", { valueAsNumber: true })}
-                  />
-                  {errors.budget && <p className="text-destructive text-sm mt-1">{errors.budget.message}</p>}
+                  <Label htmlFor="budget" className="text-sm font-medium text-foreground/90 mb-1.5 block">Budget</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="budget"
+                      type="number" 
+                      placeholder="Event budget" 
+                      className="w-full pl-9 rounded-md border-border/60 focus-visible:ring-[hsl(var(--eventra-blue))/30] focus-visible:border-[hsl(var(--eventra-blue))]"
+                      {...register("budget", { valueAsNumber: true })}
+                    />
+                  </div>
+                  {errors.budget && <p className="text-destructive text-xs mt-1.5">{errors.budget.message}</p>}
                 </div>
               </div>
             )}
           
             {/* Step 3: Appearance */}
             {step === 3 && (
-              <div className="p-6 space-y-5">
+              <div className="space-y-6 py-4">
                 <div>
-                  <Label htmlFor="theme" className="block text-sm font-medium mb-1">Theme</Label>
-                  <RadioGroup 
-                    className="flex gap-3" 
-                    value={selectedTheme}
-                    onValueChange={handleThemeSelect}
-                  >
+                  <Label className="text-sm font-medium text-foreground/90 mb-1.5 block">Theme</Label>
+                  <div className="grid grid-cols-3 gap-3 mt-2">
                     {eventThemes.map((theme) => (
-                      <div key={theme.id} className="flex items-center">
-                        <RadioGroupItem value={theme.id} id={theme.id} className="sr-only" />
-                        <div className="flex flex-col items-center cursor-pointer">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 mb-2">
-                            {theme.id === "modern" && (
-                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.colorScheme[0] }}></div>
-                            )}
-                            {theme.id === "vibrant" && (
-                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.colorScheme[0] }}></div>
-                            )}
-                            {theme.id === "professional" && (
-                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.colorScheme[0] }}></div>
-                            )}
-                            {theme.id === "classic" && (
-                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.colorScheme[0] }}></div>
-                            )}
-                            {theme.id === "tech" && (
-                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.colorScheme[0] }}></div>
-                            )}
-                            {theme.id === "celebration" && (
-                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: theme.colorScheme[0] }}></div>
-                            )}
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => handleThemeSelect(theme.id)}
+                        className={cn(
+                          "relative rounded-md overflow-hidden border transition-all duration-200 p-0.5 h-24",
+                          selectedTheme === theme.id 
+                            ? "border-[hsl(var(--eventra-blue))] ring-2 ring-[hsl(var(--eventra-blue))/20]" 
+                            : "border-border/50 hover:border-[hsl(var(--eventra-blue))/50]"
+                        )}
+                      >
+                        <div 
+                          className="absolute inset-0 opacity-20" 
+                          style={{ 
+                            background: `linear-gradient(135deg, ${theme.colorScheme[0]}, ${theme.colorScheme[2] || theme.colorScheme[0]})` 
+                          }}
+                        />
+                        <div className="relative h-full flex flex-col items-center justify-center p-2 text-center">
+                          <div className="flex gap-1 mb-2">
+                            {theme.colorScheme.slice(0, 3).map((color, i) => (
+                              <div 
+                                key={i} 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
                           </div>
-                          <span className="text-xs">{theme.name}</span>
+                          <span className="text-xs font-medium mb-0.5">{theme.name}</span>
+                          <span className="text-[10px] text-muted-foreground line-clamp-1">
+                            {theme.description}
+                          </span>
+                          {selectedTheme === theme.id && (
+                            <div className="absolute top-1 right-1">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-[hsl(var(--eventra-blue))]" />
+                            </div>
+                          )}
                         </div>
-                      </div>
+                      </button>
                     ))}
-                  </RadioGroup>
-                  <input type="hidden" {...register("theme")} />
+                  </div>
+                  <input type="hidden" {...register("theme" as any)} />
                 </div>
                 
                 <div>
-                  <Label htmlFor="coverImage" className="block text-sm font-medium mb-1">Cover Image</Label>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-1">
+                  <Label htmlFor="coverImage" className="text-sm font-medium text-foreground/90 mb-1.5 block">Cover Image</Label>
+                  <div className="mt-2">
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className={cn(
+                        "w-full h-32 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors",
+                        previewImage 
+                          ? "border-[hsl(var(--eventra-blue))/30] bg-[hsl(var(--eventra-blue))/5]" 
+                          : "border-border/60 hover:border-[hsl(var(--eventra-blue))/50] hover:bg-muted/50"
+                      )}
+                    >
                       <Input 
                         id="coverImage"
                         type="file"
@@ -509,15 +628,31 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
                         onChange={handleFileChange}
                         className="hidden"
                       />
-                      <Button type="button" onClick={() => fileInputRef.current?.click()}>
-                        {previewImage ? "Change Image" : "Upload Image"}
-                      </Button>
+                      
+                      {previewImage ? (
+                        <div className="relative w-full h-full rounded-md overflow-hidden">
+                          <img src={previewImage} alt="Event Cover" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
+                            <Button 
+                              type="button" 
+                              size="sm" 
+                              variant="secondary"
+                              className="bg-white/90 hover:bg-white text-black"
+                            >
+                              Change Image
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="p-2 rounded-full bg-muted mb-2">
+                            <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">Click to upload cover image</p>
+                          <p className="text-xs text-muted-foreground/70 mt-1">JPEG, PNG (max 4MB)</p>
+                        </>
+                      )}
                     </div>
-                    {previewImage && (
-                      <div className="w-20 h-20 rounded-lg overflow-hidden">
-                        <img src={previewImage} alt="Event Cover" className="w-full h-full object-cover" />
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -525,13 +660,13 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
           </div>
           
           {/* Footer with navigation buttons */}
-          <div className="pt-4 border-t border-border/40 flex items-center justify-between">
+          <div className="p-4 bg-muted/30 flex items-center justify-between mt-4 rounded-b-xl">
             {step > 1 ? (
-              <Button type="button" variant="outline" onClick={handlePreviousStep} className="border-border/60 hover:bg-muted/50 hover:text-[hsl(var(--eventra-blue))] hover:border-[hsl(var(--eventra-blue))/50]">
+              <Button type="button" variant="outline" onClick={handlePreviousStep} className="border-border/60 hover:bg-background">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
               </Button>
             ) : (
-              <Button type="button" variant="outline" onClick={onClose} className="border-border/60 hover:bg-muted/50">
+              <Button type="button" variant="outline" onClick={onClose} className="border-border/60 hover:bg-background">
                 Cancel
               </Button>
             )}
