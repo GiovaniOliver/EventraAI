@@ -1,0 +1,131 @@
+openapi: 3.1.0
+info:
+  title: EventraAI API
+  version: 1.0.0
+  description: Official API for EventraAI - Event Management + AI + Subscription Platform
+servers:
+  - url: https://api.eventraai.com
+    description: Production Server
+  - url: http://localhost:3000
+    description: Local Development
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
+      required: [error_code, message]
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        format:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        estimated_guests:
+          type: integer
+        budget:
+          type: number
+        owner_id:
+          type: string
+      required: [id, title, type, format, status, owner_id]
+paths:
+  /api/auth/users:
+    get:
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Authenticated user info
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/events:
+    get:
+      summary: List events
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+    post:
+      summary: Create an event
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Event created
+        '403':
+          description: Subscription limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/ai/suggestions:
+    post:
+      summary: Generate AI suggestions for an event
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: AI suggestions returned
+        '429':
+          description: AI call limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/stripe/webhook:
+    post:
+      summary: Stripe webhook receiver
+      responses:
+        '200':
+          description: Webhook received
+        '400':
+          description: Invalid signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/subscriptions/usage:
+    get:
+      summary: Get current usage
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current usage per subscription limits

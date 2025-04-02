@@ -34,6 +34,7 @@ import {
   Trash2 
 } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
+import NewEventModal from '@/components/modals/new-event-modal'
 
 // Status badge component
 const StatusBadge = ({ status }: { status: Event['status'] }) => {
@@ -87,6 +88,7 @@ export default function EventList({
   } = useEvents()
 
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false)
 
   // Handle status filter changes
   const handleStatusChange = (value: string) => {
@@ -109,6 +111,31 @@ export default function EventList({
         setIsDeleting(null)
       }
     }
+  }
+
+  if (events.length === 0) {
+    return (
+      <div className="text-center py-10 space-y-4">
+        <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+          <Calendar className="h-10 w-10 text-muted-foreground" />
+        </div>
+        <h3 className="font-semibold text-xl">No events found</h3>
+        <p className="text-muted-foreground max-w-sm mx-auto">
+          You haven't created any events yet. Get started by creating your first event.
+        </p>
+        <Button
+          onClick={() => setIsNewEventModalOpen(true)}
+          className="mt-4"
+        >
+          Create New Event
+        </Button>
+        
+        <NewEventModal
+          isOpen={isNewEventModalOpen}
+          onClose={() => setIsNewEventModalOpen(false)}
+        />
+      </div>
+    )
   }
 
   return (
@@ -166,13 +193,6 @@ export default function EventList({
           <div className="flex items-center justify-center py-12">
             <Spinner />
             <span className="ml-2">Loading events...</span>
-          </div>
-        ) : events.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-8 text-center">
-            <p className="text-muted-foreground mb-4">{emptyMessage}</p>
-            <Button asChild>
-              <Link href="/events/new">Create New Event</Link>
-            </Button>
           </div>
         ) : (
           <Table>

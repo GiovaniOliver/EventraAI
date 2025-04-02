@@ -1,5 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
+import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies'
 
 // Dummy client for development when no real credentials are provided
 const createDummyClient = () => {
@@ -29,7 +30,7 @@ const createDummyClient = () => {
 };
 
 // This client is used on the server
-export const createServerClient = () => {
+export const createServerClient = (cookieStore?: ReadonlyRequestCookies) => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
@@ -44,9 +45,23 @@ export const createServerClient = () => {
     return createClient(supabaseUrl, supabaseKey, {
       auth: {
         persistSession: false,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
       },
+      // Add cookie options if cookieStore is provided
+      ...(cookieStore && {
+        cookies: {
+          get(name: string) {
+            try {
+              const cookie = cookieStore.get(name)
+              return cookie?.value
+            } catch (error) {
+              console.error('Error getting cookie:', error)
+              return null
+            }
+          },
+        },
+      }),
     })
   } catch (error) {
     console.error('Error creating Supabase client:', error)
@@ -156,11 +171,22 @@ export const createBrowserSupabaseClient = () => {
 };
 
 // Import and use the types from the database-types.ts file
-import { Database } from '@/shared/database-types'
+import { Database } from '@/shared/supabase-types'
 
-// Re-export User type from the Database type
-export type User = Database['public']['Tables']['users']['Row']
+// Define User type explicitly
+export type User = {
+  id: string;
+  username: string;
+  display_name: string;
+  email: string;
+  password: string;
+  is_admin: boolean;
+  subscription_tier: 'free' | 'starter' | 'pro' | 'business' | 'enterprise';
+  subscription_status: 'active' | 'inactive' | 'canceled';
+  created_at: string;
+}
 
+// Define Event type
 export type Event = {
   id: string
   title: string

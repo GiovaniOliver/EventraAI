@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Calendar,
   BarChart,
@@ -16,8 +16,27 @@ import {
   Store,
   Home,
   PlusCircle,
-  Sparkles
+  Sparkles,
+  LogOut,
+  Gauge,
+  FileClock,
+  ClipboardList,
+  MessageSquare,
+  HelpCircle,
+  LifeBuoy,
+  Shield,
+  CreditCard,
+  UserCog,
+  BookUser
 } from 'lucide-react'
+import NewEventModal from '@/components/modals/new-event-modal'
+
+// Define Auth interface to fix TypeScript errors
+interface Auth {
+  user: any;
+  logout?: () => Promise<void>;
+  // Add other properties as needed
+}
 
 const navItems = [
   {
@@ -63,8 +82,9 @@ const adminItems = [
 
 export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname()
-  const { user } = useAuth()
+  const { user } = useAuth() as unknown as Auth // Cast to fix TypeScript errors
   const [collapsed, setCollapsed] = useState(false)
+  const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false)
   
   const isActive = (path: string) => 
     path === '/' 
@@ -163,17 +183,22 @@ export function Sidebar({ className }: { className?: string }) {
       <div className="mt-auto px-3">
         <Button
           className={collapsed ? "mx-auto w-10 px-0" : "w-full"}
-          asChild
+          onClick={() => setIsNewEventModalOpen(true)}
         >
-          <Link href="/events/new" className={cn(
+          <div className={cn(
             "flex items-center",
             collapsed ? "justify-center" : "justify-start"
           )}>
             <PlusCircle className={collapsed ? "h-5 w-5" : "mr-2 h-4 w-4"} />
             {!collapsed && "Create Event"}
-          </Link>
+          </div>
         </Button>
       </div>
+
+      <NewEventModal
+        isOpen={isNewEventModalOpen}
+        onClose={() => setIsNewEventModalOpen(false)}
+      />
     </div>
   )
 }

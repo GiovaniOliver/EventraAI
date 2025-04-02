@@ -25,6 +25,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks";
 import { cn } from "@/lib/utils";
+import NewEventModal from '@/components/modals/new-event-modal';
 
 // Define the Event type
 interface Event {
@@ -37,10 +38,7 @@ interface Event {
 }
 
 const UpcomingEvents = () => {
-  // Get the current user ID
-  const { user } = useAuth();
-  
-  // Fetch upcoming events from API
+  const { getUser } = useAuth();
   const { data: events, isLoading, error } = useQuery<Event[]>({
     queryKey: [`/api/events`],
     queryFn: async () => {
@@ -79,11 +77,15 @@ const UpcomingEvents = () => {
       }
       
       try {
+        const user = await getUser();
+        if (!user) return;
+        
         const response = await fetch('/api/events?status=upcoming&limit=3', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-          }
+          },
+          credentials: 'include'
         });
         
         if (!response.ok) {
@@ -101,6 +103,7 @@ const UpcomingEvents = () => {
   });
   
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false);
   
   // Filter for upcoming events only
   useEffect(() => {
@@ -296,162 +299,167 @@ const UpcomingEvents = () => {
   }
 
   return (
-    <div className="mb-8">
-      <div className="flex justify-between items-center mb-5">
-        <h3 className="font-semibold text-lg text-foreground flex items-center gap-2">
-          <CalendarDays className="h-5 w-5 text-primary" />
-          Upcoming Events
-        </h3>
-        <Link 
-          href="/events" 
-          className="text-primary text-sm font-medium flex items-center group px-2 py-1 rounded-md hover:bg-primary/5 transition-colors"
-          aria-label="View all events"
-        >
-          View all <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
-        </Link>
-      </div>
-      
-      <div className="space-y-4">
-        {upcomingEvents.length > 0 ? (
-          upcomingEvents.map(event => {
-            const { 
-              icon, 
-              bgColor, 
-              textColor, 
-              borderColor, 
-              lightBgColor, 
-              progressColor, 
-              badgeColor,
-              hoverColor
-            } = getEventIcon(event.type);
-            const progress = calculateProgress(event.id);
-            const formatString = event.format.charAt(0).toUpperCase() + event.format.slice(1);
-            const relativeTime = getRelativeTime(event.date);
-            const daysRemaining = getDaysRemaining(event.date);
-            const urgencyLevel = getUrgencyLevel(daysRemaining);
-            
-            return (
-              <Card 
-                key={event.id} 
-                className={cn(
-                  "overflow-hidden border shadow transition-all duration-300",
-                  borderColor,
-                  hoverColor,
-                  "hover:shadow-md hover:-translate-y-1"
-                )}
-              >
-                <div className="flex items-center p-4 border-b border-border/50">
-                  <div className={cn(
-                    "rounded-lg p-2.5 mr-3 text-white shadow-sm", 
-                    "bg-gradient-to-br",
-                    bgColor
-                  )}>
-                    {icon}
-                  </div>
-                  <div className="flex-grow min-w-0">
-                    <h4 className="font-medium text-foreground truncate" id={`event-${event.id}-title`}>
-                      {event.name}
-                    </h4>
-                    <div className="flex flex-wrap items-center mt-1 gap-2">
+    <div className="py-12 bg-background">
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-5">
+          <h3 className="font-semibold text-lg text-foreground flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-primary" />
+            Upcoming Events
+          </h3>
+          <Link 
+            href="/events" 
+            className="text-primary text-sm font-medium flex items-center group px-2 py-1 rounded-md hover:bg-primary/5 transition-colors"
+            aria-label="View all events"
+          >
+            View all <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+        
+        <div className="space-y-4">
+          {upcomingEvents.length > 0 ? (
+            upcomingEvents.map(event => {
+              const { 
+                icon, 
+                bgColor, 
+                textColor, 
+                borderColor, 
+                lightBgColor, 
+                progressColor, 
+                badgeColor,
+                hoverColor
+              } = getEventIcon(event.type);
+              const progress = calculateProgress(event.id);
+              const formatString = event.format.charAt(0).toUpperCase() + event.format.slice(1);
+              const relativeTime = getRelativeTime(event.date);
+              const daysRemaining = getDaysRemaining(event.date);
+              const urgencyLevel = getUrgencyLevel(daysRemaining);
+              
+              return (
+                <Card 
+                  key={event.id} 
+                  className={cn(
+                    "overflow-hidden border shadow transition-all duration-300",
+                    borderColor,
+                    hoverColor,
+                    "hover:shadow-md hover:-translate-y-1"
+                  )}
+                >
+                  <div className="flex items-center p-4 border-b border-border/50">
+                    <div className={cn(
+                      "rounded-lg p-2.5 mr-3 text-white shadow-sm", 
+                      "bg-gradient-to-br",
+                      bgColor
+                    )}>
+                      {icon}
+                    </div>
+                    <div className="flex-grow min-w-0">
+                      <h4 className="font-medium text-foreground truncate" id={`event-${event.id}-title`}>
+                        {event.name}
+                      </h4>
+                      <div className="flex flex-wrap items-center mt-1 gap-2">
+                        <Badge 
+                          variant="secondary" 
+                          className={cn(
+                            "text-xs font-normal",
+                            badgeColor
+                          )}
+                        >
+                          {formatString}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground flex items-center whitespace-nowrap">
+                          <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
+                          {formatEventDate(event.date)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="ml-2 flex-shrink-0">
                       <Badge 
-                        variant="secondary" 
+                        variant="outline" 
                         className={cn(
-                          "text-xs font-normal",
-                          badgeColor
+                          "font-normal whitespace-nowrap",
+                          urgencyLevel === "high" ? "text-red-700 border-red-300 bg-red-50 dark:text-red-300 dark:border-red-800 dark:bg-red-950/50" :
+                          urgencyLevel === "medium" ? "text-amber-700 border-amber-300 bg-amber-50 dark:text-amber-300 dark:border-amber-800 dark:bg-amber-950/50" :
+                          "text-emerald-700 border-emerald-300 bg-emerald-50 dark:text-emerald-300 dark:border-emerald-800 dark:bg-emerald-950/50"
                         )}
                       >
-                        {formatString}
+                        <Clock className="h-3 w-3 mr-1" /> {relativeTime}
                       </Badge>
-                      <span className="text-xs text-muted-foreground flex items-center whitespace-nowrap">
-                        <Calendar className="h-3 w-3 mr-1 flex-shrink-0" />
-                        {formatEventDate(event.date)}
-                      </span>
                     </div>
                   </div>
-                  <div className="ml-2 flex-shrink-0">
-                    <Badge 
-                      variant="outline" 
+                  
+                  <div className={cn("p-4", lightBgColor)}>
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-muted-foreground font-medium flex items-center">
+                        <Check className="h-4 w-4 mr-1.5" /> {progress.completed} of {progress.total} tasks completed
+                      </span>
+                      <span className={cn(
+                        "text-xs font-medium",
+                        textColor
+                      )}>
+                        {Math.round(progress.percentage)}% complete
+                      </span>
+                    </div>
+                    
+                    <Progress 
+                      value={progress.percentage} 
                       className={cn(
-                        "font-normal whitespace-nowrap",
-                        urgencyLevel === "high" ? "text-red-700 border-red-300 bg-red-50 dark:text-red-300 dark:border-red-800 dark:bg-red-950/50" :
-                        urgencyLevel === "medium" ? "text-amber-700 border-amber-300 bg-amber-50 dark:text-amber-300 dark:border-amber-800 dark:bg-amber-950/50" :
-                        "text-emerald-700 border-emerald-300 bg-emerald-50 dark:text-emerald-300 dark:border-emerald-800 dark:bg-emerald-950/50"
+                        "h-1.5 rounded-full bg-muted/50 mb-4",
+                        {
+                          "[&>div]:bg-pink-600": progressColor === "bg-pink-600",
+                          "[&>div]:bg-blue-600": progressColor === "bg-blue-600",
+                          "[&>div]:bg-purple-600": progressColor === "bg-purple-600",
+                          "[&>div]:bg-amber-600": progressColor === "bg-amber-600",
+                          "[&>div]:bg-emerald-600": progressColor === "bg-emerald-600"
+                        }
                       )}
-                    >
-                      <Clock className="h-3 w-3 mr-1" /> {relativeTime}
-                    </Badge>
-                  </div>
-                </div>
-                
-                <div className={cn("p-4", lightBgColor)}>
-                  <div className="flex justify-between items-center text-sm mb-2">
-                    <span className="text-muted-foreground font-medium flex items-center">
-                      <Check className="h-4 w-4 mr-1.5" /> {progress.completed} of {progress.total} tasks completed
-                    </span>
-                    <span className={cn(
-                      "text-xs font-medium",
-                      textColor
-                    )}>
-                      {Math.round(progress.percentage)}% complete
-                    </span>
-                  </div>
-                  
-                  <Progress 
-                    value={progress.percentage} 
-                    className={cn(
-                      "h-1.5 rounded-full bg-muted/50 mb-4",
-                      {
-                        "[&>div]:bg-pink-600": progressColor === "bg-pink-600",
-                        "[&>div]:bg-blue-600": progressColor === "bg-blue-600",
-                        "[&>div]:bg-purple-600": progressColor === "bg-purple-600",
-                        "[&>div]:bg-amber-600": progressColor === "bg-amber-600",
-                        "[&>div]:bg-emerald-600": progressColor === "bg-emerald-600"
-                      }
-                    )}
-                    aria-label={`Event planning progress: ${Math.round(progress.percentage)}% complete`}
-                    aria-describedby={`event-${event.id}-title`}
-                  />
-                  
-                  <div className="flex justify-end">
-                    <Link 
-                      href={`/events/${event.id}`}
-                      aria-label={`View details for ${event.name}`}
-                    >
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className={cn(
-                          "hover:bg-background/80 gap-1",
-                          textColor
-                        )}
+                      aria-label={`Event planning progress: ${Math.round(progress.percentage)}% complete`}
+                      aria-describedby={`event-${event.id}-title`}
+                    />
+                    
+                    <div className="flex justify-end">
+                      <Link 
+                        href={`/events/${event.id}`}
+                        aria-label={`View details for ${event.name}`}
                       >
-                        View details <ArrowUpRight className="h-3.5 w-3.5 ml-0.5" />
-                      </Button>
-                    </Link>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={cn(
+                            "hover:bg-background/80 gap-1",
+                            textColor
+                          )}
+                        >
+                          View details <ArrowUpRight className="h-3.5 w-3.5 ml-0.5" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            );
-          })
-        ) : (
-          <Card className="p-8 text-center border-dashed bg-muted/20 shadow-sm hover:bg-muted/30 transition-colors">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/30 mb-4">
-              <PartyPopper className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h4 className="text-lg font-medium text-foreground mb-2">No upcoming events</h4>
-            <p className="text-muted-foreground mb-6">Get started by creating your first event</p>
-            <Link 
-              href="/events/new"
-              aria-label="Create your first event"
-            >
-              <Button className="gap-2">
+                </Card>
+              );
+            })
+          ) : (
+            <Card className="p-8 text-center border-dashed bg-muted/20 shadow-sm hover:bg-muted/30 transition-colors">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/30 mb-4">
+                <PartyPopper className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h4 className="text-lg font-medium text-foreground mb-2">No upcoming events</h4>
+              <p className="text-muted-foreground mb-6">Get started by creating your first event</p>
+              <Button 
+                onClick={() => setIsNewEventModalOpen(true)}
+                className="gap-2"
+              >
                 <PlusCircle className="h-4 w-4" />
                 Create Event
               </Button>
-            </Link>
-          </Card>
-        )}
+            </Card>
+          )}
+        </div>
       </div>
+      
+      <NewEventModal
+        isOpen={isNewEventModalOpen}
+        onClose={() => setIsNewEventModalOpen(false)}
+      />
     </div>
   );
 };

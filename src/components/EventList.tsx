@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useEvents, Event } from '@/hooks/use-events'
+import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
+import NewEventModal from '@/components/modals/new-event-modal'
 
 // Status badge component
 const StatusBadge = ({ status }: { status: Event['status'] }) => {
@@ -58,6 +61,7 @@ export default function EventList({
   } = useEvents(initialFilter)
 
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false)
 
   // Handle status filter changes
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -128,19 +132,16 @@ export default function EventList({
 
       {/* Events List */}
       {isLoading ? (
-        <div className="py-8 text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-indigo-600"></div>
-          <p className="mt-2 text-gray-600">Loading events...</p>
+        <div className="flex items-center justify-center py-12">
+          <Spinner />
+          <span className="ml-2">Loading events...</span>
         </div>
       ) : events.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm">
-          <p className="text-gray-500">{emptyMessage}</p>
-          <Link
-            href="/events/new"
-            className="mt-4 inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-          >
+        <div className="rounded-lg border border-dashed p-8 text-center">
+          <p className="text-muted-foreground mb-4">{emptyMessage}</p>
+          <Button onClick={() => setIsNewEventModalOpen(true)}>
             Create New Event
-          </Link>
+          </Button>
         </div>
       ) : (
         <ul className="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -231,6 +232,12 @@ export default function EventList({
           </div>
         </div>
       )}
+
+      {/* Add the modal */}
+      <NewEventModal
+        isOpen={isNewEventModalOpen}
+        onClose={() => setIsNewEventModalOpen(false)}
+      />
     </div>
   )
 } 

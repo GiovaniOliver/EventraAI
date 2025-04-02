@@ -11,8 +11,52 @@ type RequestOptions = {
 /**
  * Helper function to handle API responses and errors
  */
-async function handleResponse<T>(response: Response): Promise<T> {
+async function handleResponse<T>(response: Response, url: string, method: string, options: RequestOptions): Promise<T> {
   if (!response.ok) {
+    // Handle 401 Unauthorized errors by attempting to refresh the token
+    if (response.status === 401 && typeof window !== 'undefined') {
+      try {
+        console.log('Received 401 error, attempting to refresh token and retry');
+        
+        // Dynamic import to avoid circular dependencies
+        const { createBrowserSupabaseClient } = await import('./supabase');
+        const supabase = createBrowserSupabaseClient();
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (!refreshError && refreshData.session) {
+          console.log('Token refreshed successfully, retrying request');
+          
+          // Update the Authorization header with the new token
+          const newOptions = {
+            ...options,
+            headers: {
+              ...options.headers,
+              'Authorization': `Bearer ${refreshData.session.access_token}`
+            }
+          };
+          
+          // Retry the request with the new token
+          const retryResponse = await fetch(url, {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+              ...newOptions.headers,
+            },
+            credentials: 'include',
+            body: method !== 'GET' && method !== 'HEAD' && newOptions.body ? 
+              JSON.stringify(newOptions.body) : undefined
+          });
+          
+          if (retryResponse.ok) {
+            // If the retry worked, return the successful response
+            return handleResponse<T>(retryResponse, url, method, newOptions);
+          }
+        }
+      } catch (refreshError) {
+        console.error('Error refreshing token:', refreshError);
+      }
+    }
+    
     const errorData = await response.json().catch(() => ({}))
     const errorMessage = errorData.error || response.statusText || 'Something went wrong'
     throw new Error(errorMessage)
@@ -37,6 +81,22 @@ async function fetchAPI<T>(
 ): Promise<T> {
   const { headers = {}, params = {}, body } = options
   
+  // If no Authorization header is provided, try to get the token
+  if (!headers['Authorization'] && typeof window !== 'undefined') {
+    try {
+      // Dynamic import to avoid circular dependencies
+      const { createBrowserSupabaseClient } = await import('./supabase');
+      const supabase = createBrowserSupabaseClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+    } catch (error) {
+      console.error('Error getting auth token for API request:', error);
+    }
+  }
+  
   // Add search params to URL if provided
   const queryParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
@@ -55,6 +115,7 @@ async function fetchAPI<T>(
       'Content-Type': 'application/json',
       ...headers,
     },
+    credentials: 'include',
   }
   
   if (body && method !== 'GET' && method !== 'HEAD') {
@@ -63,7 +124,7 @@ async function fetchAPI<T>(
   
   try {
     const response = await fetch(urlWithParams, requestOptions)
-    return await handleResponse<T>(response)
+    return await handleResponse<T>(response, urlWithParams, method, options)
   } catch (error) {
     console.error(`API ${method} request failed:`, error)
     throw error

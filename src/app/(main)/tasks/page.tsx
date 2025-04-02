@@ -22,7 +22,8 @@ import {
   Clock, 
   Filter,
   CalendarRange,
-  ClipboardList
+  ClipboardList,
+  CheckSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -41,6 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
+import NewEventModal from '@/components/modals/new-event-modal';
 
 // Task type definition
 interface Task {
@@ -67,6 +69,7 @@ export default function TasksPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [sortBy, setSortBy] = useState<'dueDate' | 'priority'>('dueDate');
   const [searchQuery, setSearchQuery] = useState("");
+  const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false);
   
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -308,7 +311,7 @@ export default function TasksPage() {
           title="No Tasks Yet"
           description="Your task list is empty. Tasks will appear here once you create events or add tasks manually."
           actionLabel="Create Event"
-          actionHref="/events/new"
+          actionOnClick={() => setIsNewEventModalOpen(true)}
           secondaryActionLabel="View Events"
           secondaryActionHref="/events"
           iconClassName="text-[hsl(var(--eventra-blue))]"
@@ -376,7 +379,7 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl py-8">
+    <div className="container mx-auto py-6 space-y-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 text-foreground">
@@ -446,21 +449,15 @@ export default function TasksPage() {
           <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--eventra-blue))]" />
         </div>
       ) : sortedAndFilteredTasks.length === 0 ? (
-        <div className="subtle-gradient-card p-8 text-center">
-          <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-[hsl(var(--eventra-blue))]" />
-          <h3 className="text-lg font-medium mb-2 text-foreground">No tasks found</h3>
-          <p className="text-muted-foreground mb-6">
-            {filter === 'all' 
-              ? "You don't have any tasks yet. Create your first task to get started." 
-              : filter === 'pending' 
-                ? "You don't have any pending tasks."
-                : "You don't have any completed tasks."}
-          </p>
-          <Button onClick={() => router.push('/tasks/new')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Task
-          </Button>
-        </div>
+        <EmptyState
+          title="No tasks found"
+          description="Create an event to get started with tasks."
+          icon={CheckSquare}
+          actionLabel="Create Event"
+          actionOnClick={() => setIsNewEventModalOpen(true)}
+          secondaryActionLabel="View Events"
+          secondaryActionHref="/events"
+        />
       ) : (
         <div className="space-y-4">
           {sortedAndFilteredTasks.map(task => (
@@ -543,6 +540,11 @@ export default function TasksPage() {
           ))}
         </div>
       )}
+      
+      <NewEventModal
+        isOpen={isNewEventModalOpen}
+        onClose={() => setIsNewEventModalOpen(false)}
+      />
     </div>
   );
 } 

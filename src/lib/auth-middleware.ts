@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from './supabase';
+import { createClient } from '@supabase/supabase-js';
 
 export type AuthUser = {
   id: string;
@@ -19,12 +20,41 @@ export function withAuth(
 ) {
   return async (req: NextRequest) => {
     try {
-      const supabase = createServerClient();
+      // Create Supabase client with request cookies
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      
+      // Check for token in Authorization header first
+      const authHeader = req.headers.get('Authorization');
+      let token = null;
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+        console.log('Found Bearer token in Authorization header');
+      }
+      
+      // Create client with the cookie header and/or Authorization token
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+        global: {
+          headers: {
+            cookie: req.headers.get('cookie') || '',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        },
+      });
       
       // Check if user is authenticated
       const { data: { session }, error: authError } = await supabase.auth.getSession();
       
-      if (authError || !session) {
+      if (authError) {
+        console.error('Auth session error:', authError);
+      }
+      
+      if (!session) {
         return NextResponse.json(
           { error: 'Authentication required' },
           { status: 401 }
@@ -72,7 +102,32 @@ export function withAdminAuth(
 ) {
   return async (req: NextRequest) => {
     try {
-      const supabase = createServerClient();
+      // Create Supabase client with request cookies
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      
+      // Check for token in Authorization header first
+      const authHeader = req.headers.get('Authorization');
+      let token = null;
+      
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+        console.log('Found Bearer token in Authorization header');
+      }
+      
+      // Create client with the cookie header and/or Authorization token
+      const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+        global: {
+          headers: {
+            cookie: req.headers.get('cookie') || '',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        },
+      });
       
       // Check if user is authenticated
       const { data: { session }, error: authError } = await supabase.auth.getSession();
@@ -134,7 +189,14 @@ export function withAdminAuth(
  */
 export async function hasEventPermission(eventId: string, userId: string): Promise<boolean> {
   try {
-    const supabase = createServerClient();
+    // Create Supabase client directly
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    
+    // Create a direct client
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false }
+    });
     
     // Check if user is the owner of the event
     const { data: event, error: eventError } = await supabase

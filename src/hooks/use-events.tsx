@@ -81,6 +81,7 @@ export function useEvents(initialFilter?: string) {
             'Content-Type': 'application/json',
             'Cache-Control': 'no-cache' // Ensure we get fresh data
           },
+          credentials: 'include', // Add credentials for authentication
           signal: controller.signal
         });
         
@@ -133,6 +134,7 @@ export function useEvents(initialFilter?: string) {
               'Content-Type': 'application/json',
               'Cache-Control': 'no-cache' // Ensure we get fresh data
             },
+            credentials: 'include', // Add credentials for authentication
             signal: controller.signal
           });
           
@@ -213,6 +215,7 @@ export function useEvents(initialFilter?: string) {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Add credentials for authentication
           body: JSON.stringify(eventData),
           signal: controller.signal
         });
@@ -303,6 +306,7 @@ export function useEvents(initialFilter?: string) {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Add credentials for authentication
           body: JSON.stringify(updateData),
           signal: controller.signal
         });
@@ -390,6 +394,7 @@ export function useEvents(initialFilter?: string) {
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Add credentials for authentication
           signal: controller.signal
         });
         

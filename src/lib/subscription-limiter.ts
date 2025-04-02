@@ -2,7 +2,7 @@ import { createServerClient } from './supabase';
 import { getUserSubscription } from './stripe-service';
 
 // Define subscription limit types
-export type LimitType = 'events' | 'guests' | 'ai' | 'vendors' | 'storage';
+export type LimitType = 'events' | 'guests' | 'ai' | 'vendors' | 'storage' | 'ai_images';
 
 // Custom error for subscription limits
 export class SubscriptionLimitError extends Error {
@@ -24,6 +24,7 @@ interface SubscriptionLimits {
     ai_call_limit: number;
     vendor_limit: number;
     storage_limit: number; // in MB
+    ai_image_limit: number;
 }
 
 // Default limits for different tiers
@@ -33,28 +34,40 @@ const DEFAULT_LIMITS: Record<string, SubscriptionLimits> = {
         guest_limit: 50,
         ai_call_limit: 10,
         vendor_limit: 5,
-        storage_limit: 100
+        storage_limit: 100,
+        ai_image_limit: 2
     },
     starter: {
         event_limit: 10,
         guest_limit: 100,
         ai_call_limit: 50,
         vendor_limit: 10,
-        storage_limit: 500
+        storage_limit: 500,
+        ai_image_limit: 10
     },
     pro: {
         event_limit: 50,
         guest_limit: 500,
         ai_call_limit: 200,
         vendor_limit: 50,
-        storage_limit: 2048
+        storage_limit: 2048,
+        ai_image_limit: 25
     },
     business: {
         event_limit: -1, // unlimited
         guest_limit: -1, // unlimited
         ai_call_limit: 1000,
         vendor_limit: -1, // unlimited
-        storage_limit: 10240
+        storage_limit: 10240,
+        ai_image_limit: 50
+    },
+    enterprise: {
+        event_limit: -1, // unlimited
+        guest_limit: -1, // unlimited
+        ai_call_limit: -1, // unlimited
+        vendor_limit: -1, // unlimited
+        storage_limit: -1, // unlimited
+        ai_image_limit: -1 // unlimited
     }
 };
 
@@ -123,6 +136,15 @@ export async function checkLimit(
             currentUsage = aiCount || 0;
             break;
 
+        case 'ai_images':
+            const { count: aiImageCount } = await supabase
+                .from('ai_image_usage')
+                .select('*', { count: 'exact' })
+                .eq('user_id', userId)
+                .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()); // Last 30 days
+            currentUsage = aiImageCount || 0;
+            break;
+
         case 'vendors':
             const { count: vendorCount } = await supabase
                 .from('event_vendors')
@@ -178,9 +200,31 @@ export async function trackAiUsage(
 }
 
 /**
+ * Track AI image generation usage for a user
+ * @param userId - The user's ID
+ * @param eventId - The event ID
+ * @param visualizationId - The visualization ID
+ * @returns Promise<void>
+ */
+export async function trackAiImageUsage(
+    userId: string,
+    eventId: string,
+    visualizationId: string
+): Promise<void> {
+    const supabase = createServerClient();
+    
+    await supabase.from('ai_image_usage').insert({
+        user_id: userId,
+        event_id: eventId,
+        visualization_id: visualizationId,
+        created_at: new Date().toISOString()
+    });
+}
+
+/**
  * Get current usage statistics for a user
  * @param userId - The user's ID
- * @returns Promise<Record<LimitType, { current: number, limit: number }>>
+ * @returns Promise<Record<LimitType, { current: number; limit: number }>>
  */
 export async function getUserUsage(
     userId: string
@@ -205,12 +249,16 @@ export async function getUserUsage(
         { count: eventCount },
         { count: guestCount },
         { count: aiCount },
+        { count: aiImageCount },
         { count: vendorCount },
         { data: files }
     ] = await Promise.all([
         supabase.from('events').select('*', { count: 'exact' }).eq('owner_id', userId),
         supabase.from('guests').select('*', { count: 'exact' }).eq('user_id', userId),
         supabase.from('ai_usage').select('*', { count: 'exact' })
+            .eq('user_id', userId)
+            .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+        supabase.from('ai_image_usage').select('*', { count: 'exact' })
             .eq('user_id', userId)
             .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
         supabase.from('event_vendors').select('*', { count: 'exact' }).eq('user_id', userId),
@@ -233,6 +281,10 @@ export async function getUserUsage(
         ai: {
             current: aiCount || 0,
             limit: planLimits.ai_call_limit
+        },
+        ai_images: {
+            current: aiImageCount || 0,
+            limit: planLimits.ai_image_limit
         },
         vendors: {
             current: vendorCount || 0,

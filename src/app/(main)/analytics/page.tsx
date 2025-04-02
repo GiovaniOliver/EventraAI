@@ -31,6 +31,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import NewEventModal from '@/components/modals/new-event-modal';
 
 interface EventBasic {
   id: string;
@@ -65,6 +66,8 @@ export default function AnalyticsPage() {
     { value: "90d", label: "Last 90 days" },
     { value: "all", label: "All time" },
   ]);
+
+  const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false);
 
   // Fetch user's events
   const { 
@@ -204,7 +207,7 @@ export default function AnalyticsPage() {
           title="No Events Found"
           description="You don't have any events yet. Create an event to view its analytics."
           actionLabel="Create Event"
-          actionHref="/events/new"
+          actionOnClick={() => setIsNewEventModalOpen(true)}
           secondaryActionLabel="View Events"
           secondaryActionHref="/events"
           iconClassName="text-[hsl(var(--eventra-blue))]"
@@ -485,6 +488,11 @@ export default function AnalyticsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <NewEventModal
+        isOpen={isNewEventModalOpen}
+        onClose={() => setIsNewEventModalOpen(false)}
+      />
     </div>
   );
 }

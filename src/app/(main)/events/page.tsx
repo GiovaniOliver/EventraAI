@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, Calendar, Loader2 } from 'lucide-react'
 import EventList from '@/components/EventList'
 import Link from 'next/link'
+import NewEventModal from '@/components/modals/new-event-modal'
 
 // Define Event interface based on the EventList component expectations
 interface Event {
@@ -31,6 +32,7 @@ export default function EventsPage() {
   
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isNewEventModalOpen, setIsNewEventModalOpen] = useState(false)
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -118,12 +120,13 @@ export default function EventsPage() {
             Create and manage your events
           </p>
         </div>
-        <Link href="/events/new">
-          <Button className="bg-gradient-to-r from-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] hover:opacity-90">
-            <Plus className="mr-2 h-4 w-4" />
-            New Event
-          </Button>
-        </Link>
+        <Button 
+          onClick={() => setIsNewEventModalOpen(true)}
+          className="bg-gradient-to-r from-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] hover:opacity-90"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          New Event
+        </Button>
       </div>
 
       <Tabs defaultValue="all" className="w-full">
@@ -166,6 +169,11 @@ export default function EventsPage() {
           />
         </TabsContent>
       </Tabs>
+
+      <NewEventModal
+        isOpen={isNewEventModalOpen}
+        onClose={() => setIsNewEventModalOpen(false)}
+      />
     </div>
   )
 } 
