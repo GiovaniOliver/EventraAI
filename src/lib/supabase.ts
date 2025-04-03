@@ -105,11 +105,35 @@ export const createBrowserSupabaseClient = () => {
       url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       key: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     });
+    // Return dummy client instead of throwing to prevent app from crashing
+    return createDummyClient();
+  }
+  
+  // Verify Supabase URL is accessible before creating client
+  if (typeof window !== 'undefined') {
+    // Simple ping test to verify Supabase is accessible
+    fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    .then(response => {
+      console.log('[DEBUG] Supabase health check response:', response.status);
+      if (!response.ok) {
+        console.warn('[DEBUG] Supabase instance may not be running or accessible');
+      }
+    })
+    .catch(error => {
+      console.error('[DEBUG] Supabase connectivity test failed:', error);
+      console.warn('[DEBUG] Check if Supabase is running with: npx supabase start');
+    });
   }
   
   try {
     // Create the client with debug info
-    return createBrowserClient(
+    const client = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
@@ -153,6 +177,10 @@ export const createBrowserSupabaseClient = () => {
           headers: {
             'X-Client-Info': 'EventraAI Next.js'
           },
+          // Add custom fetch function with retry for network errors
+          fetch: (url, options) => {
+            return fetchWithRetry(url, options);
+          }
         },
         cookieOptions: {
           name: 'eventra-auth',
@@ -164,9 +192,29 @@ export const createBrowserSupabaseClient = () => {
         }
       }
     );
+    
+    // Set up auth state change listener with fallback mechanism
+    client.auth.onAuthStateChange((event, session) => {
+      console.log('[DEBUG] Auth state change:', event);
+      // If there's a network error during token refresh, provide fallback behavior
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.warn('[DEBUG] Token refresh failed, attempting local recovery');
+        // Clear auth data to force re-login on critical auth failures
+        try {
+          localStorage.removeItem('eventra-auth');
+          console.log('[DEBUG] Cleared cached auth data due to refresh failure');
+        } catch (err) {
+          console.error('[DEBUG] Failed to clear auth data:', err);
+        }
+      }
+    });
+    
+    return client;
   } catch (error) {
     console.error('[DEBUG] Error creating Supabase client:', error);
-    throw error;
+    // Return dummy client instead of throwing to prevent complete app failure
+    console.warn('[DEBUG] Using fallback dummy client - limited functionality available');
+    return createDummyClient();
   }
 };
 

@@ -13,15 +13,68 @@ export interface TaskInput {
 /**
  * Creates a new event with the provided data
  */
-export async function createEvent(eventData: Partial<Event>): Promise<Event> {
+export const createEvent = async (eventData: Partial<Event>): Promise<Event> => {
   try {
-    const response = await api.post<Event>('/api/events', eventData);
-    return response;
+    console.log('[EVENT SERVICE] Creating event with data:', eventData);
+    
+    // Validate essential fields are present
+    if (!eventData.title) {
+      console.error('[EVENT SERVICE] Missing required field: title');
+      throw new Error('Event title is required');
+    }
+    
+    if (!eventData.type) {
+      console.error('[EVENT SERVICE] Missing required field: type');
+      throw new Error('Event type is required');
+    }
+    
+    // Format dates properly if they exist but aren't in ISO format
+    if (eventData.date && !(typeof eventData.date === 'string')) {
+      try {
+        // Convert Date object to ISO string
+        if (eventData.date instanceof Date) {
+          eventData.date = eventData.date.toISOString();
+        }
+      } catch (dateError) {
+        console.error('[EVENT SERVICE] Date conversion error:', dateError);
+      }
+    }
+    
+    // Ensure all dates are in proper format
+    ['start_date', 'end_date'].forEach(dateField => {
+      if (eventData[dateField] && eventData[dateField] instanceof Date) {
+        eventData[dateField] = eventData[dateField].toISOString();
+      }
+    });
+    
+    console.log('[EVENT SERVICE] Sending event data to API:', {
+      title: eventData.title,
+      type: eventData.type,
+      dateFormatted: eventData.date,
+    });
+    
+    // Use the api utility which handles authentication properly
+    const createdEvent = await api.post<Event>('/api/events', eventData);
+    
+    console.log('[EVENT SERVICE] Event created successfully:', createdEvent);
+    return createdEvent;
   } catch (error) {
-    console.error("Error creating event:", error);
-    throw new Error("Failed to create event");
+    console.error('[EVENT SERVICE] Error creating event:', error);
+    
+    // Provide more helpful error messages
+    if (error instanceof Error) {
+      if (error.message.includes('401') || error.message.includes('auth')) {
+        console.error('[EVENT SERVICE] Authentication error - user may not be logged in');
+        throw new Error('Authentication failed. Please make sure you are logged in and try again.');
+      } else if (error.message.includes('422')) {
+        console.error('[EVENT SERVICE] Validation error - check event data format');
+        throw new Error('Event data validation failed. Please check all required fields.');
+      }
+    }
+    
+    throw error;
   }
-}
+};
 
 /**
  * Updates an existing event with the provided data

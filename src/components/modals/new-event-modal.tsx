@@ -256,11 +256,16 @@ export default function NewEventModal({ isOpen, onClose }: NewEventModalProps) {
         throw new Error("Failed to create event");
       }
 
+      const createdEvent = await response.json();
+      
       toast({
         title: "Event created successfully",
         description: "Your new event has been created.",
       });
 
+      // Navigate to the event detail page
+      router.push(`/events/${createdEvent.id}`);
+      
       reset();
       onClose();
     } catch (error) {

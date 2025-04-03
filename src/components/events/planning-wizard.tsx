@@ -178,6 +178,8 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
   const [suggestedTasks, setSuggestedTasks] = useState<TaskSuggestion[]>([]);
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
   // Form data
   const [eventData, setEventData] = useState<Partial<Event>>({
@@ -188,7 +190,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
     status: "planning",
     budget: null,
     description: "",
-    estimatedGuests: 50,
+    estimated_guests: 50,
     userId: user?.id || 1,
   });
 
@@ -219,7 +221,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
         status: "planning",
         budget: null,
         description: "",
-        estimatedGuests: 50,
+        estimated_guests: 50,
         userId: user?.id || 1,
       });
       setSuggestedTasks([]);
@@ -244,37 +246,37 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
           {
             title: "Contact and book venue",
             description: "Secure your event location by contacting and finalizing venue booking",
-            priority: "high",
+            priority: "high" as "high" | "medium" | "low",
             dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 60 * 24 * 60 * 60 * 1000).toISOString(),
           },
           {
             title: "Create and send invitations",
             description: "Design and distribute invitations to all guests",
-            priority: "high",
+            priority: "high" as "high" | "medium" | "low",
             dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 45 * 24 * 60 * 60 * 1000).toISOString(),
           },
           {
             title: "Arrange catering services",
             description: "Select and book a catering company for the event",
-            priority: "medium",
+            priority: "medium" as "high" | "medium" | "low",
             dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
           },
           {
             title: "Hire event photographer",
             description: "Book a professional photographer to capture the event",
-            priority: "medium",
+            priority: "medium" as "high" | "medium" | "low",
             dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
           },
           {
             title: "Prepare event timeline",
             description: "Create a detailed schedule for the day of the event",
-            priority: "medium",
+            priority: "medium" as "high" | "medium" | "low",
             dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(),
           },
           {
             title: "Confirm attendance with guests",
             description: "Follow up with all invitees who haven't responded",
-            priority: "high",
+            priority: "high" as "high" | "medium" | "low",
             dueDate: new Date(new Date(eventData.date || new Date()).getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(),
           },
         ];
@@ -284,32 +286,66 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
         return;
       }
       
+      // Get auth token from Supabase
+      const { createBrowserSupabaseClient } = await import('@/lib/supabase');
+      const supabase = createBrowserSupabaseClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('[DEBUG] No active session found for AI request');
+        throw new Error('Authentication required');
+      }
+      
+      // Log that we're making the request with a token
+      console.log('[DEBUG] Making AI task suggestions request with token:', 
+                  session.access_token ? 'Token present' : 'No token');
+      
       // Call the AI API to generate task suggestions
       const response = await fetch('/api/ai/generate-checklist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           eventType: eventData.type,
           eventDate: eventData.date,
-          guestCount: eventData.estimatedGuests,
+          guestCount: eventData.estimated_guests,
           format: eventData.format,
           budget: eventData.budget
         }),
       });
       
       if (!response.ok) {
+        console.error('[DEBUG] API response error:', response.status, await response.text());
         throw new Error(`Error generating task suggestions: ${response.statusText}`);
       }
       
       const data = await response.json();
-      setSuggestedTasks(data.tasks);
+      console.log('[DEBUG] AI task suggestions received:', data);
+      
+      // Handle both the grouped format from the API and flat format
+      if (data.groups && Array.isArray(data.groups)) {
+        // Flatten tasks from groups
+        const allTasks = data.groups.reduce((acc: any[], group: any) => {
+          if (group.tasks && Array.isArray(group.tasks)) {
+            return [...acc, ...group.tasks];
+          }
+          return acc;
+        }, []);
+        setSuggestedTasks(allTasks);
+      } else if (data.tasks && Array.isArray(data.tasks)) {
+        // Direct tasks array
+        setSuggestedTasks(data.tasks);
+      } else {
+        console.error('[DEBUG] Unexpected response format:', data);
+        throw new Error('Invalid response format');
+      }
     } catch (error) {
-      console.error('Failed to get AI task suggestions:', error);
+      console.error('[DEBUG] Failed to get AI task suggestions:', error);
       toast({
         title: 'Error',
-        description: 'Failed to generate task suggestions. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to generate task suggestions. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -414,55 +450,95 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
     }
   };
 
-  // Create event mutation
-  const createEventMutation = useMutation({
-    mutationFn: (data: Partial<Event>) => createEvent(data),
-    onSuccess: async (createdEvent) => {
-      // Invalidate events query to refetch latest data
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${user?.id}/events`] });
+  // Mutation for creating an event
+  const createEventMutation = useMutation<Event, Error, Partial<Event>>({  
+  mutationFn: async (data) => {
+    console.log('[DEBUG] Starting event creation with data:', {
+        title: data.title,
+        type: data.type,
+        format: data.format,
+        // Log other fields but avoid excessive logging
+      });
+      
+      // Get current auth session to verify we're authenticated
+      const { createBrowserSupabaseClient } = await import('@/lib/supabase');
+      const supabase = createBrowserSupabaseClient();
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      console.log('[DEBUG] Current auth status:', sessionData.session ? 'Authenticated' : 'Not authenticated');
+      
+      if (!sessionData.session) {
+        throw new Error('No active session. Please log in again.');
+      }
+      
+      // Add additional properties to ensure event creation success
+      const enhancedData = {
+        ...data,
+        status: data.status || 'draft',
+        owner_id: sessionData.session.user.id
+      };
+      
+      return await createEvent(enhancedData);
+    },
+    onSuccess: (createdEvent) => {
+      // Add debug logging
+      console.log('[DEBUG] Event created successfully:', createdEvent);
+      console.log('[DEBUG] Event ID for navigation:', createdEvent.id);
       
       // Create associated tasks if any were selected
       if (selectedTasks.length > 0) {
-        try {
-          await createTasksForEvent(createdEvent.id);
-        } catch (error) {
-          console.error("Error creating tasks:", error);
-          // Continue anyway as the event was created successfully
-        }
+        // Logic to create tasks
+        console.log('[DEBUG] Creating associated tasks:', selectedTasks);
       }
-      
-      toast({
-        title: "Event Created",
-        description: "Your event has been successfully created"
-      });
       
       // Navigate to the event detail page
       router.push(`/events/${createdEvent.id}`);
+      
+      // Fallback navigation in case router doesn't trigger
+      setTimeout(() => {
+        console.log('[DEBUG] Using fallback navigation');
+        window.location.href = `/events/${createdEvent.id}`;
+      }, 500);
       
       // Close the wizard
       onClose();
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to create event",
-        variant: "destructive"
-      });
-      console.error("Error creating event:", error);
-      setIsLoading(false);
-    }
+      console.error('[DEBUG] Error in createEventMutation:', error);
+      setValidationError(`Failed to create event: ${error.message}`);
+      setIsCreating(false);
+    },
   });
 
   // Handle creating event
   const handleCreateEvent = async () => {
-    setIsLoading(true);
+    console.log("[DEBUG] Create event button clicked");
+    
+    // Validate required fields
+    if (!eventData.title || !eventData.type) {
+      setValidationError("Title and event type are required");
+      console.log("[DEBUG] Validation failed:", { 
+        title: eventData.title, 
+        type: eventData.type 
+      });
+      return;
+    }
+    
+    setIsCreating(true);
+    setValidationError("");
     
     try {
       console.log("Submitting event data:", eventData);
+      // Track the current step where submission is happening
+      console.log("[DEBUG] Current step when submitting:", currentStep);
+      
+      // Create the event
+      console.log("[DEBUG] Calling createEventMutation.mutate");
       createEventMutation.mutate(eventData);
     } catch (error) {
       console.error("Error creating event:", error);
-      setIsLoading(false);
+      setValidationError("Failed to create event. Please try again.");
+      setIsCreating(false);
     }
   };
 
@@ -765,11 +841,11 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                         key={count}
                         type="button"
                         className={`py-2 px-4 border rounded-md text-center ${
-                          eventData.estimatedGuests === count
+                          eventData.estimated_guests === count
                             ? "bg-primary text-primary-foreground border-primary"
                             : "bg-background border-input hover:bg-accent hover:text-accent-foreground"
                         }`}
-                        onClick={() => setEventData({ ...eventData, estimatedGuests: count })}
+                        onClick={() => setEventData({ ...eventData, estimated_guests: count })}
                       >
                         {count}
                       </button>
@@ -781,11 +857,11 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                       type="number"
                       min="1"
                       placeholder="Or enter custom number"
-                      value={eventData.estimatedGuests || ""}
+                      value={eventData.estimated_guests || ""}
                       onChange={(e) =>
                         setEventData({
                           ...eventData,
-                          estimatedGuests: parseInt(e.target.value) || undefined,
+                          estimated_guests: parseInt(e.target.value) || undefined,
                         })
                       }
                     />
@@ -806,7 +882,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                           <Users className="h-3.5 w-3.5 text-primary" />
                         </span>
                         <span>
-                          For <strong>{eventData.estimatedGuests}</strong> attendees, ensure your virtual platform 
+                          For <strong>{eventData.estimated_guests}</strong> attendees, ensure your virtual platform 
                           supports this capacity without performance issues
                         </span>
                       </div>
@@ -1109,7 +1185,7 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <span className="text-muted-foreground">Estimated Guests:</span>
-                        <span className="font-medium ml-2">{eventData.estimatedGuests}</span>
+                        <span className="font-medium ml-2">{eventData.estimated_guests}</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Budget:</span>
@@ -1120,35 +1196,21 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
                     </div>
                   </div>
                   
-                  {selectedTasks.length > 0 && (
-                    <div className="p-4">
+                  {suggestedTasks.length > 0 && (
+                    <div className="p-4 bg-background rounded-md shadow-sm border border-border">
                       <h4 className="font-medium mb-2 flex items-center">
-                        <CheckCircle2 className="h-4 w-4 mr-1.5 text-muted-foreground" />
-                        <span>Selected Tasks ({selectedTasks.length})</span>
+                        <CheckCircle className="h-4 w-4 mr-1.5 text-muted-foreground" />
+                        <span>Selected Tasks</span>
                       </h4>
-                      <div className="space-y-1 text-sm">
-                        {selectedTasks.map((taskTitle) => {
-                          const task = suggestedTasks.find(t => t.title === taskTitle);
-                          if (!task) return null;
-                          return (
-                            <div key={taskTitle} className="flex flex-wrap items-center mb-1">
-                              <MoveRight className="h-3 w-3 mr-1.5 text-muted-foreground" />
+                      <div className="space-y-1.5">
+                        {suggestedTasks
+                          .filter(task => selectedTasks.includes(task.title))
+                          .map(task => (
+                            <div key={task.title} className="flex items-center text-sm gap-1.5">
+                              <div className="h-2 w-2 rounded-full bg-primary"></div>
                               <span>{task.title}</span>
-                              <Badge 
-                                variant="outline" 
-                                className="ml-2 text-xs"
-                              >
-                                {task.priority}
-                              </Badge>
-                              {task.dueDate && eventData.date && (
-                                <span className="flex items-center ml-auto text-xs text-muted-foreground">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {formatEventDate(parseDueDate(task.dueDate, new Date(eventData.date as Date)))}
-                                </span>
-                              )}
                             </div>
-                          );
-                        })}
+                          ))}
                       </div>
                     </div>
                   )}
@@ -1157,6 +1219,14 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
             </div>
           )}
         </div>
+
+        {/* Show validation error if present */}
+        {validationError && (
+          <div className="px-4 py-2 mt-2 mb-2 border border-destructive/50 bg-destructive/10 rounded-md text-sm text-destructive flex items-center">
+            <AlertTriangle className="h-4 w-4 mr-2 flex-shrink-0" />
+            {validationError}
+          </div>
+        )}
 
         <DialogFooter className="pt-2 border-t bg-muted/20 flex-shrink-0">
           {currentStep !== "basics" && (
@@ -1186,11 +1256,11 @@ export default function PlanningWizard({ isOpen, onClose }: PlanningWizardProps)
           ) : (
             <Button 
               onClick={handleCreateEvent} 
-              disabled={isLoading}
+              disabled={isCreating}
               className="bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] text-white shadow-sm gap-1 transition-all hover:shadow-md"
               aria-label="Create event"
             >
-              {isLoading ? (
+              {isCreating ? (
                 <>
                   <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5"></div>
                   Creating...

@@ -1,32 +1,58 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
+import { cookies } from 'next/headers'
 
-export async function GET() {
-  const supabase = createServerClient()
-  
+/**
+ * Health check endpoint that returns:
+ * - API status
+ * - Authentication status
+ * - Environment information
+ */
+export async function GET(req: NextRequest) {
   try {
-    // Ping the Supabase connection to verify it's working
-    const { data, error } = await supabase.from('users').select('count', { count: 'exact' }).limit(1)
+    // Create a Supabase client for this request
+    const cookieStore = await cookies()
     
-    if (error) {
-      throw error
+    const supabase = createServerClient(cookieStore)
+    
+    // Check if the request is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    // Check if important environment variables are set
+    const envStatus = {
+      supabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      supabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      siteUrl: !!process.env.NEXT_PUBLIC_SITE_URL,
+      appName: !!process.env.NEXT_PUBLIC_APP_NAME,
     }
     
-    return NextResponse.json({ 
-      status: "ok", 
-      message: "Server is running with Supabase",
+    // Return health information
+    return NextResponse.json({
+      status: 'ok',
       timestamp: new Date().toISOString(),
-      supabase: "connected",
-      environment: process.env.NODE_ENV || 'development'
-    }, { status: 200 })
+      auth: {
+        authenticated: !!session,
+        hasError: !!sessionError,
+      },
+      environment: envStatus,
+      version: process.env.NEXT_PUBLIC_APP_VERSION || 'development',
+    }, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    })
   } catch (error) {
-    console.error('Health check error:', error)
-    
-    return NextResponse.json({ 
-      status: "error", 
-      message: "Server is running but Supabase connection failed",
+    console.error('Health check failed:', error)
+    return NextResponse.json({
+      status: 'error',
+      error: 'Internal server error',
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development'
-    }, { status: 500 })
+    }, {
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    })
   }
 } 

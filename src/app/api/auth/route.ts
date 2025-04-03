@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase'
 
+/**
+ * Supabase Auth API Routes
+ * 
+ * These routes handle Supabase authentication operations including:
+ * - Sign in with email/password
+ * - User registration  
+ * - Sign out
+ * - Session management
+ * - User profile retrieval
+ * 
+ * All authentication is handled through Supabase Auth.
+ */
+
 // Helper function to get the path from the request
 function getPathFromRequest(request: NextRequest): string {
   const url = new URL(request.url)
-  return url.pathname.replace('/api/auth/', '')
+  const path = url.pathname.replace('/api/auth/', '')
+  return path;
 }
 
 // POST handler for all auth routes

@@ -38,8 +38,7 @@ async function handleResponse<T>(response: Response, url: string, method: string
         }
         
         console.log('[AUTH] Attempting to refresh token');
-        // Supabase handles token refresh automatically when calling getSession
-        const { data: refreshData, error: refreshError } = await supabase.auth.getSession();
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
         
         if (!refreshError && refreshData.session) {
           console.log('[AUTH] Token refreshed successfully, retrying request');
@@ -191,8 +190,7 @@ async function fetchAPI<T>(
       try {
         const { createBrowserSupabaseClient } = await import('./supabase');
         const supabase = createBrowserSupabaseClient();
-        // Use getSession instead of refreshSession - Supabase refreshes automatically
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.refreshSession();
         
         if (!error && data.session?.access_token) {
           console.log('[DEBUG] Successfully refreshed token for request');

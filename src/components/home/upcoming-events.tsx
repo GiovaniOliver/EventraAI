@@ -438,18 +438,38 @@ const UpcomingEvents = () => {
               );
             })
           ) : (
-            <Card className="p-8 text-center border-dashed bg-muted/20 shadow-sm hover:bg-muted/30 transition-colors">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted/30 mb-4">
-                <PartyPopper className="h-8 w-8 text-muted-foreground" />
+            <Card className="p-8 text-center border-dashed shadow-sm transition-all duration-300 overflow-hidden relative"
+              style={{
+                background: "linear-gradient(135deg, rgba(var(--eventra-teal-rgb), 0.05), rgba(var(--eventra-blue-rgb), 0.07), rgba(var(--eventra-purple-rgb), 0.05))",
+                border: "1px solid rgba(var(--eventra-blue-rgb), 0.1)"
+              }}
+            >
+              {/* Decorative Elements */}
+              <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                <div className="absolute top-5 right-5 w-24 h-24 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 blur-xl"></div>
+                <div className="absolute bottom-5 left-5 w-20 h-20 rounded-full bg-gradient-to-r from-blue-500/10 to-teal-500/10 blur-xl"></div>
               </div>
-              <h4 className="text-lg font-medium text-foreground mb-2">No upcoming events</h4>
-              <p className="text-muted-foreground mb-6">Get started by creating your first event</p>
+              
+              {/* Icon Container */}
+              <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full mb-5 bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] p-[2px]">
+                <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                  <CalendarDays className="h-8 w-8 text-[hsl(var(--eventra-blue))]" />
+                </div>
+              </div>
+              
+              {/* Content */}
+              <h4 className="text-xl font-semibold text-foreground mb-2">No Upcoming Events</h4>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                You don't have any upcoming events planned. Get started by creating your first event to track tasks, invitations, and more.
+              </p>
+              
+              {/* Action Button */}
               <Button 
                 onClick={() => setIsNewEventModalOpen(true)}
-                className="gap-2"
+                className="bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] text-white shadow-md hover:shadow-lg transition-all duration-300 gap-2"
               >
                 <PlusCircle className="h-4 w-4" />
-                Create Event
+                Create Your First Event
               </Button>
             </Card>
           )}

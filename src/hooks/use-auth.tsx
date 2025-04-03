@@ -4,24 +4,30 @@ import { useContext } from "react";
 import { useRouter } from 'next/navigation';
 import { AuthContext } from "@/app/providers";
 import { createBrowserSupabaseClient } from '@/lib/supabase';
+import { User } from '@/lib/supabase'; // Import the User type from supabase
+import { AuthError } from '@supabase/supabase-js'; // Import AuthError type
 
 // Import toast directly without the hook to avoid circular dependencies
 import { toast } from "./use-toast";
 
-// Initialize Supabase client - use the one from lib/supabase.ts to ensure consistent configuration
+/**
+ * Supabase Authentication Hook
+ * 
+ * This is the primary authentication hook for the application.
+ * It provides a unified interface to handle all authentication operations
+ * using Supabase Auth, including login, logout, registration, and session management.
+ */
+
+// Initialize Supabase client
 const supabase = createBrowserSupabaseClient();
 
-export type User = {
-  id: string;
-  username: string;
-  email: string;
-  display_name: string;
-  is_admin: boolean;
-  subscription_tier: string;
-  subscription_status: string;
-  created_at: string;
-  displayName?: string; // Getter property
-};
+/**
+ * Supabase Authentication Hook
+ * 
+ * This is the primary authentication hook for the application.
+ * It provides a unified interface to handle all authentication operations
+ * using Supabase Auth, including login, logout, registration, and session management.
+ */
 
 // Define the return type of useAuth hook
 export interface UseAuthReturn {
@@ -32,10 +38,28 @@ export interface UseAuthReturn {
   register: (email: string, password: string, username: string, displayName: string) => Promise<any>;
   isLoading: boolean;
   error: Error | null;
+  
+  // Additional methods from the simple useAuth implementation
+  resetPassword: (email: string) => Promise<any>;
+  updatePassword: (newPassword: string) => Promise<any>;
+  getSession: () => Promise<any>;
+  getUser: () => Promise<any>;
 }
 
+// Define the AuthContext type to match the context in providers.tsx
+interface AuthContextType {
+  isLoading: boolean;
+  user: User | null;
+  error: Error | null;
+  refresh: () => Promise<void>;
+}
+
+/**
+ * Primary authentication hook that provides auth state and methods
+ * to interact with Supabase Auth.
+ */
 export function useAuth(): UseAuthReturn {
-  const context = useContext(AuthContext);
+  const context = useContext(AuthContext) as AuthContextType;
   const router = useRouter();
 
   if (!context) {
@@ -63,18 +87,8 @@ export function useAuth(): UseAuthReturn {
   const login = async (email: string, password: string) => {
     try {
       console.log('[DEBUG] Starting login attempt with email:', email); 
-      console.log('[DEBUG] Supabase client status:', supabase ? 'initialized' : 'not initialized');
-      console.log('[DEBUG] Environment check:', {
-        NODE_ENV: process.env.NODE_ENV,
-        SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 10) + '...' // Show only beginning for security
-      });
       
-      // Check if we're in a browser environment
-      if (typeof window !== 'undefined') {
-        console.log('[DEBUG] Running in browser environment');
-      }
-      
-      // Log current Supabase session status
+      // Check current Supabase session status
       const sessionCheck = await supabase.auth.getSession();
       console.log('[DEBUG] Current session status before login:', 
         sessionCheck.data.session ? 'Has existing session' : 'No existing session');
@@ -96,24 +110,8 @@ export function useAuth(): UseAuthReturn {
         console.error('[DEBUG] Supabase auth error:', {
           name: error.name,
           message: error.message,
-          status: error.status
+          ...(error as AuthError).status ? { status: (error as AuthError).status } : {}
         });
-        
-        // Log specific error handling for AuthApiError
-        if (error.name === 'AuthApiError') {
-          console.error('[DEBUG] AuthApiError details:', {
-            status: error.status,
-            message: error.message
-          });
-          
-          // Check if it's an invalid credentials error
-          if (error.message === 'Invalid login credentials') {
-            console.log('[DEBUG] Invalid credentials detected - checking user existence');
-            
-            // Log that we can't check user existence due to Supabase limitations
-            console.log('[DEBUG] Cannot verify if user exists - Supabase client-side restrictions');
-          }
-        }
         
         throw error;
       }
@@ -121,7 +119,6 @@ export function useAuth(): UseAuthReturn {
       console.log('[DEBUG] Login successful, user:', data.user?.id);
       
       // Create a basic user profile in case the database query fails
-      // This allows the app to continue working even if the users table has issues
       const tempUserProfile = {
         id: data.user?.id || 'unknown',
         username: data.user?.email?.split('@')[0] || 'user',
@@ -174,14 +171,21 @@ export function useAuth(): UseAuthReturn {
           
         if (!profileError && profile) {
           userProfile = profile;
-          console.log('[DEBUG] Admin check - found user profile:', userProfile.email, 'is_admin:', userProfile.is_admin);
+          // Safe access with type checking
+          if (userProfile && typeof userProfile === 'object' && 'email' in userProfile && 'is_admin' in userProfile) {
+            console.log('[DEBUG] Admin check - found user profile:', userProfile.email, 'is_admin:', userProfile.is_admin);
+          }
         }
       } catch (e) {
         console.error('[DEBUG] Failed to get user profile for admin check:', e);
       }
       
       // Use profile data for admin check, or fall back to context
-      const isAdmin = userProfile?.is_admin || context.user?.is_admin || false;
+      const isAdmin = 
+        (userProfile && typeof userProfile === 'object' && 'is_admin' in userProfile && userProfile.is_admin) || 
+        (context.user && context.user.is_admin) || 
+        false;
+
       console.log('[DEBUG] Final admin status determination:', isAdmin);
       
       let redirectTo = '/dashboard'; // Default redirect
@@ -267,7 +271,8 @@ export function useAuth(): UseAuthReturn {
       console.log('[DEBUG] Attempting to register:', { email, username }); // Only log non-sensitive data
       
       // Attempt to register with Supabase
-      const { data, error } = await supabase.auth.signUp({ 
+      // Type assertion to ensure TypeScript knows these methods exist
+      const { data, error } = await (supabase.auth as any).signUp({ 
         email, 
         password,
         options: {
@@ -296,8 +301,9 @@ export function useAuth(): UseAuthReturn {
         if (profileError || !profile) {
           console.log('[DEBUG] Creating user profile manually');
           
-          const { error: insertError } = await supabase
-            .from('users')
+          // Type assertion for insert method
+          const { error: insertError } = await (supabase
+            .from('users') as any)
             .insert({
               id: data.user?.id,
               email: email,
@@ -353,12 +359,96 @@ export function useAuth(): UseAuthReturn {
     }
   };
 
+  // Additional methods from the simple useAuth implementation
+  const resetPassword = async (email: string) => {
+    try {
+      // Type assertion to ensure TypeScript knows these methods exist
+      const { data, error } = await (supabase.auth as any).resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password reset email sent",
+        description: "Please check your email for password reset instructions",
+      });
+      
+      return data;
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      
+      toast({
+        title: "Password reset failed",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+      
+      throw error;
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      // Type assertion to ensure TypeScript knows these methods exist
+      const { data, error } = await (supabase.auth as any).updateUser({
+        password: newPassword,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password updated",
+        description: "Your password has been successfully updated",
+      });
+      
+      return data;
+    } catch (error) {
+      console.error("Error updating password:", error);
+      
+      toast({
+        title: "Password update failed",
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+      
+      throw error;
+    }
+  };
+
+  const getSession = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      return session;
+    } catch (error) {
+      console.error("Error getting session:", error);
+      return null;
+    }
+  };
+
+  const getUser = async () => {
+    try {
+      // Type assertion to ensure TypeScript knows these methods exist
+      const { data: { user }, error } = await (supabase.auth as any).getUser();
+      if (error) throw error;
+      return user;
+    } catch (error) {
+      console.error("Error getting user:", error);
+      return null;
+    }
+  };
+
   return {
     user,
     refreshAuth,
     login,
     logout,
     register,
+    resetPassword,
+    updatePassword,
+    getSession,
+    getUser,
     isLoading: context.isLoading,
     error: context.error,
   };

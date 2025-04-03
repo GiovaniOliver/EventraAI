@@ -41,8 +41,37 @@ const publicPaths = [
   '/favicon.ico'
 ]
 
+// Supabase auth endpoints that should be allowed without auth
+const supabaseAuthPaths = ['/auth/v1/', '/rest/v1/'];
+
 export async function middleware(request: NextRequest) {
-  console.log('Middleware request path:', request.nextUrl.pathname)
+  console.log('Middleware request path:', request.nextUrl.pathname);
+  
+  // Check if this is a request to the Supabase authentication endpoints
+  const isSupabaseAuthRequest = supabaseAuthPaths.some(path => 
+    request.nextUrl.pathname.includes(path)
+  );
+  
+  // For Supabase auth requests, add CORS headers and bypass auth checks
+  if (isSupabaseAuthRequest) {
+    console.log('Supabase auth request detected, adding CORS headers');
+    const response = NextResponse.next();
+    
+    // Add CORS headers for Supabase requests
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Client-Info');
+    
+    // Handle preflight OPTIONS requests
+    if (request.method === 'OPTIONS') {
+      return new NextResponse(null, {
+        status: 204,
+        headers: response.headers,
+      });
+    }
+    
+    return response;
+  }
 
   // Check if the path is public
   const isPublicPath = publicPaths.some(path => 
@@ -91,16 +120,22 @@ export async function middleware(request: NextRequest) {
   )
 
   // Check session
-  const { data: { session } } = await supabase.auth.getSession()
-  console.log('Session check result:', session ? 'Authenticated' : 'Not authenticated')
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    console.log('Session check result:', session ? 'Authenticated' : 'Not authenticated')
 
-  // If no session and not a public path, redirect to login
-  if (!session && !isPublicPath) {
-    console.log('Redirecting unauthenticated user to login')
-    const redirectUrl = new URL('/login', request.url)
-    redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
-    
-    return NextResponse.redirect(redirectUrl)
+    // If no session and not a public path, redirect to login
+    if (!session && !isPublicPath) {
+      console.log('Redirecting unauthenticated user to login')
+      const redirectUrl = new URL('/login', request.url)
+      redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
+      
+      return NextResponse.redirect(redirectUrl)
+    }
+  } catch (error) {
+    console.error('Error checking session:', error);
+    // On error, allow the request to proceed rather than breaking the site
+    // This makes the site more resilient to auth service disruptions
   }
 
   return response

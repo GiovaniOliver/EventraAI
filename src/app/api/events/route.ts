@@ -132,12 +132,16 @@ export const GET = withAuth(async (request: NextRequest, user: AuthUser) => {
 export const POST = withAuth(async (request: NextRequest, user: AuthUser) => {
   const supabase = createServerClient();
   
+  console.log('[API] POST /api/events - Creating new event', { userId: user.id });
+  
   try {
     const requestData = await request.json();
+    console.log('[API] Event data received:', requestData);
     
     // Validate the input data
     const validationResult = eventSchema.safeParse(requestData);
     if (!validationResult.success) {
+      console.log('[API] Validation failed:', validationResult.error.format());
       return NextResponse.json(
         { error: 'Validation error', details: validationResult.error.format() },
         { status: 422 }
@@ -202,16 +206,17 @@ export const POST = withAuth(async (request: NextRequest, user: AuthUser) => {
       .single();
     
     if (error) {
-      console.error('Error creating event:', error);
+      console.error('[API] Error creating event:', error);
       return NextResponse.json(
         { error: error.message },
         { status: 500 }
       );
     }
     
+    console.log('[API] Event created successfully:', data);
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error in events API:', error);
+    console.error('[API] Error in events API:', error);
     return NextResponse.json(
       { error: 'Failed to create event' },
       { status: 500 }

@@ -21,7 +21,8 @@ import {
   Star,
   Calendar,
   BellRing,
-  Coffee
+  Coffee,
+  Plus
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -130,11 +131,37 @@ export default function Dashboard() {
   
   // Get user's first name
   useEffect(() => {
-    if (user && user.displayName) {
-      const names = user.displayName.split(' ')
-      setFirstName(names[0])
+    if (user) {
+      try {
+        // Try to get display name from user object
+        let displayName = '';
+        
+        if (user.displayName) {
+          displayName = user.displayName;
+        } else if (user.user_metadata?.full_name) {
+          displayName = user.user_metadata.full_name;
+        } else if (user.user_metadata?.name) {
+          displayName = user.user_metadata.name;
+        } else if (user.display_name) {
+          displayName = user.display_name;
+        } else if (user.email) {
+          // As a fallback, use the part of email before @
+          displayName = user.email.split('@')[0];
+        } else {
+          displayName = 'there';
+        }
+        
+        // Extract first name
+        const names = displayName.split(' ');
+        setFirstName(names[0]);
+        
+        console.log('[DEBUG] User profile loaded, display name:', displayName);
+      } catch (error) {
+        console.error('[DEBUG] Error extracting user name:', error);
+        setFirstName('there');
+      }
     }
-  }, [user])
+  }, [user]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -150,67 +177,92 @@ export default function Dashboard() {
       try {
         // Only proceed if user is authenticated
         if (!user) {
-          console.log('User not authenticated, deferring events fetch');
+          console.log('[DEBUG] User not authenticated, deferring events fetch');
           return [];
         }
 
-        console.log('Fetching events for user:', user.id);
+        console.log('[DEBUG] Fetching events for user:', user.id);
         
-        // Get the current session to include auth token
-        const supabase = createBrowserSupabaseClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          console.error('No active session found, cannot fetch events');
-          return [];
-        }
-        
-        const response = await fetch('/api/events?status=upcoming&limit=3', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          },
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          // Get detailed error message
-          let errorText = '';
-          try {
-            const errorData = await response.json();
-            errorText = JSON.stringify(errorData);
-          } catch (e) {
-            errorText = await response.text();
+        try {
+          // Get the current session to include auth token
+          const supabase = createBrowserSupabaseClient();
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionError) {
+            console.error('[DEBUG] Session retrieval error:', sessionError);
+            throw new Error('Failed to retrieve session');
           }
           
-          console.error('API response error:', response.status, errorText);
+          if (!session) {
+            console.error('[DEBUG] No active session found, cannot fetch events');
+            throw new Error('No active session');
+          }
           
-          if (response.status === 401) {
-            // Handle auth error by refreshing user session
-            console.log('Auth error detected, attempting to refresh session');
-            
+          // Add authorization headers consistently with other API requests
+          const accessToken = session.access_token;
+          console.log('[DEBUG] Fetching events with token:', accessToken ? 'Token present' : 'No token');
+          
+          const response = await fetch('/api/events?status=upcoming&limit=3', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`
+            },
+            credentials: 'include'
+          });
+          
+          // Log detailed response information
+          console.log('[DEBUG] Events API response status:', response.status);
+          
+          if (!response.ok) {
+            // Get detailed error message
+            let errorText = '';
             try {
-              // Refresh the auth session
-              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+              const errorData = await response.json();
+              errorText = typeof errorData === 'object' ? JSON.stringify(errorData) : String(errorData);
+            } catch (e) {
+              errorText = await response.text();
+            }
+            
+            console.error('[DEBUG] API response error:', response.status, errorText);
+            
+            if (response.status === 401) {
+              // Try to refresh the session
+              console.log('[DEBUG] Auth error detected, attempting to refresh session');
               
-              if (!refreshError && refreshData.session) {
-                console.log('Session refreshed successfully, retrying request');
+              try {
+                // Get the current session again
+                const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
                 
-                // Retry the request with the new token
-                const retryResponse = await fetch('/api/events?status=upcoming&limit=3', {
-                  method: 'GET',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${refreshData.session.access_token}`
-                  },
-                  credentials: 'include'
-                });
+                if (sessionError) {
+                  console.error('[DEBUG] Session retrieval error:', sessionError);
+                  throw new Error('Failed to retrieve session');
+                }
                 
-                if (retryResponse.ok) {
-                  const retryData = await retryResponse.json();
-                  if (retryData.events && Array.isArray(retryData.events)) {
-                    return retryData.events.map((event: any) => ({
+                if (currentSession) {
+                  console.log('[DEBUG] Session found, retrying request with current token');
+                  
+                  // Retry the request with the current token
+                  const retryResponse = await fetch('/api/events?status=upcoming&limit=3', {
+                    method: 'GET',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${currentSession.access_token}`
+                    },
+                    credentials: 'include'
+                  });
+                  
+                  if (retryResponse.ok) {
+                    const data = await retryResponse.json();
+                    
+                    // Check if events property exists and is an array
+                    if (!data.events || !Array.isArray(data.events)) {
+                      console.error('[DEBUG] API response does not contain events array:', data);
+                      return [];
+                    }
+                    
+                    // Transform API response to match the UpcomingEvent format
+                    return data.events.map((event: any) => ({
                       id: event.id,
                       title: event.title || event.name,
                       date: new Date(event.start_date || event.date).toLocaleDateString('en-US', { 
@@ -226,56 +278,87 @@ export default function Dashboard() {
                       type: event.type || 'Event',
                       progress: event.progress || Math.floor(Math.random() * 75) + 10 // Random progress if not provided
                     }));
+                  } else {
+                    console.error('[DEBUG] Retry request failed:', retryResponse.status);
                   }
                 }
-              } else {
-                console.error('Failed to refresh session:', refreshError);
+              } catch (refreshException) {
+                console.error('[DEBUG] Error during session refresh:', refreshException);
+                // Redirect to login if we can't refresh the session
+                router.push('/login');
+                throw new Error('Session expired. Please log in again.');
               }
-            } catch (refreshException) {
-              console.error('Error during session refresh:', refreshException);
             }
             
-            // If we reached here, refresh/retry failed
+            throw new Error(`Error fetching upcoming events: ${response.statusText}. Details: ${errorText}`);
+          }
+          
+          const data = await response.json();
+          
+          // Check if events property exists and is an array
+          if (!data.events || !Array.isArray(data.events)) {
+            console.error('[DEBUG] API response does not contain events array:', data);
             return [];
           }
           
-          throw new Error(`Error fetching upcoming events: ${response.statusText}. Details: ${errorText}`);
+          // Transform API response to match the UpcomingEvent format
+          return data.events.map((event: any) => ({
+            id: event.id,
+            title: event.title || event.name,
+            date: new Date(event.start_date || event.date).toLocaleDateString('en-US', { 
+              month: 'long', 
+              day: 'numeric', 
+              year: 'numeric' 
+            }),
+            time: new Date(event.start_date || event.date).toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            }),
+            type: event.type || 'Event',
+            progress: event.progress || Math.floor(Math.random() * 75) + 10 // Random progress if not provided
+          }));
+        } catch (fetchError) {
+          console.error('[DEBUG] Fetch operation error:', fetchError);
+          // Use mock data for development/testing if fetch fails
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[DEBUG] Using mock data in development mode due to fetch error');
+            return mockUpcomingEvents();
+          }
+          throw fetchError;
         }
-        
-        const data = await response.json();
-        
-        // Check if events property exists and is an array
-        if (!data.events || !Array.isArray(data.events)) {
-          console.error('API response does not contain events array:', data);
-          return [];
-        }
-        
-        // Transform API response to match the UpcomingEvent format
-        return data.events.map((event: any) => ({
-          id: event.id,
-          title: event.title || event.name,
-          date: new Date(event.start_date || event.date).toLocaleDateString('en-US', { 
-            month: 'long', 
-            day: 'numeric', 
-            year: 'numeric' 
-          }),
-          time: new Date(event.start_date || event.date).toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-          }),
-          type: event.type || 'Event',
-          progress: event.progress || Math.floor(Math.random() * 75) + 10 // Random progress if not provided
-        }));
       } catch (error) {
-        console.error('Failed to fetch upcoming events:', error);
+        console.error('[DEBUG] Failed to fetch upcoming events:', error);
         return [];
       }
     },
     enabled: !!user && !authLoading,
-    retry: false,
+    retry: 1,
+    retryDelay: 1000,
     staleTime: 30000,
   });
+
+  // Mock data function for development
+  function mockUpcomingEvents(): UpcomingEvent[] {
+    return [
+      {
+        id: "mock1",
+        title: "Sample Conference",
+        date: "October 15, 2023",
+        time: "9:00 AM",
+        type: "Conference",
+        progress: 75
+      },
+      {
+        id: "mock2",
+        title: "Team Building Workshop",
+        date: "November 5, 2023",
+        time: "2:00 PM",
+        type: "Workshop",
+        progress: 45
+      }
+    ];
+  }
 
   if (authLoading) {
     return (
@@ -415,20 +498,40 @@ export default function Dashboard() {
             <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--eventra-blue))]" />
           </div>
         ) : !upcomingEvents || upcomingEvents.length === 0 ? (
-          <div className="rounded-lg p-8 text-center empty-state" style={{
-            background: "linear-gradient(135deg, rgba(var(--eventra-teal-rgb), 0.05), rgba(var(--eventra-blue-rgb), 0.07), rgba(var(--eventra-purple-rgb), 0.05))",
-            border: "1px solid rgba(var(--eventra-blue-rgb), 0.1)"
-          }}>
-            <Calendar className="h-12 w-12 mx-auto mb-4 text-[hsl(var(--eventra-blue))]" />
-            <h3 className="text-lg font-medium mb-2 text-foreground">No upcoming events</h3>
-            <p className="text-muted-foreground mb-6">Start creating events to see them here</p>
+          <Card className="p-8 text-center border-dashed shadow-sm transition-all duration-300 overflow-hidden relative"
+            style={{
+              background: "linear-gradient(135deg, rgba(var(--eventra-teal-rgb), 0.05), rgba(var(--eventra-blue-rgb), 0.07), rgba(var(--eventra-purple-rgb), 0.05))",
+              border: "1px solid rgba(var(--eventra-blue-rgb), 0.1)"
+            }}
+          >
+            {/* Decorative Elements */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+              <div className="absolute top-5 right-5 w-24 h-24 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 blur-xl"></div>
+              <div className="absolute bottom-5 left-5 w-20 h-20 rounded-full bg-gradient-to-r from-blue-500/10 to-teal-500/10 blur-xl"></div>
+            </div>
+            
+            {/* Icon Container */}
+            <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full mb-5 bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] p-[2px]">
+              <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+                <Calendar className="h-8 w-8 text-[hsl(var(--eventra-blue))]" />
+              </div>
+            </div>
+            
+            {/* Content */}
+            <h3 className="text-xl font-semibold mb-2 text-foreground">No Upcoming Events</h3>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              Your dashboard will show your next events here. Get started by creating your first event to manage planning, tasks, and invitations.
+            </p>
+            
+            {/* Action Button */}
             <Button 
               onClick={() => setIsNewEventModalOpen(true)}
-              className="bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] text-white"
+              className="bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] text-white shadow-md hover:shadow-lg transition-all duration-300 gap-2"
             >
+              <Plus className="h-4 w-4 mr-1" />
               Create an Event
             </Button>
-          </div>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {upcomingEvents.map(event => (

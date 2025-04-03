@@ -6,6 +6,7 @@ import { useEvents, Event } from '@/hooks/use-events'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import NewEventModal from '@/components/modals/new-event-modal'
+import { Calendar, PlusCircle } from 'lucide-react'
 
 // Status badge component
 const StatusBadge = ({ status }: { status: Event['status'] }) => {
@@ -137,9 +138,32 @@ export default function EventList({
           <span className="ml-2">Loading events...</span>
         </div>
       ) : events.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-center">
-          <p className="text-muted-foreground mb-4">{emptyMessage}</p>
-          <Button onClick={() => setIsNewEventModalOpen(true)}>
+        <div className="rounded-lg border border-dashed p-8 text-center overflow-hidden relative"
+          style={{
+            background: "linear-gradient(135deg, rgba(var(--eventra-teal-rgb), 0.05), rgba(var(--eventra-blue-rgb), 0.07), rgba(var(--eventra-purple-rgb), 0.05))",
+            border: "1px solid rgba(var(--eventra-blue-rgb), 0.1)"
+          }}
+        >
+          {/* Decorative Elements */}
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+            <div className="absolute top-5 right-5 w-24 h-24 rounded-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 blur-xl"></div>
+            <div className="absolute bottom-5 left-5 w-20 h-20 rounded-full bg-gradient-to-r from-blue-500/10 to-teal-500/10 blur-xl"></div>
+          </div>
+          
+          {/* Icon Container */}
+          <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full mb-5 bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] p-[2px]">
+            <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
+              <Calendar className="h-8 w-8 text-[hsl(var(--eventra-blue))]" />
+            </div>
+          </div>
+          
+          <h3 className="text-xl font-semibold mb-2 text-foreground">No Events Found</h3>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">{emptyMessage}</p>
+          <Button 
+            onClick={() => setIsNewEventModalOpen(true)}
+            className="bg-gradient-to-r from-[hsl(var(--eventra-teal))] via-[hsl(var(--eventra-blue))] to-[hsl(var(--eventra-purple))] text-white shadow-md hover:shadow-lg transition-all duration-300 gap-2"
+          >
+            <PlusCircle className="h-4 w-4 mr-1" />
             Create New Event
           </Button>
         </div>

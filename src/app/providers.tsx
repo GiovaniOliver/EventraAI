@@ -100,15 +100,7 @@ export function Providers({ children }: { children: ReactNode }) {
           console.log('[DEBUG] Profile query result:', profile ? 'Profile found' : 'No profile found');
           
           if (profileError) {
-            console.error('[DEBUG] Profile fetch error details:', {
-              error: profileError,
-              stringified: JSON.stringify(profileError),
-              code: profileError?.code,
-              message: profileError?.message,
-              details: profileError?.details,
-              hint: profileError?.hint,
-              stack: profileError?.stack
-            });
+            console.error('[DEBUG] Profile fetch error details:', profileError || {});
             
             // Try to get database schema to debug
             try {
@@ -119,18 +111,13 @@ export function Providers({ children }: { children: ReactNode }) {
                 .limit(1);
                 
               if (schemaError) {
-                console.error('[DEBUG] Table schema check error:', {
-                  code: schemaError.code,
-                  message: schemaError.message,
-                  details: schemaError.details,
-                  hint: schemaError.hint
-                });
+                console.error('[DEBUG] Table schema check error:', schemaError || {});
               } else {
                 console.log('[DEBUG] Users table exists with structure:', 
                   schemaData && schemaData.length > 0 ? Object.keys(schemaData[0]) : 'No rows found');
               }
             } catch (schemaCheckError) {
-              console.error('[DEBUG] Schema check failed:', schemaCheckError);
+              console.error('[DEBUG] Schema check failed:', schemaCheckError || {});
             }
           }
           
@@ -150,24 +137,16 @@ export function Providers({ children }: { children: ReactNode }) {
                 .insert([userProfile]);
                 
               if (insertError) {
-                console.error('[DEBUG] Error inserting user profile:', {
-                error: insertError,
-                stringified: JSON.stringify(insertError),
-                code: insertError?.code,
-                message: insertError?.message,
-                details: insertError?.details,
-                hint: insertError?.hint,
-                stack: insertError?.stack
-              });
+                console.error('[DEBUG] Error inserting user profile:', insertError || {});
               } else {
                 console.log('[DEBUG] User profile inserted successfully');
               }
             } catch (insertError) {
-              console.error('[DEBUG] Failed to insert user profile:', insertError);
+              console.error('[DEBUG] Failed to insert user profile:', insertError || {});
             }
           }
         } catch (profileQueryError) {
-          console.error('[DEBUG] Critical error during profile query:', profileQueryError);
+          console.error('[DEBUG] Critical error during profile query:', profileQueryError || {});
           userProfile = createUserProfileFromSession(data.session.user);
         }
       }
@@ -224,16 +203,8 @@ export function Providers({ children }: { children: ReactNode }) {
               userProfile = profile;
               console.log('[DEBUG] Using database profile');
             } else {
-              console.error('[DEBUG] Error fetching user profile in auth change:', {
-                  error: profileError,
-                  stringified: JSON.stringify(profileError),
-                  code: profileError?.code,
-                  message: profileError?.message,
-                  details: profileError?.details,
-                  hint: profileError?.hint,
-                  stack: profileError?.stack
-                });
-                
+              console.error('[DEBUG] Error fetching user profile in auth change:', profileError || {});
+              
               // Create a fallback profile from session data
               userProfile = createUserProfileFromSession(session.user);
               console.log('[DEBUG] Created fallback profile');
@@ -245,7 +216,7 @@ export function Providers({ children }: { children: ReactNode }) {
               isLoading: false,
             }));
           } catch (profileError) {
-            console.error('[DEBUG] Critical error in auth change handler:', profileError);
+            console.error('[DEBUG] Critical error in auth change handler:', profileError || {});
             // Even on error, create a minimal profile to prevent app from breaking
             const fallbackProfile = createUserProfileFromSession(session.user);
             
@@ -261,7 +232,7 @@ export function Providers({ children }: { children: ReactNode }) {
       
       authListenerRef.current = authListener;
     } catch (error) {
-      console.error('[DEBUG] Authentication error:', error);
+      console.error('[DEBUG] Authentication error:', error || {});
       
       if (retryCount < MAX_RETRIES) {
         console.log(`[DEBUG] Retrying authentication in ${Math.pow(2, retryCount)} seconds...`);

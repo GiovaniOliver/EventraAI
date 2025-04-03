@@ -25,7 +25,20 @@ export function withAuth(
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
       
       // Extract cookies from request headers
+      let cookies: Record<string, string> = {};
       const cookieHeader = req.headers.get('cookie');
+      
+      if (cookieHeader) {
+        cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+          const [key, value] = cookie.trim().split('=');
+          if (key && value) acc[key] = value;
+          return acc;
+        }, {} as Record<string, string>);
+        
+        console.log('[DEBUG] Extracted cookies from request:', Object.keys(cookies));
+      } else {
+        console.log('[DEBUG] No cookies found in request');
+      }
       
       // Check for token in Authorization header first
       const authHeader = req.headers.get('Authorization');
@@ -33,9 +46,7 @@ export function withAuth(
       
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7);
-        console.log('[DEBUG] Found Bearer token in Authorization header:', token.substring(0, 10) + '...');
-      } else {
-        console.log('[DEBUG] No Authorization header found, checking cookies');
+        console.log('[DEBUG] Found Bearer token in Authorization header');
       }
       
       // Create client with the cookie header and/or Authorization token
@@ -46,50 +57,25 @@ export function withAuth(
         },
         global: {
           headers: {
-            ...(cookieHeader ? { cookie: cookieHeader } : {}),
+            cookie: cookieHeader || '',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         },
       });
       
-      // Get session directly from the token if available
-      let session = null;
-      if (token) {
-        try {
-          // First try using the token directly
-          const { data, error } = await supabase.auth.getUser(token);
-          if (!error && data.user) {
-            console.log('[DEBUG] Successfully authenticated with token in Authorization header');
-            session = { user: data.user };
-          } else {
-            console.error('[DEBUG] Error authenticating with token:', error);
-          }
-        } catch (tokenError) {
-          console.error('[DEBUG] Failed to use token directly:', tokenError);
-        }
+      // Check if user is authenticated
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      
+      if (authError) {
+        console.error('[DEBUG] Auth session error:', authError);
       }
       
-      // If token-based authentication failed, try getting the session
       if (!session) {
-        const { data: sessionData, error: authError } = await supabase.auth.getSession();
-        
-        if (authError) {
-          console.error('[DEBUG] Auth session error:', authError);
-        }
-        
-        session = sessionData.session;
-      }
-      
-      // If no session found, return 401
-      if (!session) {
-        console.error('[DEBUG] No valid session found - authentication required');
         return NextResponse.json(
           { error: 'Authentication required' },
           { status: 401 }
         );
       }
-      
-      console.log('[DEBUG] Successfully authenticated user:', session.user.id);
       
       // Get user profile from the database to include roles and subscription info
       const { data: userProfile, error: profileError } = await supabase
@@ -138,12 +124,11 @@ export function withAdminAuth(
       
       // Check for token in Authorization header first
       const authHeader = req.headers.get('Authorization');
-      const cookieHeader = req.headers.get('cookie');
       let token = null;
       
       if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.substring(7);
-        console.log('[DEBUG] Found Bearer token in admin auth middleware');
+        console.log('Found Bearer token in Authorization header');
       }
       
       // Create client with the cookie header and/or Authorization token
@@ -154,42 +139,16 @@ export function withAdminAuth(
         },
         global: {
           headers: {
-            ...(cookieHeader ? { cookie: cookieHeader } : {}),
+            cookie: req.headers.get('cookie') || '',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         },
       });
       
-      // Get session directly from the token if available
-      let session = null;
-      if (token) {
-        try {
-          // First try using the token directly
-          const { data, error } = await supabase.auth.getUser(token);
-          if (!error && data.user) {
-            console.log('[DEBUG] Successfully authenticated admin with token');
-            session = { user: data.user };
-          } else {
-            console.error('[DEBUG] Error authenticating admin with token:', error);
-          }
-        } catch (tokenError) {
-          console.error('[DEBUG] Failed to use token directly for admin:', tokenError);
-        }
-      }
+      // Check if user is authenticated
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
       
-      // If token-based authentication failed, try getting the session
-      if (!session) {
-        const { data: sessionData, error: authError } = await supabase.auth.getSession();
-        
-        if (authError) {
-          console.error('[DEBUG] Admin auth session error:', authError);
-        }
-        
-        session = sessionData.session;
-      }
-      
-      // If no session found, return 401
-      if (!session) {
+      if (authError || !session) {
         return NextResponse.json(
           { error: 'Authentication required' },
           { status: 401 }

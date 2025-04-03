@@ -1,11 +1,25 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { Database } from '@/shared/supabase-types'
 
+/**
+ * Supabase Authentication Utilities
+ * 
+ * This module provides a set of helper functions for interacting with Supabase Auth,
+ * simplifying common authentication operations like sign-in, sign-up, sign-out,
+ * and password management.
+ * 
+ * Note: Many of these functions are also available through the useAuth hook,
+ * which is the recommended way to handle authentication in components.
+ */
+
 const supabase = createBrowserClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+/**
+ * Signs in a user with email and password
+ */
 export async function signIn(email: string, password: string) {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -24,6 +38,9 @@ export async function signIn(email: string, password: string) {
   }
 }
 
+/**
+ * Registers a new user with email, password and optional full name
+ */
 export async function signUp(email: string, password: string, fullName?: string) {
   try {
     const { data, error } = await supabase.auth.signUp({
@@ -47,6 +64,9 @@ export async function signUp(email: string, password: string, fullName?: string)
   }
 }
 
+/**
+ * Signs out the current user
+ */
 export async function signOut() {
   try {
     const { error } = await supabase.auth.signOut()
@@ -60,6 +80,9 @@ export async function signOut() {
   }
 }
 
+/**
+ * Sends a password reset email to the specified email address
+ */
 export async function resetPassword(email: string) {
   try {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -77,6 +100,9 @@ export async function resetPassword(email: string) {
   }
 }
 
+/**
+ * Updates the current user's password
+ */
 export async function updatePassword(newPassword: string) {
   try {
     const { data, error } = await supabase.auth.updateUser({
@@ -94,6 +120,9 @@ export async function updatePassword(newPassword: string) {
   }
 }
 
+/**
+ * Gets the current session
+ */
 export async function getSession() {
   try {
     const { data: { session }, error } = await supabase.auth.getSession()
@@ -107,6 +136,9 @@ export async function getSession() {
   }
 }
 
+/**
+ * Gets the current user
+ */
 export async function getUser() {
   try {
     const { data: { user }, error } = await supabase.auth.getUser()
